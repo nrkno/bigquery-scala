@@ -106,7 +106,7 @@ object BQPoll {
       Option(pulledJob.getStatus)
 
     val maybeFailed: Option[BQPoll.Failed] =
-      maybeStatus.flatMap { s: JobStatus =>
+      maybeStatus.flatMap { (s: JobStatus) =>
         val primary: Option[BigQueryError] =
           Option(s.getError)
 

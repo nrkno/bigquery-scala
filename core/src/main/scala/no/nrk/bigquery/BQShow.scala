@@ -6,6 +6,7 @@ import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDate, LocalTime, YearMonth}
 
 /* A type class, directly derived from cats.Show, which determines what a type will look like when printed to BigQuery SQL */
+@FunctionalInterface
 trait BQShow[T] { self =>
   def bqShow(t: T): BQSqlFrag
   def contramap[B](f: B => T): BQShow[B] = (t: B) => self.bqShow(f(t))

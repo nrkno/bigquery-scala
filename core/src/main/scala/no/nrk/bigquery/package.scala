@@ -78,11 +78,11 @@ package object bigquery {
   }
 
   // orphan instances below
-  implicit val showJobId: Show[JobId] = Jsonify.jobId
-  implicit val showBigQueryError: Show[BigQueryError] = Jsonify.error
-  implicit def showJob[J <: JobInfo]: Show[J] = Jsonify.job
-  implicit val showDataset: Show[DatasetId] = tid =>
-    s"`${tid.getProject}.${tid.getDataset}`"
+  implicit val showJobId: Show[JobId] = Show.show(Jsonify.jobId)
+  implicit val showBigQueryError: Show[BigQueryError] = Show.show(Jsonify.error)
+  implicit def showJob[J <: JobInfo]: Show[J] = Show.show(Jsonify.job)
+  implicit val showDataset: Show[DatasetId] =
+    Show.show(tid => s"`${tid.getProject}.${tid.getDataset}`")
 
   def formatTableId(tableId: TableId): String =
     s"${tableId.getProject}.${tableId.getDataset}.${tableId.getTable}"

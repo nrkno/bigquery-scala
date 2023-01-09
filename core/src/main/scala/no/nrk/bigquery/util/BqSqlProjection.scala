@@ -102,7 +102,7 @@ object BqSqlProjection {
 
         case field if field.tpe == StandardSQLTypeName.STRUCT =>
           val selecteds: List[(Ident, Selected)] =
-            field.subFields.flatMap { subField: BQField =>
+            field.subFields.flatMap { (subField: BQField) =>
               f(subField) match {
                 case Keep =>
                   val selectedSubField =

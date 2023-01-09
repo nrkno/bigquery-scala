@@ -45,12 +45,22 @@ lazy val core = crossProject(JVMPlatform)
       "io.circe" %% "circe-parser" % "0.14.2",
       "co.fs2" %% "fs2-core" % "3.4.0",
       "co.fs2" %% "fs2-io" % "3.4.0",
-
-      //scala2
-      "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.2",
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.9.0"
-    )
+    ),
+    libraryDependencies ++= {
+      if (scalaVersion.value.startsWith("3")) {
+        Seq(
+           "com.softwaremill.magnolia1_3" %% "magnolia" % "1.1.2",
+        )
+      } else {
+        //scala2
+        Seq(
+           "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.2",
+           "org.scala-lang" % "scala-reflect" % scalaVersion.value
+        )
+
+      }
+    }
   )
 
 //lazy val docs = project.in(file("site")).enablePlugins(TypelevelSitePlugin)

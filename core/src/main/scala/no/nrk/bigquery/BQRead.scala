@@ -2,15 +2,14 @@ package no.nrk.bigquery
 
 import com.google.cloud.bigquery.{Field, StandardSQLTypeName}
 import io.circe.Json
-import magnolia1.{CaseClass, Magnolia}
-import org.apache.avro
-import org.apache.avro.generic.GenericRecord
+
 import org.apache.avro.util.Utf8
+import org.apache.avro
 
 import java.time._
-import scala.annotation.nowarn
 import scala.collection.compat._
 import scala.jdk.CollectionConverters._
+
 import scala.reflect.ClassTag
 
 trait BQRead[A] { outer =>
@@ -26,56 +25,15 @@ trait BQRead[A] { outer =>
   def read(transportSchema: avro.Schema, value: Any): A
 }
 
-object BQRead {
+object BQRead extends BQReadCompat {
 
   def apply[A: BQRead]: BQRead[A] = implicitly
 
-  // magnolia automatic derivation begin
-  type Typeclass[T] = BQRead[T]
-
-  private def firstNotNullable(schema: avro.Schema): Option[avro.Schema] =
+  private[bigquery] def firstNotNullable(schema: avro.Schema): Option[avro.Schema] =
     if (schema.isUnion) schema.getTypes.asScala.collectFirst {
       case s if !s.isNullable => s
     }
     else None
-
-  def join[T](ctx: CaseClass[BQRead, T]): BQRead[T] =
-    new BQRead[T] {
-      override val bqType: BQType =
-        BQType(
-          Field.Mode.REQUIRED,
-          StandardSQLTypeName.STRUCT,
-          ctx.parameters
-            .map(param => param.label -> param.typeclass.bqType)
-            .toList
-        )
-
-      override def read(transportSchema: avro.Schema, value: Any): T =
-        value match {
-          case coll: GenericRecord =>
-            // ignore if BQ thinks this record type is nullable if we think it's not
-            val schema1 =
-              firstNotNullable(transportSchema).getOrElse(transportSchema)
-            val fields = schema1.getFields
-            ctx.construct { param =>
-              param.typeclass.read(
-                fields.get(param.index).schema(),
-                coll.get(param.index)
-              )
-            }
-          case other =>
-            sys.error(
-              s"Unexpected: ${other.getClass.getSimpleName} $other . Schema from BQ: $transportSchema"
-            )
-        }
-    }
-
-  def derived[T]: BQRead[T] = macro Magnolia.gen[T]
-  // magnolia automatic derivation end
-
-  @nowarn("cat=unused")
-  implicit def convertsTuple[A: BQRead, B: BQRead]: BQRead[(A, B)] =
-    derived[(A, B)]
 
   implicit def convertsOption[A: BQRead]: BQRead[Option[A]] =
     new BQRead[Option[A]] {
