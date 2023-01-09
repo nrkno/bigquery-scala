@@ -53,7 +53,8 @@ object BigQueryTestClient {
             jobName: BQJobName,
             query: BQSqlFrag,
             legacySql: Boolean,
-            jobOptions: Seq[JobOption]
+            jobOptions: Seq[JobOption],
+            logStream: Boolean
         ): Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] = {
           val hash = util.Objects.hash(query, legacySql, jobOptions)
           val hashedSchemaPath =

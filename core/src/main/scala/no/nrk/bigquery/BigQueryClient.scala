@@ -53,11 +53,18 @@ class BigQueryClient(
       jobName: BQJobName,
       query: BQQuery[A],
       legacySql: Boolean = false,
-      jobOptions: Seq[JobOption] = Nil
+      jobOptions: Seq[JobOption] = Nil,
+      logStream: Boolean = false
   ): Stream[IO, A] =
     Stream
       .resource(
-        synchronousQueryExecute(jobName, query.sql, legacySql, jobOptions)
+        synchronousQueryExecute(
+          jobName,
+          query.sql,
+          legacySql,
+          jobOptions,
+          logStream
+        )
       )
       .flatMap { case (_, rowStream) =>
         rowStream.map { (record: GenericRecord) =>
@@ -77,7 +84,8 @@ class BigQueryClient(
       jobName: BQJobName,
       query: BQSqlFrag,
       legacySql: Boolean = false,
-      jobOptions: Seq[JobOption]
+      jobOptions: Seq[JobOption] = Nil,
+      logStream: Boolean = false
   ): Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] = {
 
     val runQuery: IO[Job] = {
@@ -163,13 +171,17 @@ class BigQueryClient(
       schema = new avro.Schema.Parser().parse(session.getAvroSchema.getSchema)
       datumReader = new GenericDatumReader[GenericRecord](schema)
     } yield {
-      val rowStream: Stream[IO, GenericRecord] = streams
+      val baseStream: Stream[IO, GenericRecord] = streams
         .map(stream => rows(datumReader, stream))
         .reduceOption(_.merge(_))
         .getOrElse(Stream.empty)
-        .chunks
-        .through(StreamUtils.logChunks(logger, None, "downloading"))
-        .flatMap(Stream.chunk)
+
+      val rowStream =
+        if (logStream)
+          baseStream.chunks
+            .through(StreamUtils.logChunks(logger, None, "downloading"))
+            .flatMap(Stream.chunk)
+        else baseStream
 
       (schema, rowStream)
     }
@@ -184,7 +196,8 @@ class BigQueryClient(
       partition: P,
       stream: fs2.Stream[IO, A],
       writeDisposition: WriteDisposition,
-      chunkSize: Int = 10 * StreamUtils.Megabyte
+      chunkSize: Int = 10 * StreamUtils.Megabyte,
+      logStream: Boolean = false
   ): IO[Option[LoadStatistics]] =
     submitJob(jobName) { jobId =>
       val partitionId = table.assertPartition(partition)
@@ -208,8 +221,10 @@ class BigQueryClient(
           stream
             .through(StreamUtils.toLineSeparatedJsonBytes(chunkSize))
             .through(
-              StreamUtils
-                .logChunks(logger, None, show"uploading to $partitionId")
+              if (logStream)
+                StreamUtils
+                  .logChunks(logger, None, show"uploading to $partitionId")
+              else identity
             )
             .prefetch
             .evalMap(chunk => IO.blocking(writer.write(chunk.toByteBuffer)))
