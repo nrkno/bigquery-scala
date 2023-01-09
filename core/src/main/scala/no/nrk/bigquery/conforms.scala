@@ -1,0 +1,61 @@
+package no.nrk.bigquery
+
+import com.google.cloud.bigquery.Field.Mode
+import com.google.cloud.bigquery.StandardSQLTypeName
+
+/** Comparisons of schemas and bigquery types. This is order dependant instead of names, because that's how we originally wrote all the BQ integration code. Not
+  * decided if that is for better or worse still.
+  */
+object conforms {
+  def onlyTypes(actualSchema: BQSchema, givenType: BQType): Option[List[String]] = {
+
+    // rewrite both types to not use names, and reuse the comparison logic in `apply`
+    val Anon = "_"
+    def asAnonField(bqType: BQType): BQField =
+      BQField(Anon, bqType.tpe, bqType.mode, None, bqType.subFields.map { case (_, tpe) => asAnonField(tpe) }, Nil)
+    def anonymize(field: BQField): BQField =
+      field.copy(name = Anon, subFields = field.subFields.map(anonymize))
+
+    val givenSchema = asAnonField(givenType) match {
+      case BQField(_, StandardSQLTypeName.STRUCT, _, _, subFields, Nil) => BQSchema(subFields.toList)
+      case other                                                        => BQSchema.of(other)
+    }
+
+    apply(actualSchema.copy(fields = actualSchema.fields.map(anonymize)), givenSchema)
+  }
+
+  /* this is a stronger comparison than `onlyTypes`, because it takes into column names as well */
+  def apply(actualSchema: BQSchema, givenSchema: BQSchema): Option[List[String]] = {
+    val reasonsBuilder = List.newBuilder[String]
+
+    def go(path: List[BQField], actualFields: Seq[BQField], givenFields: Seq[BQField]): Unit =
+      actualFields.zipWithIndex.foreach { case (actualField, idx) =>
+        val givenFieldOpt = givenFields.lift(idx)
+
+        // if we're inside structs, render the full path
+        def render(f: BQField) = s"field ${(f :: path).reverse.map(_.name).mkString(".")}"
+
+        givenFieldOpt match {
+          case Some(givenField) if givenField.name != actualField.name =>
+            reasonsBuilder += s"Expected ${render(actualField)}, got ${render(givenField)}"
+          case Some(givenField) if givenField.tpe != actualField.tpe =>
+            reasonsBuilder += s"Expected ${render(actualField)} to have type ${actualField.tpe}, got ${givenField.tpe}"
+          case Some(givenField) if (givenField.mode == Mode.REPEATED) != (actualField.mode == Mode.REPEATED) =>
+            reasonsBuilder += s"Expected ${render(actualField)} to have mode ${actualField.mode}, got ${givenField.mode}"
+          case Some(givenField) if givenField.subFields.nonEmpty =>
+            go(givenField :: path, actualField.subFields, givenField.subFields)
+          case Some(ok @ _) =>
+            ()
+          case None =>
+            reasonsBuilder += s"Expected ${render(actualField)} at 0-based index $idx, but it given table/struct was shorter"
+        }
+      }
+
+    go(Nil, actualSchema.fields, givenSchema.fields)
+
+    reasonsBuilder.result() match {
+      case Nil     => None
+      case reasons => Some(reasons)
+    }
+  }
+}
