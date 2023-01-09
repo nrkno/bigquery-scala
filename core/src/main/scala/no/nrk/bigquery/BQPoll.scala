@@ -23,8 +23,17 @@ object BQPoll {
   case class Failed(error: BQExecutionException) extends Finished
   case class Success(job: Job) extends Finished
 
-  def poll(runningJob: Job, baseDelay: FiniteDuration, maxDuration: FiniteDuration, maxErrorsTolerated: Int)(retry: IO[Job]): IO[BQPoll.Finished] = {
-    def go(runningJob: Job, seenErrors: List[Throwable], seenNotFinished: List[BQPoll.NotFinished]): IO[BQPoll.Finished] =
+  def poll(
+      runningJob: Job,
+      baseDelay: FiniteDuration,
+      maxDuration: FiniteDuration,
+      maxErrorsTolerated: Int
+  )(retry: IO[Job]): IO[BQPoll.Finished] = {
+    def go(
+        runningJob: Job,
+        seenErrors: List[Throwable],
+        seenNotFinished: List[BQPoll.NotFinished]
+    ): IO[BQPoll.Finished] =
       fromJob(runningJob) match {
         case x: BQPoll.Finished => IO.pure(x)
         case notFinished: BQPoll.NotFinished =>
@@ -32,7 +41,9 @@ object BQPoll {
           val newSeenNotFinished = notFinished :: seenNotFinished
           val waitFor = fullJitter(baseDelay, seenErrors.length)
 
-          logger.info(s"sleeping ${waitFor.toMillis}ms before polling ${jobId.getJob}. Current status $notFinished") >> IO.sleep(waitFor) >> retry.attempt
+          logger.info(
+            s"sleeping ${waitFor.toMillis}ms before polling ${jobId.getJob}. Current status $notFinished"
+          ) >> IO.sleep(waitFor) >> retry.attempt
             .flatMap {
               case Left(error) =>
                 val newSeenErrors = error :: seenErrors
@@ -40,7 +51,9 @@ object BQPoll {
                 if (newSeenErrors.length == maxErrorsTolerated) {
                   IO.raiseError(error) // will be logged later
                 } else {
-                  logger.info(error)(s"Network error while polling $jobId. Retrying") >>
+                  logger.info(error)(
+                    s"Network error while polling $jobId. Retrying"
+                  ) >>
                     go(runningJob, newSeenErrors, newSeenNotFinished)
                 }
 
@@ -50,12 +63,16 @@ object BQPoll {
       }
 
     IO.sleep(maxDuration).race(go(runningJob, Nil, Nil)).flatMap {
-      case Left(_)         => IO.raiseError(BQExecutionException(runningJob.getJobId, None, Nil))
+      case Left(_) =>
+        IO.raiseError(BQExecutionException(runningJob.getJobId, None, Nil))
       case Right(finished) => IO.pure(finished)
     }
   }
 
-  def fullJitter(baseDelay: FiniteDuration, retriesSoFar: Int): FiniteDuration = {
+  def fullJitter(
+      baseDelay: FiniteDuration,
+      retriesSoFar: Int
+  ): FiniteDuration = {
     val e = Math.pow(2, retriesSoFar.toDouble).toLong
     val maxDelay = safeMultiply(baseDelay, e)
     val delayNanos = (maxDelay.toNanos * Random.nextDouble()).toLong
@@ -72,7 +89,10 @@ object BQPoll {
    * FiniteDuration if the multiplier is negative. But an assumption of the library
    * as a whole is that nobody would be silly enough to use negative delays.
    */
-  private def safeMultiply(duration: FiniteDuration, multiplier: Long): FiniteDuration = {
+  private def safeMultiply(
+      duration: FiniteDuration,
+      multiplier: Long
+  ): FiniteDuration = {
     val durationNanos = BigInt(duration.toNanos)
     val resultNanos = durationNanos * BigInt(multiplier)
     val safeResultNanos = resultNanos min LongMax

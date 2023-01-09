@@ -8,10 +8,22 @@ import java.time.LocalDate
 class BQPartitionIdTest extends BQSmokeTest {
   val partitionDate: Ident = Ident("partitionDate")
   // here because of a failing test since we deleted the table? sorry
-  val PodcastRaw = BQTableRef(TableId.of("nrk-datahub", "raw_data", "podcast_access_logs_v02"), BQPartitionType.DatePartitioned(partitionDate))
-  val P3Article = BQTableRef(TableId.of("nrk-datahub", "prod", "p3_article"), BQPartitionType.NotPartitioned)
-  val NrkBeta = BQTableRef(TableId.of("nrk-ga-export", "5672922", "ga_sessions"), BQPartitionType.Sharded)
-  val NrkNo = BQTableRef(TableId.of("nrk-recommendations", "6666907", "ga_sessions"), BQPartitionType.Sharded)
+  val PodcastRaw = BQTableRef(
+    TableId.of("nrk-datahub", "raw_data", "podcast_access_logs_v02"),
+    BQPartitionType.DatePartitioned(partitionDate)
+  )
+  val P3Article = BQTableRef(
+    TableId.of("nrk-datahub", "prod", "p3_article"),
+    BQPartitionType.NotPartitioned
+  )
+  val NrkBeta = BQTableRef(
+    TableId.of("nrk-ga-export", "5672922", "ga_sessions"),
+    BQPartitionType.Sharded
+  )
+  val NrkNo = BQTableRef(
+    TableId.of("nrk-recommendations", "6666907", "ga_sessions"),
+    BQPartitionType.Sharded
+  )
 
   bqCheckFragmentNoSchemaTest("shards") {
     // should handle different tables. it won't necessarily work, but who are we to judge?
@@ -67,23 +79,38 @@ class BQPartitionIdTest extends BQSmokeTest {
   }
 
   bqCheckLegacyFragmentTest("PartitionLoader.shardedQuery with startdate") {
-    PartitionLoader.shard.allPartitionsQuery(StartDate.FromDate(LocalDate.of(2020, 1, 1)), NrkNo).sql
+    PartitionLoader.shard
+      .allPartitionsQuery(StartDate.FromDate(LocalDate.of(2020, 1, 1)), NrkNo)
+      .sql
   }
 
   bqCheckLegacyFragmentTest("PartitionLoader.shardedQuery without startdate") {
     PartitionLoader.shard.allPartitionsQuery(StartDate.All, NrkNo).sql
   }
 
-  bqCheckLegacyFragmentTest("PartitionLoader.date.allPartitionsQuery with startdate") {
-    PartitionLoader.date.allPartitionsQuery(PodcastRaw, StartDate.FromDate(LocalDate.of(2020, 1, 1))).sql
+  bqCheckLegacyFragmentTest(
+    "PartitionLoader.date.allPartitionsQuery with startdate"
+  ) {
+    PartitionLoader.date
+      .allPartitionsQuery(
+        PodcastRaw,
+        StartDate.FromDate(LocalDate.of(2020, 1, 1))
+      )
+      .sql
   }
 
-  bqCheckLegacyFragmentTest("PartitionLoader.date.allPartitionsQuery without startdate") {
+  bqCheckLegacyFragmentTest(
+    "PartitionLoader.date.allPartitionsQuery without startdate"
+  ) {
     PartitionLoader.date.allPartitionsQuery(PodcastRaw, StartDate.All).sql
   }
 
   bqCheckTest("PartitionLoader.date.rowCountQuery with startdate") {
-    PartitionLoader.date.rowCountQuery(PodcastRaw, partitionDate, StartDate.FromDate(LocalDate.of(2020, 1, 1)))
+    PartitionLoader.date.rowCountQuery(
+      PodcastRaw,
+      partitionDate,
+      StartDate.FromDate(LocalDate.of(2020, 1, 1))
+    )
   }
 
   bqCheckTest("PartitionLoader.date.rowCountQuery without startdate") {

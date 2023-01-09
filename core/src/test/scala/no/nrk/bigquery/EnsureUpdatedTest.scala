@@ -16,12 +16,22 @@ class EnsureUpdatedTest extends FunSuite {
 
   test("views with schema should trigger update after create") {
     val schema = BQSchema.of(a)
-    val testView = BQTableDef.View(viewId, BQPartitionType.NotPartitioned, bqsql"select 1 as a", schema, Some("description"), TableLabels.Empty)
+    val testView = BQTableDef.View(
+      viewId,
+      BQPartitionType.NotPartitioned,
+      bqsql"select 1 as a",
+      schema,
+      Some("description"),
+      TableLabels.Empty
+    )
     val remote = None
 
     UpdateOperation.from(testView, remote) match {
       case UpdateOperation.Create(_, _, maybePatchedTable) =>
-        assert(maybePatchedTable.nonEmpty, "Expected create with patched table when we have schema")
+        assert(
+          maybePatchedTable.nonEmpty,
+          "Expected create with patched table when we have schema"
+        )
       case other => fail(other.toString)
     }
   }
@@ -30,14 +40,40 @@ class EnsureUpdatedTest extends FunSuite {
     val schema = BQSchema.of(a)
     val query = bqsql"select 1 as a"
     val description = "description"
-    val testView = BQTableDef.View(viewId, BQPartitionType.NotPartitioned, query, schema, Some(description), TableLabels.Empty)
-    val remote = Some(TableInfo.newBuilder(viewId, ViewDefinition.newBuilder(query.asStringWithUDFs).setSchema(schema.toSchema).build()).build())
+    val testView = BQTableDef.View(
+      viewId,
+      BQPartitionType.NotPartitioned,
+      query,
+      schema,
+      Some(description),
+      TableLabels.Empty
+    )
+    val remote = Some(
+      TableInfo
+        .newBuilder(
+          viewId,
+          ViewDefinition
+            .newBuilder(query.asStringWithUDFs)
+            .setSchema(schema.toSchema)
+            .build()
+        )
+        .build()
+    )
 
     UpdateOperation.from(testView, remote) match {
       case UpdateOperation.RecreateView(from, to, createNew) =>
-        assert(Option(from.getDescription).isEmpty, "Expected `from` table to not have description")
-        assert(to.description.contains(description), "Expected `to` to have description")
-        assert(createNew.table.getDescription == description, "Expected `updatedTable` to have description")
+        assert(
+          Option(from.getDescription).isEmpty,
+          "Expected `from` table to not have description"
+        )
+        assert(
+          to.description.contains(description),
+          "Expected `to` to have description"
+        )
+        assert(
+          createNew.table.getDescription == description,
+          "Expected `updatedTable` to have description"
+        )
       case other => fail(other.toString)
     }
   }
@@ -46,10 +82,26 @@ class EnsureUpdatedTest extends FunSuite {
     val schema = BQSchema.of(a)
     val query = bqsql"select 1 as a"
     val description = "description"
-    val testView = BQTableDef.View(viewId, BQPartitionType.NotPartitioned, query, schema, Some(description), TableLabels.Empty)
+    val testView = BQTableDef.View(
+      viewId,
+      BQPartitionType.NotPartitioned,
+      query,
+      schema,
+      Some(description),
+      TableLabels.Empty
+    )
     val remote =
       Some(
-        TableInfo.newBuilder(viewId, ViewDefinition.newBuilder(query.asStringWithUDFs).setSchema(schema.toSchema).build()).setDescription(description).build()
+        TableInfo
+          .newBuilder(
+            viewId,
+            ViewDefinition
+              .newBuilder(query.asStringWithUDFs)
+              .setSchema(schema.toSchema)
+              .build()
+          )
+          .setDescription(description)
+          .build()
       )
 
     UpdateOperation.from(testView, remote) match {
@@ -61,27 +113,52 @@ class EnsureUpdatedTest extends FunSuite {
   test("should keep unknown values set on a TableInfo for table updates") {
     val schema = BQSchema.of(a)
     val description = "description"
-    val testTable = BQTableDef.Table(tableId, schema, BQPartitionType.NotPartitioned, Some(description), clustering = Nil, TableLabels.Empty)
+    val testTable = BQTableDef.Table(
+      tableId,
+      schema,
+      BQPartitionType.NotPartitioned,
+      Some(description),
+      clustering = Nil,
+      TableLabels.Empty
+    )
     val friendlyName = "friendlyName"
     val remote = Some(
       TableInfo
-        .newBuilder(viewId, StandardTableDefinition.newBuilder.setSchema(schema.toSchema).build())
+        .newBuilder(
+          viewId,
+          StandardTableDefinition.newBuilder.setSchema(schema.toSchema).build()
+        )
         .setFriendlyName(friendlyName)
         .build()
     )
 
     UpdateOperation.from(testTable, remote) match {
       case UpdateOperation.UpdateTable(_, _, updatedTable) =>
-        assert(updatedTable.getFriendlyName == friendlyName, "Expected `updatedTable` to contain friendly name")
+        assert(
+          updatedTable.getFriendlyName == friendlyName,
+          "Expected `updatedTable` to contain friendly name"
+        )
       case other => fail(other.toString)
     }
   }
 
   test("should allow valid extension of schema") {
-    val givenTable = BQTableDef.Table(tableId, BQSchema.of(a, b, c), BQPartitionType.NotPartitioned, description = None, clustering = Nil, TableLabels.Empty)
+    val givenTable = BQTableDef.Table(
+      tableId,
+      BQSchema.of(a, b, c),
+      BQPartitionType.NotPartitioned,
+      description = None,
+      clustering = Nil,
+      TableLabels.Empty
+    )
     val actualTable = Some(
       TableInfo
-        .newBuilder(viewId, StandardTableDefinition.newBuilder.setSchema(BQSchema.of(a, b).toSchema).build())
+        .newBuilder(
+          viewId,
+          StandardTableDefinition.newBuilder
+            .setSchema(BQSchema.of(a, b).toSchema)
+            .build()
+        )
         .build()
     )
 
@@ -92,16 +169,29 @@ class EnsureUpdatedTest extends FunSuite {
   }
 
   test("should not allow invalid extension of schema") {
-    val givenTable = BQTableDef.Table(tableId, BQSchema.of(a, c, b), BQPartitionType.NotPartitioned, description = None, clustering = Nil, TableLabels.Empty)
+    val givenTable = BQTableDef.Table(
+      tableId,
+      BQSchema.of(a, c, b),
+      BQPartitionType.NotPartitioned,
+      description = None,
+      clustering = Nil,
+      TableLabels.Empty
+    )
     val actualTable = Some(
       TableInfo
-        .newBuilder(viewId, StandardTableDefinition.newBuilder.setSchema(BQSchema.of(a, b).toSchema).build())
+        .newBuilder(
+          viewId,
+          StandardTableDefinition.newBuilder
+            .setSchema(BQSchema.of(a, b).toSchema)
+            .build()
+        )
         .build()
     )
 
     UpdateOperation.from(givenTable, actualTable) match {
-      case UpdateOperation.IllegalSchemaExtension(_, _, reason) => assertEquals(reason, "Expected field b, got field c")
-      case other                                                => fail(other.toString)
+      case UpdateOperation.IllegalSchemaExtension(_, _, reason) =>
+        assertEquals(reason, "Expected field b, got field c")
+      case other => fail(other.toString)
     }
   }
 
@@ -109,10 +199,22 @@ class EnsureUpdatedTest extends FunSuite {
     val ba = BQField.struct("b", Mode.REQUIRED)(a)
     val bac = BQField.struct("b", Mode.REQUIRED)(a, c)
 
-    val givenTable = BQTableDef.Table(tableId, BQSchema.of(bac), BQPartitionType.NotPartitioned, description = None, clustering = Nil, TableLabels.Empty)
+    val givenTable = BQTableDef.Table(
+      tableId,
+      BQSchema.of(bac),
+      BQPartitionType.NotPartitioned,
+      description = None,
+      clustering = Nil,
+      TableLabels.Empty
+    )
     val actualTable = Some(
       TableInfo
-        .newBuilder(viewId, StandardTableDefinition.newBuilder.setSchema(BQSchema.of(ba).toSchema).build())
+        .newBuilder(
+          viewId,
+          StandardTableDefinition.newBuilder
+            .setSchema(BQSchema.of(ba).toSchema)
+            .build()
+        )
         .build()
     )
 
@@ -126,16 +228,29 @@ class EnsureUpdatedTest extends FunSuite {
     val bab = BQField.struct("b", Mode.REQUIRED)(a, b)
     val bac = BQField.struct("b", Mode.REQUIRED)(a, c)
 
-    val givenTable = BQTableDef.Table(tableId, BQSchema.of(bac), BQPartitionType.NotPartitioned, description = None, clustering = Nil, TableLabels.Empty)
+    val givenTable = BQTableDef.Table(
+      tableId,
+      BQSchema.of(bac),
+      BQPartitionType.NotPartitioned,
+      description = None,
+      clustering = Nil,
+      TableLabels.Empty
+    )
     val actualTable = Some(
       TableInfo
-        .newBuilder(viewId, StandardTableDefinition.newBuilder.setSchema(BQSchema.of(bab).toSchema).build())
+        .newBuilder(
+          viewId,
+          StandardTableDefinition.newBuilder
+            .setSchema(BQSchema.of(bab).toSchema)
+            .build()
+        )
         .build()
     )
 
     UpdateOperation.from(givenTable, actualTable) match {
-      case UpdateOperation.IllegalSchemaExtension(_, _, reason) => assertEquals(reason, "Expected field b.b, got field b.c")
-      case other                                                => fail(other.toString)
+      case UpdateOperation.IllegalSchemaExtension(_, _, reason) =>
+        assertEquals(reason, "Expected field b.b, got field b.c")
+      case other => fail(other.toString)
     }
   }
 
@@ -156,7 +271,13 @@ class EnsureUpdatedTest extends FunSuite {
     val expirationTime: java.lang.Long = 100L
     val remote = Some(
       TableInfo
-        .newBuilder(materializedViewId, MaterializedViewDefinition.newBuilder(query.asStringWithUDFs).setSchema(testView.schema.toSchema).build())
+        .newBuilder(
+          materializedViewId,
+          MaterializedViewDefinition
+            .newBuilder(query.asStringWithUDFs)
+            .setSchema(testView.schema.toSchema)
+            .build()
+        )
         .setFriendlyName(friendlyName)
         .setExpirationTime(expirationTime)
         .build()
@@ -169,10 +290,23 @@ class EnsureUpdatedTest extends FunSuite {
   }
 
   test("should fail when faced with unrecognized partition scheme") {
-    val testTable = BQTableDef.Table(tableId, BQSchema.of(a), BQPartitionType.NotPartitioned, description = None, clustering = Nil, TableLabels.Empty)
+    val testTable = BQTableDef.Table(
+      tableId,
+      BQSchema.of(a),
+      BQPartitionType.NotPartitioned,
+      description = None,
+      clustering = Nil,
+      TableLabels.Empty
+    )
     val remote = Some(
       TableInfo
-        .newBuilder(viewId, StandardTableDefinition.newBuilder.setSchema(BQSchema.of(a).toSchema).setTimePartitioning(TimePartitioning.of(Type.HOUR)).build())
+        .newBuilder(
+          viewId,
+          StandardTableDefinition.newBuilder
+            .setSchema(BQSchema.of(a).toSchema)
+            .setTimePartitioning(TimePartitioning.of(Type.HOUR))
+            .build()
+        )
         .build()
     )
 
@@ -187,14 +321,23 @@ class EnsureUpdatedTest extends FunSuite {
   }
 
   test("should fail when faced with different partition scheme") {
-    val testTable = BQTableDef.Table(tableId, BQSchema.of(a), BQPartitionType.NotPartitioned, description = None, clustering = Nil, TableLabels.Empty)
+    val testTable = BQTableDef.Table(
+      tableId,
+      BQSchema.of(a),
+      BQPartitionType.NotPartitioned,
+      description = None,
+      clustering = Nil,
+      TableLabels.Empty
+    )
     val remote = Some(
       TableInfo
         .newBuilder(
           viewId,
           StandardTableDefinition.newBuilder
             .setSchema(BQSchema.of(a).toSchema)
-            .setTimePartitioning(TimePartitioning.newBuilder(Type.DAY).setField("date").build())
+            .setTimePartitioning(
+              TimePartitioning.newBuilder(Type.DAY).setField("date").build()
+            )
             .build()
         )
         .build()
@@ -202,22 +345,40 @@ class EnsureUpdatedTest extends FunSuite {
 
     UpdateOperation.from(testTable, remote) match {
       case UpdateOperation.UnsupportedPartitioning(_, _, msg) =>
-        assertEquals(msg, "Cannot change partitioning from DatePartitioned(Ident(date)) to NotPartitioned")
+        assertEquals(
+          msg,
+          "Cannot change partitioning from DatePartitioned(Ident(date)) to NotPartitioned"
+        )
       case other => fail(other.toString)
     }
   }
 
   test("schema changes must maintain order") {
-    val testTable = BQTableDef.Table(tableId, BQSchema.of(a, b, c), BQPartitionType.NotPartitioned, description = None, clustering = Nil, TableLabels.Empty)
+    val testTable = BQTableDef.Table(
+      tableId,
+      BQSchema.of(a, b, c),
+      BQPartitionType.NotPartitioned,
+      description = None,
+      clustering = Nil,
+      TableLabels.Empty
+    )
     val remote = Some(
       TableInfo
-        .newBuilder(viewId, StandardTableDefinition.newBuilder.setSchema(BQSchema.of(a, c, b).toSchema).build())
+        .newBuilder(
+          viewId,
+          StandardTableDefinition.newBuilder
+            .setSchema(BQSchema.of(a, c, b).toSchema)
+            .build()
+        )
         .build()
     )
 
     UpdateOperation.from(testTable, remote) match {
       case UpdateOperation.IllegalSchemaExtension(_, _, reason) =>
-        assertEquals(reason, "Expected field c, got field b, Expected field b, got field c")
+        assertEquals(
+          reason,
+          "Expected field c, got field b, Expected field b, got field c"
+        )
       case other => fail(other.toString)
     }
   }

@@ -5,7 +5,8 @@ import munit.CatsEffectSuite
 
 import java.time.{Instant, LocalDate, LocalTime}
 
-/** By writing roundtrip test we test instances for both `BQShow` and `BQRead` at the same time.
+/** By writing roundtrip test we test instances for both `BQShow` and `BQRead`
+  * at the same time.
   *
   * I didn't think too long about adding too many cases, feel free to add more
   */
@@ -15,7 +16,12 @@ class RoundtripTest extends CatsEffectSuite {
 
   def roundtrip[P: BQShow: BQRead](expectedValues: P*): IO[Unit] =
     BigQueryTestClient.cachingClient
-      .use(_.synchronousQuery(BQJobName.auto, roundtripQuery(expectedValues)).compile.toVector)
+      .use(
+        _.synchronousQuery(
+          BQJobName.auto,
+          roundtripQuery(expectedValues)
+        ).compile.toVector
+      )
       .map(actualValues => assertEquals(actualValues, expectedValues.toVector))
 
   test("roundtrip strings") {

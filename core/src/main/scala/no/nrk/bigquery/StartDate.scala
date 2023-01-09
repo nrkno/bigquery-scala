@@ -5,16 +5,18 @@ import java.time.{LocalDate, YearMonth}
 sealed trait StartDate[+T] {
   def asMonth: StartDate[YearMonth] =
     this match {
-      case StartDate.All          => StartDate.All
-      case x: StartDate.FromDate  => StartDate.FromMonth(YearMonth.from(x.startInclusive))
+      case StartDate.All => StartDate.All
+      case x: StartDate.FromDate =>
+        StartDate.FromMonth(YearMonth.from(x.startInclusive))
       case x: StartDate.FromMonth => x
     }
 
   def asDate: StartDate[LocalDate] =
     this match {
-      case StartDate.All          => StartDate.All
-      case x: StartDate.FromDate  => x
-      case x: StartDate.FromMonth => StartDate.FromDate(x.startInclusive.atDay(1))
+      case StartDate.All         => StartDate.All
+      case x: StartDate.FromDate => x
+      case x: StartDate.FromMonth =>
+        StartDate.FromDate(x.startInclusive.atDay(1))
     }
 }
 

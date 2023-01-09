@@ -3,7 +3,8 @@ package no.nrk.bigquery
 import cats.Show
 import io.circe.{Encoder, Json}
 
-/** an identifier in an sql statement, typically a column name or anything which shouldnt be quoted
+/** an identifier in an sql statement, typically a column name or anything which
+  * shouldnt be quoted
   */
 case class Ident(value: String) extends AnyVal {
   def suffixed(next: String): Ident = Ident(s"$value$next")
@@ -18,7 +19,8 @@ object Ident {
 
   implicit val bqShowIdent: BQShow[Ident] =
     x =>
-      if (keywords(x.value.toUpperCase) || x.value.contains("-")) BQSqlFrag("`" + x.value + "`")
+      if (keywords(x.value.toUpperCase) || x.value.contains("-"))
+        BQSqlFrag("`" + x.value + "`")
       else BQSqlFrag(x.value)
 
   implicit val showIdent: Show[Ident] =

@@ -23,7 +23,10 @@ object TableOps {
   def apply[P: TableOps]: TableOps[P] = implicitly
 
   implicit val date: TableOps[LocalDate] = new TableOps[LocalDate] {
-    override def assertPartition(table: BQTableLike[LocalDate], partition: LocalDate): BQPartitionId[LocalDate] =
+    override def assertPartition(
+        table: BQTableLike[LocalDate],
+        partition: LocalDate
+    ): BQPartitionId[LocalDate] =
       table.partitionType match {
         case BQPartitionType.DatePartitioned(_) =>
           BQPartitionId.DatePartitioned(table, partition)
@@ -39,14 +42,23 @@ object TableOps {
     ): IO[Vector[(BQPartitionId[LocalDate], PartitionMetadata)]] =
       table.partitionType match {
         case x: BQPartitionType.DatePartitioned =>
-          PartitionLoader.date(table, x.field, client, startDate, requireRowNums)
+          PartitionLoader.date(
+            table,
+            x.field,
+            client,
+            startDate,
+            requireRowNums
+          )
         case _: BQPartitionType.Sharded =>
           PartitionLoader.shard(table, client, startDate)
       }
   }
 
   implicit val month: TableOps[YearMonth] = new TableOps[YearMonth] {
-    override def assertPartition(table: BQTableLike[YearMonth], partition: YearMonth): BQPartitionId[YearMonth] =
+    override def assertPartition(
+        table: BQTableLike[YearMonth],
+        partition: YearMonth
+    ): BQPartitionId[YearMonth] =
       BQPartitionId.MonthPartitioned(table, partition)
 
     override def loadPartitions(
@@ -57,12 +69,21 @@ object TableOps {
     ): IO[Vector[(BQPartitionId[YearMonth], PartitionMetadata)]] =
       table.partitionType match {
         case x: BQPartitionType.MonthPartitioned =>
-          PartitionLoader.month(table, x.field, client, startDate, requireRowNums)
+          PartitionLoader.month(
+            table,
+            x.field,
+            client,
+            startDate,
+            requireRowNums
+          )
       }
   }
 
   implicit val unit: TableOps[Unit] = new TableOps[Unit] {
-    override def assertPartition(table: BQTableLike[Unit], partition: Unit): BQPartitionId[Unit] =
+    override def assertPartition(
+        table: BQTableLike[Unit],
+        partition: Unit
+    ): BQPartitionId[Unit] =
       BQPartitionId.NotPartitioned(table)
 
     override def loadPartitions(

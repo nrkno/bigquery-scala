@@ -23,9 +23,14 @@ trait GeneratedTest {
   def testFileForName(name: String): Path =
     dir.resolve(name)
 
-  def writeAndCompare(testFile: Path, value: String)(implicit loc: Location): Unit =
+  def writeAndCompare(testFile: Path, value: String)(implicit
+      loc: Location
+  ): Unit =
     if (assertCurrentGeneratedFiles) {
-      assert(Files.exists(testFile), s"Expected $testFile to exist. Run failing test locally and check in generated files")
+      assert(
+        Files.exists(testFile),
+        s"Expected $testFile to exist. Run failing test locally and check in generated files"
+      )
       val storedJsonString = Files.readString(testFile)
       assertEquals(value, storedJsonString)
     } else {

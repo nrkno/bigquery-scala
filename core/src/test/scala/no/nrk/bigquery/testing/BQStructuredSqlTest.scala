@@ -5,7 +5,9 @@ import no.nrk.bigquery._
 import no.nrk.bigquery.testing.BQStructuredSql.{Segment, SegmentList}
 
 class BQStructuredSqlTest extends FunSuite {
-  def checkSegment(input: String, segments: Segment*)(implicit loc: Location): Unit = {
+  def checkSegment(input: String, segments: Segment*)(implicit
+      loc: Location
+  ): Unit = {
     val actual = SegmentList(segments.toList)
     assertEquals(SegmentList.from(input), actual)
     assertEquals(input, actual.asString)
@@ -20,7 +22,12 @@ class BQStructuredSqlTest extends FunSuite {
   }
 
   test("understand block comments") {
-    checkSegment("a/*a */b", Segment.Normal("a"), Segment.BlockComment("/*a */"), Segment.Normal("b"))
+    checkSegment(
+      "a/*a */b",
+      Segment.Normal("a"),
+      Segment.BlockComment("/*a */"),
+      Segment.Normal("b")
+    )
   }
 
   test("understand strings") {
@@ -45,7 +52,12 @@ class BQStructuredSqlTest extends FunSuite {
     checkSegment(
       "asd(b(c, d))e",
       Segment.Normal("asd"),
-      Segment.InParenthesis(List(Segment.Normal("b"), Segment.InParenthesis(List(Segment.Normal("c, d"))))),
+      Segment.InParenthesis(
+        List(
+          Segment.Normal("b"),
+          Segment.InParenthesis(List(Segment.Normal("c, d")))
+        )
+      ),
       Segment.Normal("e")
     )
     checkSegment(
@@ -59,7 +71,12 @@ class BQStructuredSqlTest extends FunSuite {
   test("unterminated parenthesis") {
     checkSegment("a(a(a", Segment.Normal("a(a(a"))
     checkSegment("a(a(a()", Segment.Normal("a(a(a"), Segment.InParenthesis(Nil))
-    checkSegment("a(a(a('b')c", Segment.Normal("a(a(a"), Segment.InParenthesis(List(Segment.StrSingle("'b'"))), Segment.Normal("c"))
+    checkSegment(
+      "a(a(a('b')c",
+      Segment.Normal("a(a(a"),
+      Segment.InParenthesis(List(Segment.StrSingle("'b'"))),
+      Segment.Normal("c")
+    )
     checkSegment("(", Segment.Normal("("))
     checkSegment(")", Segment.Normal(")"))
     checkSegment("))", Segment.Normal("))"))
@@ -71,23 +88,44 @@ class BQStructuredSqlTest extends FunSuite {
     assertEquals(actual, expected)
   }
   test("one") {
-    val actual = BQStructuredSql.parse(bqfr"with a as (select ')') select * from a")
-    val expected = BQStructuredSql(Nil, List(CTE(Ident("a"), BQSqlFrag("(select ')')"))), BQSqlFrag(" select * from a"), "select")
+    val actual =
+      BQStructuredSql.parse(bqfr"with a as (select ')') select * from a")
+    val expected = BQStructuredSql(
+      Nil,
+      List(CTE(Ident("a"), BQSqlFrag("(select ')')"))),
+      BQSqlFrag(" select * from a"),
+      "select"
+    )
     assertEquals(actual, expected)
   }
 
   test("two") {
-    val actual = BQStructuredSql.parse(bqfr"with a as (select 1), b as (select 2) select * from a, b")
+    val actual = BQStructuredSql.parse(
+      bqfr"with a as (select 1), b as (select 2) select * from a, b"
+    )
     val expected =
-      BQStructuredSql(Nil, List(CTE(Ident("a"), BQSqlFrag("(select 1)")), CTE(Ident("b"), BQSqlFrag("(select 2)"))), BQSqlFrag(" select * from a, b"), "select")
+      BQStructuredSql(
+        Nil,
+        List(
+          CTE(Ident("a"), BQSqlFrag("(select 1)")),
+          CTE(Ident("b"), BQSqlFrag("(select 2)"))
+        ),
+        BQSqlFrag(" select * from a, b"),
+        "select"
+      )
     assertEquals(actual, expected)
   }
 
   test("comments") {
-    val actual = BQStructuredSql.parse(bqfr"/* foo*/ /*--foo*/with/*foo*/a--foo\nas (--foo\nselect 1), b as (select 2)/*foo*/ select * from a, b--foo")
+    val actual = BQStructuredSql.parse(
+      bqfr"/* foo*/ /*--foo*/with/*foo*/a--foo\nas (--foo\nselect 1), b as (select 2)/*foo*/ select * from a, b--foo"
+    )
     val expected = BQStructuredSql(
       Nil,
-      List(CTE(Ident("a"), BQSqlFrag("(--foo\nselect 1)")), CTE(Ident("b"), BQSqlFrag("(select 2)"))),
+      List(
+        CTE(Ident("a"), BQSqlFrag("(--foo\nselect 1)")),
+        CTE(Ident("b"), BQSqlFrag("(select 2)"))
+      ),
       BQSqlFrag("/*foo*/ select * from a, b--foo"),
       "select"
     )

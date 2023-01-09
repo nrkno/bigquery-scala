@@ -8,9 +8,11 @@ import no.nrk.bigquery.BQSqlFrag.asSubQuery
 sealed trait BQSqlFrag {
   final def stripMargin: BQSqlFrag =
     this match {
-      case BQSqlFrag.Frag(string)          => BQSqlFrag.Frag(string.stripMargin)
-      case BQSqlFrag.Combined(values)      => BQSqlFrag.Combined(values.map(_.stripMargin))
-      case BQSqlFrag.Call(udf, args)       => BQSqlFrag.Call(udf, args.map(_.stripMargin))
+      case BQSqlFrag.Frag(string) => BQSqlFrag.Frag(string.stripMargin)
+      case BQSqlFrag.Combined(values) =>
+        BQSqlFrag.Combined(values.map(_.stripMargin))
+      case BQSqlFrag.Call(udf, args) =>
+        BQSqlFrag.Call(udf, args.map(_.stripMargin))
       case x @ BQSqlFrag.PartitionRef(_)   => x
       case x @ BQSqlFrag.FillRef(_)        => x
       case x @ BQSqlFrag.FilledTableRef(_) => x
@@ -47,14 +49,18 @@ sealed trait BQSqlFrag {
         BQSqlFrag.PartitionRef(fill.destination).asString
 
       case BQSqlFrag.FilledTableRef(fill) =>
-        BQSqlFrag.PartitionRef(fill.tableDef.unpartitioned.assertPartition).asString
+        BQSqlFrag
+          .PartitionRef(fill.tableDef.unpartitioned.assertPartition)
+          .asString
 
       case BQSqlFrag.PartitionRef(partitionId) =>
         partitionId match {
           case x @ BQPartitionId.MonthPartitioned(_, _) => x.asSubQuery.asString
           case x @ BQPartitionId.DatePartitioned(_, _)  => x.asSubQuery.asString
-          case x @ BQPartitionId.Sharded(_, _)          => bqFormatTableId(x.asTableId).asString
-          case x @ BQPartitionId.NotPartitioned(_)      => bqFormatTableId(x.asTableId).asString
+          case x @ BQPartitionId.Sharded(_, _) =>
+            bqFormatTableId(x.asTableId).asString
+          case x @ BQPartitionId.NotPartitioned(_) =>
+            bqFormatTableId(x.asTableId).asString
         }
     }
 
@@ -63,20 +69,29 @@ sealed trait BQSqlFrag {
 
   final def allReferencedAsPartitions: Seq[BQPartitionId[Any]] =
     this match {
-      case BQSqlFrag.Frag(_)              => Nil
-      case BQSqlFrag.Call(udf, args)      => (udf.body.allReferencedAsPartitions ++ args.flatMap(_.allReferencedAsPartitions)).distinct
-      case BQSqlFrag.Combined(values)     => values.flatMap(_.allReferencedAsPartitions).distinct
-      case BQSqlFrag.PartitionRef(ref)    => List(ref)
-      case BQSqlFrag.FillRef(fill)        => List(fill.destination)
-      case BQSqlFrag.FilledTableRef(fill) => List(fill.tableDef.unpartitioned.assertPartition)
+      case BQSqlFrag.Frag(_) => Nil
+      case BQSqlFrag.Call(udf, args) =>
+        (udf.body.allReferencedAsPartitions ++ args.flatMap(
+          _.allReferencedAsPartitions
+        )).distinct
+      case BQSqlFrag.Combined(values) =>
+        values.flatMap(_.allReferencedAsPartitions).distinct
+      case BQSqlFrag.PartitionRef(ref) => List(ref)
+      case BQSqlFrag.FillRef(fill)     => List(fill.destination)
+      case BQSqlFrag.FilledTableRef(fill) =>
+        List(fill.tableDef.unpartitioned.assertPartition)
     }
 
   // this does not descend into referenced fills.
   final def allReferencedUDFs: Seq[UDF] =
     this match {
-      case BQSqlFrag.Frag(_)           => Nil
-      case BQSqlFrag.Call(udf, args)   => (udf.body.allReferencedUDFs ++ args.flatMap(_.allReferencedUDFs) ++ List(udf)).distinct
-      case BQSqlFrag.Combined(values)  => values.flatMap(_.allReferencedUDFs).distinct
+      case BQSqlFrag.Frag(_) => Nil
+      case BQSqlFrag.Call(udf, args) =>
+        (udf.body.allReferencedUDFs ++ args.flatMap(
+          _.allReferencedUDFs
+        ) ++ List(udf)).distinct
+      case BQSqlFrag.Combined(values) =>
+        values.flatMap(_.allReferencedUDFs).distinct
       case BQSqlFrag.PartitionRef(_)   => Nil
       case BQSqlFrag.FillRef(_)        => Nil
       case BQSqlFrag.FilledTableRef(_) => Nil
@@ -90,7 +105,10 @@ object BQSqlFrag {
 
   case class Frag(string: String) extends BQSqlFrag
   case class Call(udf: UDF, args: Seq[BQSqlFrag]) extends BQSqlFrag {
-    require(udf.params.length == args.length, s"UDF ${udf.name.value}: Expected ${udf.params.length} arguments, got ${args.length}")
+    require(
+      udf.params.length == args.length,
+      s"UDF ${udf.name.value}: Expected ${udf.params.length} arguments, got ${args.length}"
+    )
   }
   case class Combined(values: Seq[BQSqlFrag]) extends BQSqlFrag
   case class PartitionRef(ref: BQPartitionId[Any]) extends BQSqlFrag
@@ -105,7 +123,9 @@ object BQSqlFrag {
    * type, as long as it is convertible to `BQSqlFrag` through a `BQShow` */
   case class Magnet(frag: BQSqlFrag) extends AnyVal
   object Magnet extends MagnetLower {
-    implicit def hasInstance[T: BQShow](x: T): Magnet = Magnet(BQShow[T].bqShow(x))
+    implicit def hasInstance[T: BQShow](x: T): Magnet = Magnet(
+      BQShow[T].bqShow(x)
+    )
   }
 
   trait MagnetLower {
@@ -117,65 +137,97 @@ object BQSqlFrag {
     implicit def hasNotInstance2[T](t: T): Magnet = ???
   }
 
-  implicit val encodes: Encoder[BQSqlFrag] = frag => Json.fromString(frag.asString)
+  implicit val encodes: Encoder[BQSqlFrag] = frag =>
+    Json.fromString(frag.asString)
 
-  /** Encapsulate the horribleness that is specifying more than one partition in an efficient manner.
+  /** Encapsulate the horribleness that is specifying more than one partition in
+    * an efficient manner.
     *
-    * Note that the implementation will give you what you ask for, unless the list is empty
+    * Note that the implementation will give you what you ask for, unless the
+    * list is empty
     * @throws Exception
     *   if the list is empty
     */
-  def asSubQuery[I[t] <: Iterable[t], Pid <: BQPartitionId[Any]](partitions: I[Pid]): BQSqlFrag = {
+  def asSubQuery[I[t] <: Iterable[t], Pid <: BQPartitionId[Any]](
+      partitions: I[Pid]
+  ): BQSqlFrag = {
     require(partitions.nonEmpty, "Cannot generate query for no partitions")
 
     val subSelects: List[BQSqlFrag] =
-      groupByOrdered(partitions.toList.distinct)(_.wholeTable).flatMap { case (_, partitions) =>
-        val fromSharded: Iterable[BQSqlFrag] =
-          partitions.collect { case x: BQPartitionId.Sharded => x }.sorted match {
-            case sharded @ (first :: _) =>
-              /** Note: it's physically impossible to perform this query without splitting the date: shard.partition.format(localDateNoDash) == for instance
-                * "20210101"
-                *
-                * If we ask for `gasessions_*` BQ will match a view and bail out So we ask for `gasessions_2*` and strip the `2` in the table suffix
-                */
-              sharded.map(_.partition.format(BQPartitionId.localDateNoDash)).groupBy(_.head).map { case (firstDigit, formattedInSameMillenium) =>
-                val in = formattedInSameMillenium.map(s => StringValue(s.drop(1))).mkFragment("[", ", ", "]")
+      groupByOrdered(partitions.toList.distinct)(_.wholeTable).flatMap {
+        case (_, partitions) =>
+          val fromSharded: Iterable[BQSqlFrag] =
+            partitions.collect { case x: BQPartitionId.Sharded =>
+              x
+            }.sorted match {
+              case sharded @ (first :: _) =>
+                /** Note: it's physically impossible to perform this query
+                  * without splitting the date:
+                  * shard.partition.format(localDateNoDash) == for instance
+                  * "20210101"
+                  *
+                  * If we ask for `gasessions_*` BQ will match a view and bail
+                  * out So we ask for `gasessions_2*` and strip the `2` in the
+                  * table suffix
+                  */
+                sharded
+                  .map(_.partition.format(BQPartitionId.localDateNoDash))
+                  .groupBy(_.head)
+                  .map { case (firstDigit, formattedInSameMillenium) =>
+                    val in = formattedInSameMillenium
+                      .map(s => StringValue(s.drop(1)))
+                      .mkFragment("[", ", ", "]")
 
-                val wildcard = TableId.of(
-                  first.wholeTable.tableId.getProject,
-                  first.wholeTable.tableId.getDataset,
-                  first.wholeTable.tableId.getTable + "_" + firstDigit.toString + "*"
+                    val wildcard = TableId.of(
+                      first.wholeTable.tableId.getProject,
+                      first.wholeTable.tableId.getDataset,
+                      first.wholeTable.tableId.getTable + "_" + firstDigit.toString + "*"
+                    )
+
+                    bqfr"(select * from ${bqFormatTableId(wildcard)} WHERE _TABLE_SUFFIX IN UNNEST($in))"
+
+                  }
+              case Nil => None
+            }
+
+          val fromNotPartitioned: Option[BQSqlFrag] =
+            partitions.collect { case x: BQPartitionId.NotPartitioned =>
+              x
+            }.sorted match {
+              case notPartitioned :: _ => Some(notPartitioned.asSubQuery)
+              case Nil                 => None
+            }
+
+          val fromDatePartitioned: Option[BQSqlFrag] =
+            partitions.collect { case x: BQPartitionId.DatePartitioned =>
+              x
+            }.sorted match {
+              case partitions @ (first :: _) =>
+                val in = partitions.map(_.partition).mkFragment("[", ", ", "]")
+                Some(
+                  bqfr"(select * from ${bqFormatTableId(first.wholeTable.tableId)} WHERE ${first.field} IN UNNEST($in))"
                 )
+              case Nil => None
+            }
 
-                bqfr"(select * from ${bqFormatTableId(wildcard)} WHERE _TABLE_SUFFIX IN UNNEST($in))"
+          val fromMonthPartitioned: Option[BQSqlFrag] =
+            partitions.collect { case x: BQPartitionId.MonthPartitioned =>
+              x
+            }.sorted match {
+              case partitions @ (first :: _) =>
+                val in = partitions.map(_.partition).mkFragment("[", ", ", "]")
+                Some(
+                  bqfr"(select * from ${bqFormatTableId(first.wholeTable.tableId)} WHERE ${first.field} IN UNNEST($in))"
+                )
+              case Nil => None
+            }
 
-              }
-            case Nil => None
-          }
-
-        val fromNotPartitioned: Option[BQSqlFrag] =
-          partitions.collect { case x: BQPartitionId.NotPartitioned => x }.sorted match {
-            case notPartitioned :: _ => Some(notPartitioned.asSubQuery)
-            case Nil                 => None
-          }
-
-        val fromDatePartitioned: Option[BQSqlFrag] =
-          partitions.collect { case x: BQPartitionId.DatePartitioned => x }.sorted match {
-            case partitions @ (first :: _) =>
-              val in = partitions.map(_.partition).mkFragment("[", ", ", "]")
-              Some(bqfr"(select * from ${bqFormatTableId(first.wholeTable.tableId)} WHERE ${first.field} IN UNNEST($in))")
-            case Nil => None
-          }
-
-        val fromMonthPartitioned: Option[BQSqlFrag] =
-          partitions.collect { case x: BQPartitionId.MonthPartitioned => x }.sorted match {
-            case partitions @ (first :: _) =>
-              val in = partitions.map(_.partition).mkFragment("[", ", ", "]")
-              Some(bqfr"(select * from ${bqFormatTableId(first.wholeTable.tableId)} WHERE ${first.field} IN UNNEST($in))")
-            case Nil => None
-          }
-
-        List(fromSharded, fromNotPartitioned, fromDatePartitioned, fromMonthPartitioned).flatten
+          List(
+            fromSharded,
+            fromNotPartitioned,
+            fromDatePartitioned,
+            fromMonthPartitioned
+          ).flatten
       }
 
     subSelects match {

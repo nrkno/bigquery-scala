@@ -1,6 +1,11 @@
 package no.nrk.bigquery
 
-case class UDF(name: Ident, params: Seq[UDF.Param], body: BQSqlFrag, returnType: Option[BQType]) {
+case class UDF(
+    name: Ident,
+    params: Seq[UDF.Param],
+    body: BQSqlFrag,
+    returnType: Option[BQType]
+) {
   require(body.asString.startsWith("(") && body.asString.endsWith(")"))
 
   lazy val definition: BQSqlFrag = {
@@ -11,7 +16,8 @@ case class UDF(name: Ident, params: Seq[UDF.Param], body: BQSqlFrag, returnType:
     bqfr"CREATE TEMP FUNCTION $name${params.map(_.definition).mkFragment("(", ", ", ")")}$returning AS ($body);"
   }
 
-  def apply(args: BQSqlFrag.Magnet*): BQSqlFrag.Call = BQSqlFrag.Call(this, args.map(_.frag))
+  def apply(args: BQSqlFrag.Magnet*): BQSqlFrag.Call =
+    BQSqlFrag.Call(this, args.map(_.frag))
 }
 
 object UDF {

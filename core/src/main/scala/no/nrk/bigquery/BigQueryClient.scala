@@ -29,14 +29,19 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
-class BigQueryClient(bigQuery: BigQuery, val reader: BigQueryReadClient, val track: BQTracker) {
+class BigQueryClient(
+    bigQuery: BigQuery,
+    val reader: BigQueryReadClient,
+    val track: BQTracker
+) {
   protected lazy val logger = Slf4jFactory.getLogger[IO]
 
   def underlying: BigQuery = bigQuery
 
   /** Synchronous query to BQ.
     *
-    * Must be called with the type of the row. The type must have a [[BQRead]] instance.
+    * Must be called with the type of the row. The type must have a [[BQRead]]
+    * instance.
     *
     * Example:
     * {{{
@@ -50,15 +55,23 @@ class BigQueryClient(bigQuery: BigQuery, val reader: BigQueryReadClient, val tra
       legacySql: Boolean = false,
       jobOptions: Seq[JobOption] = Nil
   ): Stream[IO, A] =
-    Stream.resource(synchronousQueryExecute(jobName, query.sql, legacySql, jobOptions)).flatMap { case (_, rowStream) =>
-      rowStream.map { (record: GenericRecord) =>
-        record.getSchema.getFields.size() match {
-          // this corresponds to the support for `AnyVal` in magnolia.
-          case 1 => query.bqRead.read(record.getSchema.getFields.get(0).schema(), record.get(0))
-          case _ => query.bqRead.read(record.getSchema, record)
+    Stream
+      .resource(
+        synchronousQueryExecute(jobName, query.sql, legacySql, jobOptions)
+      )
+      .flatMap { case (_, rowStream) =>
+        rowStream.map { (record: GenericRecord) =>
+          record.getSchema.getFields.size() match {
+            // this corresponds to the support for `AnyVal` in magnolia.
+            case 1 =>
+              query.bqRead.read(
+                record.getSchema.getFields.get(0).schema(),
+                record.get(0)
+              )
+            case _ => query.bqRead.read(record.getSchema, record)
+          }
         }
       }
-    }
 
   protected def synchronousQueryExecute(
       jobName: BQJobName,
@@ -68,22 +81,40 @@ class BigQueryClient(bigQuery: BigQuery, val reader: BigQueryReadClient, val tra
   ): Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] = {
 
     val runQuery: IO[Job] = {
-      val queryRequest = QueryJobConfiguration.newBuilder(query.asStringWithUDFs).setUseLegacySql(legacySql).build
-      submitJob(jobName)(jobId => IO.blocking(Option(bigQuery.create(JobInfo.of(jobId, queryRequest), jobOptions: _*)))).flatMap {
+      val queryRequest = QueryJobConfiguration
+        .newBuilder(query.asStringWithUDFs)
+        .setUseLegacySql(legacySql)
+        .build
+      submitJob(jobName)(jobId =>
+        IO.blocking(
+          Option(
+            bigQuery.create(JobInfo.of(jobId, queryRequest), jobOptions: _*)
+          )
+        )
+      ).flatMap {
         case Some(job) => IO.pure(job)
-        case None      => IO.raiseError(new Exception(s"Unexpected: got no job after submitting $jobName"))
+        case None =>
+          IO.raiseError(
+            new Exception(s"Unexpected: got no job after submitting $jobName")
+          )
       }
     }
 
-    def openServerStreams(job: Job, numStreams: Int): Resource[IO, (ReadSession, List[ServerStream[ReadRowsResponse]])] = {
-      val tempTable = job.getConfiguration[QueryJobConfiguration].getDestinationTable
+    def openServerStreams(
+        job: Job,
+        numStreams: Int
+    ): Resource[IO, (ReadSession, List[ServerStream[ReadRowsResponse]])] = {
+      val tempTable =
+        job.getConfiguration[QueryJobConfiguration].getDestinationTable
 
       val request = CreateReadSessionRequest
         .newBuilder()
         .setReadSession(
           ReadSession
             .newBuilder()
-            .setTable(s"projects/${tempTable.getProject}/datasets/${tempTable.getDataset}/tables/${tempTable.getTable}")
+            .setTable(
+              s"projects/${tempTable.getProject}/datasets/${tempTable.getDataset}/tables/${tempTable.getTable}"
+            )
             .setDataFormat(DataFormat.AVRO)
         )
         .setParent(s"projects/${tempTable.getProject}")
@@ -92,28 +123,38 @@ class BigQueryClient(bigQuery: BigQuery, val reader: BigQueryReadClient, val tra
 
       for {
         session <- Resource.eval(IO.blocking(reader.createReadSession(request)))
-        serverStreams <- 0.until(session.getStreamsCount).toList.parTraverse { streamN =>
-          Resource.make(
-            IO.blocking(
-              reader.readRowsCallable.call(
-                ReadRowsRequest.newBuilder.setReadStream(session.getStreams(streamN).getName).build
+        serverStreams <- 0.until(session.getStreamsCount).toList.parTraverse {
+          streamN =>
+            Resource.make(
+              IO.blocking(
+                reader.readRowsCallable.call(
+                  ReadRowsRequest.newBuilder
+                    .setReadStream(session.getStreams(streamN).getName)
+                    .build
+                )
               )
-            )
-          )(serverStream => IO.blocking(serverStream.cancel()))
+            )(serverStream => IO.blocking(serverStream.cancel()))
         }
       } yield (session, serverStreams)
     }
 
-    def rows(datumReader: GenericDatumReader[GenericRecord], stream: ServerStream[ReadRowsResponse]): Stream[IO, GenericRecord] =
-      Stream.fromBlockingIterator[IO].apply(stream.iterator.asScala, chunkSize = 1).flatMap { response =>
-        val b = Vector.newBuilder[GenericRecord]
-        val avroRows = response.getAvroRows.getSerializedBinaryRows
-        val decoder = DecoderFactory.get.binaryDecoder(avroRows.toByteArray, null)
+    def rows(
+        datumReader: GenericDatumReader[GenericRecord],
+        stream: ServerStream[ReadRowsResponse]
+    ): Stream[IO, GenericRecord] =
+      Stream
+        .fromBlockingIterator[IO]
+        .apply(stream.iterator.asScala, chunkSize = 1)
+        .flatMap { response =>
+          val b = Vector.newBuilder[GenericRecord]
+          val avroRows = response.getAvroRows.getSerializedBinaryRows
+          val decoder =
+            DecoderFactory.get.binaryDecoder(avroRows.toByteArray, null)
 
-        while (!decoder.isEnd)
-          b += datumReader.read(null, decoder)
-        Stream.chunk(Chunk.vector(b.result()))
-      }
+          while (!decoder.isEnd)
+            b += datumReader.read(null, decoder)
+          Stream.chunk(Chunk.vector(b.result()))
+        }
 
     for {
       job <- Resource.liftK(runQuery)
@@ -158,13 +199,18 @@ class BigQueryClient(bigQuery: BigQuery, val reader: BigQueryReadClient, val tra
         .build()
 
       val writerResource: Resource[IO, TableDataWriteChannel] =
-        Resource.make(IO.blocking(bigQuery.writer(jobId, writeChannelConfiguration)))(writer => IO.blocking(writer.close()))
+        Resource.make(
+          IO.blocking(bigQuery.writer(jobId, writeChannelConfiguration))
+        )(writer => IO.blocking(writer.close()))
 
       writerResource
         .use { writer =>
           stream
             .through(StreamUtils.toLineSeparatedJsonBytes(chunkSize))
-            .through(StreamUtils.logChunks(logger, None, show"uploading to $partitionId"))
+            .through(
+              StreamUtils
+                .logChunks(logger, None, show"uploading to $partitionId")
+            )
             .prefetch
             .evalMap(chunk => IO.blocking(writer.write(chunk.toByteBuffer)))
             .compile
@@ -174,20 +220,32 @@ class BigQueryClient(bigQuery: BigQuery, val reader: BigQueryReadClient, val tra
 
     }.map(jobOpt => jobOpt.map(_.getStatistics[LoadStatistics]))
 
-  def createTempTable[Param](table: BQTableDef.Table[Param], expirationDuration: Option[FiniteDuration] = Some(1.hour)): IO[BQTableDef.Table[Param]] = {
+  def createTempTable[Param](
+      table: BQTableDef.Table[Param],
+      expirationDuration: Option[FiniteDuration] = Some(1.hour)
+  ): IO[BQTableDef.Table[Param]] = {
     // a copy of `table` with new coordinates
-    val tempTableDef = table.copy(TableId.of("nrk-datahub", "tmp", table.tableId.getTable + UUID.randomUUID().toString))
+    val tempTableDef = table.copy(
+      TableId.of(
+        "nrk-datahub",
+        "tmp",
+        table.tableId.getTable + UUID.randomUUID().toString
+      )
+    )
     val tempTableBqDef = UpdateOperation.createNew(tempTableDef).table
-    val expirationTime = Instant.now.plusMillis(expirationDuration.getOrElse(1.hour).toMillis)
+    val expirationTime =
+      Instant.now.plusMillis(expirationDuration.getOrElse(1.hour).toMillis)
 
     val tempTableBqDefWithExpiry = tempTableBqDef.toBuilder
       .setExpirationTime(expirationTime.toEpochMilli)
       .build()
 
-    IO.blocking(bigQuery.create(tempTableBqDefWithExpiry)).map(_ => tempTableDef)
+    IO.blocking(bigQuery.create(tempTableBqDefWithExpiry))
+      .map(_ => tempTableDef)
   }
 
-  /** Submit any SQL statement to BQ, perfect for BQ to BQ insertions or data mutation
+  /** Submit any SQL statement to BQ, perfect for BQ to BQ insertions or data
+    * mutation
     */
   def submitQuery[P](
       jobName: BQJobName,
@@ -200,77 +258,124 @@ class BigQueryClient(bigQuery: BigQuery, val reader: BigQueryReadClient, val tra
     submitJob(jobName) { jobId =>
       val jobConfiguration = {
         val b = QueryJobConfiguration.newBuilder(query.asStringWithUDFs)
-        destination.foreach(partitionId => b.setDestinationTable(partitionId.asTableId))
+        destination.foreach(partitionId =>
+          b.setDestinationTable(partitionId.asTableId)
+        )
         writeDisposition.foreach(b.setWriteDisposition)
         timePartitioning.foreach(b.setTimePartitioning)
         b.build()
       }
 
-      IO.blocking(Option(bigQuery.create(JobInfo.of(jobId, jobConfiguration), jobOptions: _*)))
+      IO.blocking(
+        Option(
+          bigQuery.create(JobInfo.of(jobId, jobConfiguration), jobOptions: _*)
+        )
+      )
     }.flatMap {
       case Some(job) => IO.pure(job)
-      case None      => IO.raiseError(new Exception(s"Unexpected: got no job after submitting $jobName"))
+      case None =>
+        IO.raiseError(
+          new Exception(s"Unexpected: got no job after submitting $jobName")
+        )
     }
 
-  /** Submit a job to BQ, wait for it to finish, log results, track as dependency
+  /** Submit a job to BQ, wait for it to finish, log results, track as
+    * dependency
     */
-  def submitJob(jobName: BQJobName)(runJob: JobId => IO[Option[Job]]): IO[Option[Job]] =
-    IO(System.currentTimeMillis).product(jobName.freshJobId.flatMap(runJob)).flatMap {
-      case (t0, Some(runningJob)) =>
-        val mkDuration = IO(System.currentTimeMillis).map(t1 => FiniteDuration.apply(t1 - t0, TimeUnit.MILLISECONDS))
+  def submitJob(
+      jobName: BQJobName
+  )(runJob: JobId => IO[Option[Job]]): IO[Option[Job]] =
+    IO(System.currentTimeMillis)
+      .product(jobName.freshJobId.flatMap(runJob))
+      .flatMap {
+        case (t0, Some(runningJob)) =>
+          val mkDuration = IO(System.currentTimeMillis)
+            .map(t1 => FiniteDuration.apply(t1 - t0, TimeUnit.MILLISECONDS))
 
-        val logged: IO[Job] =
-          BQPoll
-            .poll(runningJob, baseDelay = 3.second, maxDuration = 20.minutes, maxErrorsTolerated = 10)(
-              retry = IO.blocking(bigQuery.getJob(runningJob.getJobId))
-            )
-            .flatMap {
-              case BQPoll.Failed(error) => IO.raiseError(error)
-              case BQPoll.Success(job)  => IO.pure(job)
-            }
-            .guaranteeCase {
-              case Outcome.Errored(e) =>
+          val logged: IO[Job] =
+            BQPoll
+              .poll(
+                runningJob,
+                baseDelay = 3.second,
+                maxDuration = 20.minutes,
+                maxErrorsTolerated = 10
+              )(
+                retry = IO.blocking(bigQuery.getJob(runningJob.getJobId))
+              )
+              .flatMap {
+                case BQPoll.Failed(error) => IO.raiseError(error)
+                case BQPoll.Success(job)  => IO.pure(job)
+              }
+              .guaranteeCase {
+                case Outcome.Errored(e) =>
+                  for {
+                    _ <- logger.warn(e)(show"${runningJob.show} failed")
+                    duration <- mkDuration
+                    _ <- track(
+                      duration,
+                      jobName,
+                      isSuccess = false,
+                      stats = None
+                    )
+                  } yield ()
+
+                case Outcome.Canceled() =>
+                  for {
+                    _ <- logger.warn(show"${runningJob.show} cancelled")
+                    duration <- mkDuration
+                    _ <- track(
+                      duration,
+                      jobName,
+                      isSuccess = false,
+                      stats = None
+                    )
+                  } yield ()
+                case Outcome.Succeeded(_) =>
+                  IO.unit // we don't have access to the completed job here
+              }
+              .flatTap(succeededJob =>
                 for {
-                  _ <- logger.warn(e)(show"${runningJob.show} failed")
+                  _ <- logger.debug(show"${succeededJob.show} succeeded")
                   duration <- mkDuration
-                  _ <- track(duration, jobName, isSuccess = false, stats = None)
+                  _ <- track(
+                    duration,
+                    jobName,
+                    isSuccess = true,
+                    stats = Option(succeededJob.getStatistics[JobStatistics])
+                  )
                 } yield ()
+              )
 
-              case Outcome.Canceled() =>
-                for {
-                  _ <- logger.warn(show"${runningJob.show} cancelled")
-                  duration <- mkDuration
-                  _ <- track(duration, jobName, isSuccess = false, stats = None)
-                } yield ()
-              case Outcome.Succeeded(_) =>
-                IO.unit // we don't have access to the completed job here
-            }
-            .flatTap(succeededJob =>
-              for {
-                _ <- logger.debug(show"${succeededJob.show} succeeded")
-                duration <- mkDuration
-                _ <- track(duration, jobName, isSuccess = true, stats = Option(succeededJob.getStatistics[JobStatistics]))
-              } yield ()
-            )
+          logged.map(Some.apply)
 
-        logged.map(Some.apply)
+        case (_, None) =>
+          IO.pure(None)
+      }
 
-      case (_, None) =>
-        IO.pure(None)
-    }
-
-  def getTable(tableId: TableId, tableOptions: Seq[TableOption] = Nil): IO[Option[Table]] =
-    IO.blocking(Option(bigQuery.getTable(tableId, tableOptions: _*)).filter(_.exists()))
+  def getTable(
+      tableId: TableId,
+      tableOptions: Seq[TableOption] = Nil
+  ): IO[Option[Table]] =
+    IO.blocking(
+      Option(bigQuery.getTable(tableId, tableOptions: _*)).filter(_.exists())
+    )
 
   def tableExists(tableId: TableId): IO[Table] =
     getTable(tableId).flatMap {
-      case None        => IO.raiseError(new RuntimeException(s"Table $tableId does not exists"))
+      case None =>
+        IO.raiseError(new RuntimeException(s"Table $tableId does not exists"))
       case Some(table) => IO.pure(table)
     }
 
   def dryRun(jobName: BQJobName, query: BQSqlFrag): IO[Job] =
     jobName.freshJobId.flatMap { jobId =>
-      val jobInfo = JobInfo.of(jobId, QueryJobConfiguration.newBuilder(query.asStringWithUDFs).setDryRun(true).build())
+      val jobInfo = JobInfo.of(
+        jobId,
+        QueryJobConfiguration
+          .newBuilder(query.asStringWithUDFs)
+          .setDryRun(true)
+          .build()
+      )
       IO.blocking(bigQuery.create(jobInfo))
     }
 
@@ -283,26 +388,38 @@ class BigQueryClient(bigQuery: BigQuery, val reader: BigQueryReadClient, val tra
   def delete(tableId: TableId): IO[Boolean] =
     IO(bigQuery.delete(tableId))
 
-  def tablesIn(datasetId: DatasetId, datasetOptions: Seq[BigQuery.TableListOption] = Nil): IO[Vector[BQTableRef[Any]]] =
-    IO.blocking(bigQuery.listTables(datasetId, datasetOptions: _*)).flatMap { tables =>
-      tables
-        .iterateAll()
-        .asScala
-        .toVector
-        .parTraverseFilter { table =>
-          val tableId = table.getTableId
-          table.getDefinition[TableDefinition] match {
-            case definition: StandardTableDefinition =>
-              BQPartitionType.from(definition) match {
-                case Right(partitionType) =>
-                  IO.pure(Some(BQTableRef(tableId, partitionType)))
-                case Left(msg) =>
-                  logger.warn(show"Ignoring $tableId because couldn't understand partitioning: $msg").as(None)
-              }
-            case notTable =>
-              logger.warn(show"Ignoring $tableId because we only consider tables, not ${notTable.getType.name}").as(None)
+  def tablesIn(
+      datasetId: DatasetId,
+      datasetOptions: Seq[BigQuery.TableListOption] = Nil
+  ): IO[Vector[BQTableRef[Any]]] =
+    IO.blocking(bigQuery.listTables(datasetId, datasetOptions: _*)).flatMap {
+      tables =>
+        tables
+          .iterateAll()
+          .asScala
+          .toVector
+          .parTraverseFilter { table =>
+            val tableId = table.getTableId
+            table.getDefinition[TableDefinition] match {
+              case definition: StandardTableDefinition =>
+                BQPartitionType.from(definition) match {
+                  case Right(partitionType) =>
+                    IO.pure(Some(BQTableRef(tableId, partitionType)))
+                  case Left(msg) =>
+                    logger
+                      .warn(
+                        show"Ignoring $tableId because couldn't understand partitioning: $msg"
+                      )
+                      .as(None)
+                }
+              case notTable =>
+                logger
+                  .warn(
+                    show"Ignoring $tableId because we only consider tables, not ${notTable.getType.name}"
+                  )
+                  .as(None)
+            }
           }
-        }
     }
 }
 
@@ -310,10 +427,19 @@ object BigQueryClient {
   val readTimeoutSecs = 20L
   val connectTimeoutSecs = 60L
 
-  def readerResource(credentials: Credentials): Resource[IO, BigQueryReadClient] =
+  def readerResource(
+      credentials: Credentials
+  ): Resource[IO, BigQueryReadClient] =
     Resource.fromAutoCloseable(
       IO.blocking {
-        BigQueryReadClient.create(BigQueryReadSettings.newBuilder().setCredentialsProvider(FixedCredentialsProvider.create(credentials)).build())
+        BigQueryReadClient.create(
+          BigQueryReadSettings
+            .newBuilder()
+            .setCredentialsProvider(
+              FixedCredentialsProvider.create(credentials)
+            )
+            .build()
+        )
       }
     )
 
@@ -324,7 +450,9 @@ object BigQueryClient {
         .setTransportOptions(
           HttpTransportOptions
             .newBuilder()
-            .setConnectTimeout(TimeUnit.SECONDS.toMillis(connectTimeoutSecs).toInt)
+            .setConnectTimeout(
+              TimeUnit.SECONDS.toMillis(connectTimeoutSecs).toInt
+            )
             .setReadTimeout(TimeUnit.SECONDS.toMillis(readTimeoutSecs).toInt)
             .build()
         )
@@ -346,7 +474,10 @@ object BigQueryClient {
         .getService
     }
 
-  def resource(credentials: Credentials, tracker: BQTracker): Resource[IO, BigQueryClient] =
+  def resource(
+      credentials: Credentials,
+      tracker: BQTracker
+  ): Resource[IO, BigQueryClient] =
     for {
       bq <- Resource.eval(BigQueryClient.fromCredentials(credentials))
       bqRead <- BigQueryClient.readerResource(credentials)

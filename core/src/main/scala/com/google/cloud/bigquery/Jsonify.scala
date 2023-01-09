@@ -17,7 +17,9 @@ object Jsonify {
 
     // also shorten very long queries
     if (pb.getConfiguration != null && pb.getConfiguration.getQuery != null)
-      pb.getConfiguration.getQuery.setQuery(shorten(1000)(pb.getConfiguration.getQuery.getQuery))
+      pb.getConfiguration.getQuery.setQuery(
+        shorten(1000)(pb.getConfiguration.getQuery.getQuery)
+      )
 
     factory.toString(pb)
   }

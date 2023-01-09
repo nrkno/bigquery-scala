@@ -5,7 +5,12 @@ import com.google.cloud.bigquery.Field
 import scala.annotation.tailrec
 
 object mergeQuery {
-  def into[Pid <: BQPartitionId[Any]](source: Pid, target: Pid, primaryKey: Ident, morePrimaryKeys: Ident*): BQSqlFrag = {
+  def into[Pid <: BQPartitionId[Any]](
+      source: Pid,
+      target: Pid,
+      primaryKey: Ident,
+      morePrimaryKeys: Ident*
+  ): BQSqlFrag = {
     val primaryKeys: Seq[Ident] = {
       val partitionField: Option[Ident] =
         target.wholeTable.partitionType match {
@@ -19,7 +24,9 @@ object mergeQuery {
     val allFields: List[BQField] =
       (source.wholeTable, target.wholeTable) match {
         // compare schema without comments, since those may be dynamic and it doesnt matter anyway
-        case (from: BQTableDef[Any], into: BQTableDef[Any]) if BQType.fromBQSchema(from.schema) == BQType.fromBQSchema(into.schema) =>
+        case (from: BQTableDef[Any], into: BQTableDef[Any])
+            if BQType
+              .fromBQSchema(from.schema) == BQType.fromBQSchema(into.schema) =>
           from.schema.fields
         case (from, into) =>
           sys.error(s"Cannot merge $from into $into")
@@ -34,9 +41,14 @@ object mergeQuery {
     bqsql"""
            |MERGE ${target.wholeTable.unpartitioned} AS T
            |USING $source AS S
-           |ON ${primaryKeys.toList.map(keyEqualsFragment(allFields)).mkFragment("\n AND ")}
+           |ON ${primaryKeys.toList
+            .map(keyEqualsFragment(allFields))
+            .mkFragment("\n AND ")}
            |WHEN MATCHED THEN UPDATE SET
-           |${allFieldNames.filterNot(isPrimaryKey).map(nonKey => bqfr"    T.$nonKey = S.$nonKey").mkFragment(",\n")}
+           |${allFieldNames
+            .filterNot(isPrimaryKey)
+            .map(nonKey => bqfr"    T.$nonKey = S.$nonKey")
+            .mkFragment(",\n")}
            |WHEN NOT MATCHED THEN
            |  INSERT (
            |${allFieldNames.map(field => bqfr"    $field").mkFragment(",\n")}
@@ -47,7 +59,9 @@ object mergeQuery {
          """.stripMargin
   }
 
-  def keyEqualsFragment(allFields: List[BQField])(primaryKey: Ident): BQSqlFrag =
+  def keyEqualsFragment(
+      allFields: List[BQField]
+  )(primaryKey: Ident): BQSqlFrag =
     if (isOptional(allFields, primaryKey))
       bqfr"(T.$primaryKey = S.$primaryKey OR (T.$primaryKey IS NULL AND S.$primaryKey IS NULL))"
     else
@@ -63,7 +77,10 @@ object mergeQuery {
             case Some(field) =>
               if (field.mode == Field.Mode.NULLABLE) true
               else go(field.subFields, tail)
-            case None => sys.error(s"Couldn't resolve ${ident.mkString(".")} among ${fields.map(_.name)}")
+            case None =>
+              sys.error(
+                s"Couldn't resolve ${ident.mkString(".")} among ${fields.map(_.name)}"
+              )
           }
       }
 

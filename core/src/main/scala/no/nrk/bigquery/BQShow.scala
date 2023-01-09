@@ -14,7 +14,8 @@ trait BQShow[T] { self =>
 object BQShow {
   def apply[A](implicit instance: BQShow[A]): BQShow[A] = instance
 
-  /** The intention, at least at first, is to be explicit what we mean when we interpolate in a string.
+  /** The intention, at least at first, is to be explicit what we mean when we
+    * interpolate in a string.
     *
     * If you want your string value to not be quoted:
     *   - call `BQSqlFrag(...)` manually
@@ -34,13 +35,17 @@ object BQShow {
   implicit def bqShowsBQPartitionId[Pid <: BQPartitionId[Any]]: BQShow[Pid] =
     BQSqlFrag.PartitionRef.apply
 
-  implicit def bqShowsBQPartitionIds[I[t] <: Iterable[t], Pid <: BQPartitionId[Any]]: BQShow[I[Pid]] =
-    partitions => BQSqlFrag.Combined(partitions.map(bqShowsBQPartitionId[Pid].bqShow).toSeq)
+  implicit def bqShowsBQPartitionIds[I[t] <: Iterable[t], Pid <: BQPartitionId[
+    Any
+  ]]: BQShow[I[Pid]] =
+    partitions =>
+      BQSqlFrag.Combined(partitions.map(bqShowsBQPartitionId[Pid].bqShow).toSeq)
 
   implicit def bqShowTableLike[T <: BQTableLike[Unit]]: BQShow[T] =
     x => x.assertPartition.bqShow
 
-  implicit def bqShowTablesLike[I[t] <: Iterable[t], T <: BQTableLike[Unit]]: BQShow[I[T]] =
+  implicit def bqShowTablesLike[I[t] <: Iterable[t], T <: BQTableLike[Unit]]
+      : BQShow[I[T]] =
     tables => BQSqlFrag.Combined(tables.map(_.assertPartition.bqShow).toSeq)
 
   implicit def bqShowFill: BQShow[BQFill] =
@@ -78,8 +83,11 @@ object BQShow {
   implicit val bqShowLocalTime: BQShow[LocalTime] =
     x => {
       // found no other way to serialize this without losing precision
-      val base = BQSqlFrag(s"TIME(${x.getHour}, ${x.getMinute}, ${x.getSecond})")
-      if (x.getNano == 0) base else bqfr"TIME_ADD($base, INTERVAL ${x.getNano / 1000} MICROSECOND)"
+      val base = BQSqlFrag(
+        s"TIME(${x.getHour}, ${x.getMinute}, ${x.getSecond})"
+      )
+      if (x.getNano == 0) base
+      else bqfr"TIME_ADD($base, INTERVAL ${x.getNano / 1000} MICROSECOND)"
     }
 
   implicit val bqShowInstant: BQShow[Instant] =

@@ -14,15 +14,23 @@ import java.nio.file.{Files, Path}
 
 class BQUdfSmokeTest extends CatsEffectSuite {
 
-  /** Evaluates the call against BQ but caches it. This is only meant to be used with pure UDFs, not those which reads tables.
+  /** Evaluates the call against BQ but caches it. This is only meant to be used
+    * with pure UDFs, not those which reads tables.
     *
-    * The jsonified result of evaluating the call is compared to the provided json structure.
+    * The jsonified result of evaluating the call is compared to the provided
+    * json structure.
     */
-  protected def bqCheckCall(testName: String, call: BQSqlFrag.Call, expected: Json)(implicit loc: Location): Unit = {
+  protected def bqCheckCall(
+      testName: String,
+      call: BQSqlFrag.Call,
+      expected: Json
+  )(implicit loc: Location): Unit = {
     val longerTestName = s"${call.udf.name.value} - $testName"
 
     test(s"bqCheck UDF: $longerTestName") {
-      BQUdfSmokeTest.bqEvaluateCall(longerTestName, call).map(actual => assertEquals(actual, expected))
+      BQUdfSmokeTest
+        .bqEvaluateCall(longerTestName, call)
+        .map(actual => assertEquals(actual, expected))
     }
   }
 }
@@ -42,15 +50,18 @@ object BQUdfSmokeTest {
       .flatMap {
         case Some(rows) => IO.pure(rows)
         case None =>
-          val log = logger.warn(s"Running $testName against BQ (could have been cached)")
+          val log = logger.warn(
+            s"Running $testName against BQ (could have been cached)"
+          )
 
           val run = BQSmokeTest.bqClient
             .synchronousQuery(BQJobName("smoketest"), BQQuery[Json](query))
             .compile
             .lastOrError
             .guaranteeCase {
-              case Outcome.Errored(_) => IO(println(s"failed query: ${query.asStringWithUDFs}"))
-              case _                  => IO.unit
+              case Outcome.Errored(_) =>
+                IO(println(s"failed query: ${query.asStringWithUDFs}"))
+              case _ => IO.unit
             }
             .flatTap(cachedQuery.writeRow)
 
@@ -60,7 +71,9 @@ object BQUdfSmokeTest {
 
   // this is a user-wide query cache to speed up development/CI
   case class CachedQuery(frag: BQSqlFrag) {
-    val cacheFile: Path = Paths.basedir.resolve("smoke-test-udf-cache").resolve(s"${frag.asStringWithUDFs.hashCode()}.json")
+    val cacheFile: Path = Paths.basedir
+      .resolve("smoke-test-udf-cache")
+      .resolve(s"${frag.asStringWithUDFs.hashCode()}.json")
 
     def writeRow(row: Json): IO[Path] =
       IO {
@@ -72,7 +85,9 @@ object BQUdfSmokeTest {
       if (Files.exists(cacheFile)) {
         decode[Json](Files.readString(cacheFile)) match {
           case Left(err) =>
-            System.err.println(s"Couldn't parse query cache file $cacheFile. Rerunning query. ${err.getMessage}")
+            System.err.println(
+              s"Couldn't parse query cache file $cacheFile. Rerunning query. ${err.getMessage}"
+            )
             Files.delete(cacheFile)
             None
           case Right(rows) => Some(rows)

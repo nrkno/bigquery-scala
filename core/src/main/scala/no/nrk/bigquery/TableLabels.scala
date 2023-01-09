@@ -28,13 +28,19 @@ case class TableLabels(values: SortedMap[String, String]) {
 
       // Keys and values can contain only lowercase letters, numeric characters, underscores, and dashes. All characters must use UTF-8 encoding, and international characters are allowed.
       if (!key.forall(c => c.isLower || c.isDigit || c == '-' || c == '_'))
-        fail(show"label key $key can contain only lowercase letters, numeric characters, underscores, and dashes")
+        fail(
+          show"label key $key can contain only lowercase letters, numeric characters, underscores, and dashes"
+        )
       if (!value.forall(c => c.isLower || c.isDigit || c == '-' || c == '_'))
-        fail(show"label value $value can contain only lowercase letters, numeric characters, underscores, and dashes")
+        fail(
+          show"label value $value can contain only lowercase letters, numeric characters, underscores, and dashes"
+        )
 
       // Keys must start with a lowercase letter or international character.
       if (!key(0).isLower)
-        fail(show"label key $key must start with lowercase letter or international character")
+        fail(
+          show"label key $key must start with lowercase letter or international character"
+        )
     }
   }
 
@@ -44,11 +50,15 @@ case class TableLabels(values: SortedMap[String, String]) {
   def ++(other: TableLabels): TableLabels =
     withAll(other.values)
 
-  /** This method is needed for the case where we delete a label. It is deleted by setting it to `null`.
+  /** This method is needed for the case where we delete a label. It is deleted
+    * by setting it to `null`.
     *
-    * As such, we need to know the labels of a table in production before we compute the new set of labels to use when updating
+    * As such, we need to know the labels of a table in production before we
+    * compute the new set of labels to use when updating
     */
-  def forUpdate(maybeExistingTable: Option[BQTableDef[Any]]): util.Map[String, String] = {
+  def forUpdate(
+      maybeExistingTable: Option[BQTableDef[Any]]
+  ): util.Map[String, String] = {
     val ret = new util.TreeMap[String, String]
 
     // existing table? set all old label keys to `null`

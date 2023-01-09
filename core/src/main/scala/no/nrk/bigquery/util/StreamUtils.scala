@@ -13,7 +13,9 @@ import scala.io.Codec
 object StreamUtils {
   val Megabyte = 1024 * 1024
 
-  def toLineSeparatedJsonBytes[A: Encoder](chunkSize: Int): Pipe[IO, A, Chunk[Byte]] =
+  def toLineSeparatedJsonBytes[A: Encoder](
+      chunkSize: Int
+  ): Pipe[IO, A, Chunk[Byte]] =
     _.map(_.asJson.noSpaces)
       .intersperse("\n")
       .through(fs2.text.utf8.encode)
@@ -21,9 +23,17 @@ object StreamUtils {
       .chunkN(chunkSize)
 
   def iso8859Decode[F[_]]: Pipe[F, Byte, String] =
-    _.through(_.chunks.map((bytes: Chunk[Byte]) => new String(bytes.toArray, Codec.ISO8859.charSet)))
+    _.through(
+      _.chunks.map((bytes: Chunk[Byte]) =>
+        new String(bytes.toArray, Codec.ISO8859.charSet)
+      )
+    )
 
-  def logChunks[T](logger: Logger[IO], maybeTotal: Option[Long], action: String): Pipe[IO, Chunk[T], Chunk[T]] =
+  def logChunks[T](
+      logger: Logger[IO],
+      maybeTotal: Option[Long],
+      action: String
+  ): Pipe[IO, Chunk[T], Chunk[T]] =
     _.evalMapAccumulate(0L) { case (acc, chunk) =>
       def format(l: Long) = l.toString
 
@@ -37,7 +47,11 @@ object StreamUtils {
       logger.info(msg).as((acc + chunk.size, chunk))
     }.map(_._2)
 
-  def log[T](logger: Logger[IO], maybeTotal: Option[Long], action: T => String): Pipe[IO, T, T] =
+  def log[T](
+      logger: Logger[IO],
+      maybeTotal: Option[Long],
+      action: T => String
+  ): Pipe[IO, T, T] =
     _.evalMapAccumulate(0L) { case (acc, t) =>
       def format(l: Long) = l.toString
 
