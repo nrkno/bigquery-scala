@@ -4,7 +4,6 @@ import cats.syntax.show._
 import com.google.cloud.bigquery.{TableId, TableInfo}
 import io.circe.{Decoder, Encoder}
 
-import java.util
 import scala.collection.immutable.SortedMap
 import scala.jdk.CollectionConverters._
 
@@ -58,8 +57,8 @@ case class TableLabels(values: SortedMap[String, String]) {
     */
   def forUpdate(
       maybeExistingTable: Option[BQTableDef[Any]]
-  ): util.Map[String, String] = {
-    val ret = new util.TreeMap[String, String]
+  ): java.util.Map[String, String] = {
+    val ret = new java.util.TreeMap[String, String]
 
     // existing table? set all old label keys to `null`
     for {

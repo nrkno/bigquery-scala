@@ -18,8 +18,9 @@ ThisBuild / tlSonatypeUseLegacyHost := false
 // publish website from this branch
 //ThisBuild / tlSitePublishBranch := Some("main")
 
+val Scala212 = "2.12.17"
 val Scala213 = "2.13.10"
-ThisBuild / crossScalaVersions := Seq(Scala213, "3.2.1")
+ThisBuild / crossScalaVersions := Seq(Scala213, Scala212, "3.2.1")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 
 lazy val root = tlCrossRootProject.aggregate(core)
@@ -42,11 +43,13 @@ lazy val core = crossProject(JVMPlatform)
       "org.typelevel" %% "log4cats-slf4j" % "2.5.0",
       "io.circe" %% "circe-generic" % "0.14.2",
       "io.circe" %% "circe-parser" % "0.14.2",
-     // "org.gnieh" %% "diffson-circe" % "4.3.0",
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.2",
       "co.fs2" %% "fs2-core" % "3.4.0",
-      "co.fs2" %% "fs2-io" % "3.4.0"
+      "co.fs2" %% "fs2-io" % "3.4.0",
+
+      //scala2
+      "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.2",
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.9.0"
     )
   )
 

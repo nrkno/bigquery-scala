@@ -17,7 +17,6 @@ import org.apache.avro.generic.{
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
-import java.util
 import scala.jdk.CollectionConverters._
 
 object BigQueryTestClient {
@@ -56,7 +55,7 @@ object BigQueryTestClient {
             jobOptions: Seq[JobOption],
             logStream: Boolean
         ): Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] = {
-          val hash = util.Objects.hash(query, legacySql, jobOptions)
+          val hash = java.util.Objects.hash(query, Boolean.box(legacySql), jobOptions)
           val hashedSchemaPath =
             queryCachePath.resolve(s"${jobName.value}__$hash.json")
           val hashedRowsPath =

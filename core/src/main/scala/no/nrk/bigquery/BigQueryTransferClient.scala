@@ -17,7 +17,7 @@ import no.nrk.bigquery.BigQueryTransferClient.{
 import org.typelevel.log4cats.slf4j.{loggerFactoryforSync, Slf4jFactory}
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
-import scala.jdk.CollectionConverters.IterableHasAsScala
+import scala.jdk.CollectionConverters._
 
 case class BigQueryTransferClient(transferClient: DataTransferServiceClient) {
   protected lazy val logger = Slf4jFactory.getLogger[IO]

@@ -18,7 +18,7 @@ object mergeQuery {
           case _                                      => None
         }
 
-      List(List(primaryKey), morePrimaryKeys, partitionField).flatten.distinct
+      List(List(primaryKey), morePrimaryKeys.toList, partitionField.toList).flatten.distinct
     }
 
     val allFields: List[BQField] =

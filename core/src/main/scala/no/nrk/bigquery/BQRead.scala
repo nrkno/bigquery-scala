@@ -9,7 +9,7 @@ import org.apache.avro.util.Utf8
 
 import java.time._
 import scala.annotation.nowarn
-import scala.collection.Factory
+import scala.collection.compat._
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 

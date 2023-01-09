@@ -3,7 +3,7 @@ package no.nrk.bigquery
 import com.google.cloud.bigquery.Schema
 import io.circe.{Decoder, Encoder}
 
-import scala.jdk.CollectionConverters.ListHasAsScala
+import scala.jdk.CollectionConverters._
 
 case class BQSchema(fields: List[BQField]) {
   def toSchema: Schema =

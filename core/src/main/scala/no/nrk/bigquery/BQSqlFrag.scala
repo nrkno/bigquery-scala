@@ -223,10 +223,10 @@ object BQSqlFrag {
             }
 
           List(
-            fromSharded,
-            fromNotPartitioned,
-            fromDatePartitioned,
-            fromMonthPartitioned
+            fromSharded.toList,
+            fromNotPartitioned.toList,
+            fromDatePartitioned.toList,
+            fromMonthPartitioned.toList
           ).flatten
       }
 
