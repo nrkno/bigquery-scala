@@ -2,6 +2,7 @@ package no.nrk.bigquery.testing
 
 import munit.{FunSuite, Location}
 import no.nrk.bigquery._
+import no.nrk.bigquery.implicits._
 import no.nrk.bigquery.testing.BQStructuredSql.{Segment, SegmentList}
 
 class BQStructuredSqlTest extends FunSuite {

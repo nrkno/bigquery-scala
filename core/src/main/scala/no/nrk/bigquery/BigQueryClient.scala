@@ -1,5 +1,6 @@
 package no.nrk.bigquery
 
+import no.nrk.bigquery.implicits._
 import cats.effect.kernel.Outcome
 import cats.effect.{IO, Resource}
 import cats.syntax.parallel._

@@ -8,6 +8,7 @@ import com.google.cloud.bigquery.{
 }
 import io.circe.{Decoder, Encoder}
 
+import no.nrk.bigquery.implicits._
 import scala.jdk.CollectionConverters._
 
 /** This is isomorphic to `Field` (can translate back and forth without data

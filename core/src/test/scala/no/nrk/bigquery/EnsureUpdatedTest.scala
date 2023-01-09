@@ -4,6 +4,7 @@ import com.google.cloud.bigquery.Field.Mode
 import com.google.cloud.bigquery.TimePartitioning.Type
 import com.google.cloud.bigquery.{Option => _, _}
 import munit.FunSuite
+import no.nrk.bigquery.implicits._
 
 class EnsureUpdatedTest extends FunSuite {
 

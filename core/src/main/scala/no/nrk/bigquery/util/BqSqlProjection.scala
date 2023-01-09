@@ -1,6 +1,7 @@
-package no.nrk.bigquery
-package util
+package no.nrk.bigquery.util
 
+import no.nrk.bigquery._
+import no.nrk.bigquery.implicits._
 import com.google.cloud.bigquery.{Field, StandardSQLTypeName}
 
 object BqSqlProjection {

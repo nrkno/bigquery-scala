@@ -1,10 +1,10 @@
-package no.nrk
+package no.nrk.bigquery
 
 import cats.Show
 import com.google.cloud.bigquery.{Option => _, _}
 import io.circe.{Decoder, Encoder}
 
-package object bigquery {
+object implicits {
   // suppress not used warnings
   private[bigquery] def assertIsUsed(a: Any*): Unit = (a, ())._2
 

@@ -1,5 +1,6 @@
 package no.nrk.bigquery
 
+import no.nrk.bigquery.implicits._
 import cats.effect.IO
 import com.google.cloud.bigquery.TableId
 import fs2.Stream

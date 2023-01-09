@@ -1,5 +1,6 @@
 package no.nrk.bigquery
 
+import no.nrk.bigquery.implicits._
 import cats.syntax.show._
 import com.google.cloud.bigquery.{TableId, TableInfo}
 import io.circe.{Decoder, Encoder}

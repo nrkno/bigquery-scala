@@ -1,5 +1,6 @@
 package no.nrk.bigquery
 
+import no.nrk.bigquery.implicits._
 import com.google.cloud.bigquery.{Field, TimePartitioning}
 
 import java.time.temporal.ChronoUnit

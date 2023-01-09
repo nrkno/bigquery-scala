@@ -2,6 +2,7 @@ package no.nrk.bigquery
 
 import cats.effect.IO
 import munit.CatsEffectSuite
+import no.nrk.bigquery.implicits._
 
 import java.time.{Instant, LocalDate, LocalTime}
 

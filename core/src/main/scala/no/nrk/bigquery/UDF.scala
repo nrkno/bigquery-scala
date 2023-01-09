@@ -1,5 +1,6 @@
 package no.nrk.bigquery
 
+import no.nrk.bigquery.implicits._
 case class UDF(
     name: Ident,
     params: Seq[UDF.Param],

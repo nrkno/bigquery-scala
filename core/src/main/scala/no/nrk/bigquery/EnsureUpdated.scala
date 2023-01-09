@@ -1,5 +1,6 @@
 package no.nrk.bigquery
 
+import no.nrk.bigquery.implicits._
 import cats.effect.IO
 import cats.syntax.show._
 import com.google.cloud.bigquery.{Option => _, _}

@@ -1,5 +1,6 @@
 package no.nrk.bigquery
 
+import no.nrk.bigquery.implicits._
 import com.google.cloud.bigquery.TableId
 import io.circe.{Encoder, Json}
 import no.nrk.bigquery.BQSqlFrag.asSubQuery

@@ -14,6 +14,7 @@ import munit.{CatsEffectSuite, Location}
 import no.nrk.bigquery._
 import no.nrk.bigquery.testing.BQSmokeTest.{bqCheckFragment, CheckType}
 import org.typelevel.log4cats.slf4j._
+import no.nrk.bigquery.implicits._
 
 import java.nio.file.{Files, Path}
 

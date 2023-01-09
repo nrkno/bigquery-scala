@@ -2,6 +2,7 @@ package no.nrk.bigquery
 
 import com.google.cloud.bigquery.TableId
 import no.nrk.bigquery.testing.BQSmokeTest
+import no.nrk.bigquery.implicits._
 
 import java.time.LocalDate
 

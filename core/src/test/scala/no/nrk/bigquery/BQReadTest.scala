@@ -1,6 +1,7 @@
 package no.nrk.bigquery
 
 import no.nrk.bigquery.testing.BQSmokeTest
+import no.nrk.bigquery.implicits._
 
 class BQReadTest extends BQSmokeTest {
   case class Nested(a: String, b: Long)
