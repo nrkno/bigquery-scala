@@ -3,7 +3,6 @@ package testing
 
 import cats.effect.IO
 import cats.effect.kernel.Outcome
-import cats.effect.unsafe.implicits.global
 import cats.syntax.alternative._
 import com.google.cloud.bigquery.JobStatistics.QueryStatistics
 import com.google.cloud.bigquery.{BigQueryException, Field, StandardSQLTypeName}
@@ -20,7 +19,6 @@ import java.nio.file.{Files, Path}
 
 abstract class BQSmokeTest extends CatsEffectSuite {
   val assertStableTables: List[BQTableLike[Any]] = Nil
-  var bqClientAndCleanup: Option[(BigQueryClient, IO[Unit])] = None
 
   val bqClient: Fixture[BigQueryClient] = ResourceSuiteLocalFixture(
     "bqClient",
@@ -164,9 +162,6 @@ abstract class BQSmokeTest extends CatsEffectSuite {
 private object BQSmokeTest {
   private val logger = Slf4jFactory.getLogger[IO]
 
-  lazy val (bqClient, cleanup) =
-    BigQueryTestClient.testClient.allocated.unsafeRunSync()
-
   object staticQueries extends GeneratedTest {
     override def testType: String = "bq-query-static"
   }
@@ -200,7 +195,7 @@ private object BQSmokeTest {
           )
         )
 
-        val cachedQuery = CachedQuery(staticFrag)
+        val cachedQuery = CachedQuery(staticFrag, BigQueryTestClient.basedir)
         val runCheck: IO[Unit] = cachedQuery.read
           .flatMap {
             case Some(schema) => IO.pure(schema)
@@ -419,8 +414,8 @@ private object BQSmokeTest {
   }
 
   // this is a user-wide query cache to speed up development/CI
-  case class CachedQuery(frag: BQSqlFrag) {
-    val cacheFile = Paths.basedir
+  case class CachedQuery(frag: BQSqlFrag, cacheDir: Path) {
+    val cacheFile = cacheDir
       .resolve("smoke-test-cache")
       .resolve(s"${frag.asStringWithUDFs.hashCode()}.json")
 

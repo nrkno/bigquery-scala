@@ -3,6 +3,7 @@ package no.nrk.bigquery
 import cats.effect.IO
 import munit.CatsEffectSuite
 import no.nrk.bigquery.implicits._
+import no.nrk.bigquery.testing.BigQueryTestClient
 
 import java.time.{Instant, LocalDate, LocalTime}
 

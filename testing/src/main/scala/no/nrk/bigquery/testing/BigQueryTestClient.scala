@@ -1,4 +1,4 @@
-package no.nrk.bigquery
+package no.nrk.bigquery.testing
 
 import cats.data.OptionT
 import cats.effect.{IO, Resource}
@@ -6,6 +6,7 @@ import cats.syntax.all._
 import com.google.auth.oauth2.ServiceAccountCredentials
 import com.google.cloud.bigquery.BigQuery.JobOption
 import fs2.Stream
+import no.nrk.bigquery.{BQJobName, BQSqlFrag, BQTracker, BigQueryClient}
 import org.apache.avro
 import org.apache.avro.file.{DataFileReader, DataFileWriter}
 import org.apache.avro.generic.{
@@ -16,11 +17,20 @@ import org.apache.avro.generic.{
 
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 import scala.jdk.CollectionConverters._
+import scala.util.Properties
 
 object BigQueryTestClient {
-  val queryCachePath = Paths.basedir.resolve("query-cache")
+  val basedir =
+    Paths
+      .get(sys.env.getOrElse("BIGQUERY_HOME", Properties.userHome))
+      .resolve(".bigquery")
+  val queryCachePath = {
+    val dir = basedir.resolve(".bigquery").resolve("query-cache")
+    Files.createDirectories(dir)
+    dir
+  }
 
   private def credentialsFromString(
       str: String
@@ -55,7 +65,8 @@ object BigQueryTestClient {
             jobOptions: Seq[JobOption],
             logStream: Boolean
         ): Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] = {
-          val hash = java.util.Objects.hash(query, Boolean.box(legacySql), jobOptions)
+          val hash =
+            java.util.Objects.hash(query, Boolean.box(legacySql), jobOptions)
           val hashedSchemaPath =
             queryCachePath.resolve(s"${jobName.value}__$hash.json")
           val hashedRowsPath =

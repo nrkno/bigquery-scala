@@ -33,7 +33,7 @@ private[bigquery] trait BQReadCompat extends ProductDerivation[BQRead] { self: B
         }
     }
 
-  inline implicit def autoTuples[A <: Tuple](implicit m: Mirror.Of[A]): BQRead[A] = derived
+  inline given [A <: Tuple](using m: Mirror.Of[A]): BQRead[A] = derived
 
-  implicit def convertsTuple[A: BQRead, B: BQRead]: BQRead[(A, B)] = derived[(A, B)]
+  given convertsTuple[A: BQRead, B: BQRead]: BQRead[(A, B)] = derived[(A, B)]
 }

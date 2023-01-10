@@ -13,6 +13,12 @@ import org.typelevel.log4cats.slf4j._
 import java.nio.file.{Files, Path}
 
 class BQUdfSmokeTest extends CatsEffectSuite {
+  val bqClient: Fixture[BigQueryClient] = ResourceSuiteLocalFixture(
+    "bqClient",
+    BigQueryTestClient.testClient
+  )
+  override def munitFixtures = List(bqClient)
+
 
   /** Evaluates the call against BQ but caches it. This is only meant to be used
     * with pure UDFs, not those which reads tables.
@@ -30,6 +36,7 @@ class BQUdfSmokeTest extends CatsEffectSuite {
     test(s"bqCheck UDF: $longerTestName") {
       BQUdfSmokeTest
         .bqEvaluateCall(longerTestName, call)
+        .apply(bqClient())
         .map(actual => assertEquals(actual, expected))
     }
   }
@@ -42,7 +49,10 @@ object BQUdfSmokeTest {
     override def testType: String = "udf-results"
   }
 
-  def bqEvaluateCall(testName: String, call: BQSqlFrag.Call): IO[Json] = {
+  def bqEvaluateCall(
+      testName: String,
+      call: BQSqlFrag.Call
+  ): BigQueryClient => IO[Json] = { bqClient =>
     val query = bqfr"SELECT TO_JSON_STRING($call)"
     val cachedQuery = CachedQuery(query)
 
@@ -54,7 +64,7 @@ object BQUdfSmokeTest {
             s"Running $testName against BQ (could have been cached)"
           )
 
-          val run = BQSmokeTest.bqClient
+          val run = bqClient
             .synchronousQuery(BQJobName("smoketest"), BQQuery[Json](query))
             .compile
             .lastOrError
@@ -71,7 +81,7 @@ object BQUdfSmokeTest {
 
   // this is a user-wide query cache to speed up development/CI
   case class CachedQuery(frag: BQSqlFrag) {
-    val cacheFile: Path = Paths.basedir
+    val cacheFile: Path = BigQueryTestClient.basedir
       .resolve("smoke-test-udf-cache")
       .resolve(s"${frag.asStringWithUDFs.hashCode()}.json")
 

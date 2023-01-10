@@ -4,6 +4,7 @@ package testing
 import munit.Assertions.{assert, assertEquals}
 import munit.Location
 
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -14,14 +15,17 @@ trait GeneratedTest {
   val assertCurrentGeneratedFiles: Boolean =
     sys.env.contains("ASSERT_CURRENT_GENERATED_FILES")
 
-  lazy val dir: Path = {
-    val ret = Paths.projectRoot.resolve(s"generated/$testType")
-    Files.createDirectories(ret)
-    ret
+  def basedir: Path = {
+    var f = new File(
+      getClass.getProtectionDomain.getCodeSource.getLocation.getFile
+    ).getParentFile
+    while (!new File(f.getParentFile, "build.sbt").exists())
+      f = f.getParentFile
+    f.getParentFile.toPath
   }
 
   def testFileForName(name: String): Path =
-    dir.resolve(name)
+    basedir.resolve(name)
 
   def writeAndCompare(testFile: Path, value: String)(implicit
       loc: Location

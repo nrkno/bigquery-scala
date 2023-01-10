@@ -23,7 +23,7 @@ val Scala213 = "2.13.10"
 ThisBuild / crossScalaVersions := Seq(Scala213, Scala212, "3.2.1")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 
-lazy val root = tlCrossRootProject.aggregate(core)
+lazy val root = tlCrossRootProject.aggregate(core, testing)
 
 lazy val core = crossProject(JVMPlatform)
   .crossType(CrossType.Pure)
@@ -31,10 +31,10 @@ lazy val core = crossProject(JVMPlatform)
   .settings(
     name := "bigquery",
     libraryDependencies ++= Seq(
-      "org.typelevel" %%% "cats-core" % "2.9.0",
-      "org.typelevel" %%% "cats-effect" % "3.4.4",
-      "org.scalameta" %%% "munit" % "0.7.29" % Test,
-      "org.typelevel" %%% "munit-cats-effect-3" % "1.0.7" % Test,
+      "org.typelevel" %% "cats-core" % "2.9.0",
+      "org.typelevel" %% "cats-effect" % "3.4.4",
+      "org.scalameta" %% "munit" % "0.7.29" % Test,
+      "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       "com.google.cloud" % "google-cloud-bigquery" % "2.20.1",
       "com.google.cloud" % "google-cloud-bigquerystorage" % "2.27.0",
       "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.7.0",
@@ -50,15 +50,42 @@ lazy val core = crossProject(JVMPlatform)
     libraryDependencies ++= {
       if (scalaVersion.value.startsWith("3")) {
         Seq(
-           "com.softwaremill.magnolia1_3" %% "magnolia" % "1.1.2",
+          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.1.2"
         )
       } else {
-        //scala2
+        // scala2
         Seq(
-           "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.2",
-           "org.scala-lang" % "scala-reflect" % scalaVersion.value
+          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.2",
+          "org.scala-lang" % "scala-reflect" % scalaVersion.value
         )
+      }
+    },
+    scalacOptions -= "-source:3.0-migration",
+    scalacOptions ++= {
+      if (scalaVersion.value.startsWith("3")) {
+        Seq("-source:3.2-migration")
+      } else {
+        Seq()
+      }
+    }
+  )
 
+lazy val testing = crossProject(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("testing"))
+  .dependsOn(core)
+  .settings(
+    name := "testing",
+    libraryDependencies ++= Seq(
+      "org.scalameta" %% "munit" % "0.7.29",
+      "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
+    ),
+    scalacOptions -= "-source:3.0-migration",
+    scalacOptions ++= {
+      if (scalaVersion.value.startsWith("3")) {
+        Seq("-source:3.2-migration")
+      } else {
+        Seq()
       }
     }
   )
