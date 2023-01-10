@@ -29,7 +29,7 @@ lazy val core = crossProject(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("core"))
   .settings(
-    name := "bigquery",
+    name := "bigquery-core",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "2.9.0",
       "org.typelevel" %% "cats-effect" % "3.4.4",
@@ -75,7 +75,7 @@ lazy val testing = crossProject(JVMPlatform)
   .in(file("testing"))
   .dependsOn(core)
   .settings(
-    name := "testing",
+    name := "bigquery-testing",
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
