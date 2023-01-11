@@ -492,7 +492,7 @@ object BigQueryClient {
         None
   ): IO[BigQuery] =
     IO.blocking {
-      val conf = configure.getOrElse(defaultConfigure)
+      val conf = configure.getOrElse(defaultConfigure(_))
       conf(BigQueryOptions.newBuilder())
         .setCredentials(credentials)
         .build()
