@@ -3,7 +3,7 @@ package no.nrk.bigquery.testing
 import cats.data.OptionT
 import cats.effect.{IO, Resource}
 import cats.syntax.all._
-import com.google.auth.oauth2.ServiceAccountCredentials
+import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
 import com.google.cloud.bigquery.BigQuery.JobOption
 import fs2.Stream
 import no.nrk.bigquery.{BQJobName, BQSqlFrag, BQTracker, BigQueryClient}
@@ -47,9 +47,7 @@ object BigQueryTestClient {
         OptionT(IO(sys.env.get("BIGQUERY_SERVICE_ACCOUNT")))
           .semiflatMap(credentialsFromString)
           .getOrElseF(
-            IO.raiseError(
-              new IllegalStateException("Unable to get service account")
-            )
+            IO.blocking(GoogleCredentials.getApplicationDefault)
           )
       )
       underlying <- BigQueryClient.resource(credentials, BQTracker.Noop)
