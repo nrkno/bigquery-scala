@@ -443,6 +443,33 @@ object BigQueryClient {
   val readTimeoutSecs = 20L
   val connectTimeoutSecs = 60L
 
+  def defaultConfigure(
+      builder: BigQueryOptions.Builder
+  ): BigQueryOptions.Builder =
+    builder
+      .setTransportOptions(
+        HttpTransportOptions
+          .newBuilder()
+          .setConnectTimeout(
+            TimeUnit.SECONDS.toMillis(connectTimeoutSecs).toInt
+          )
+          .setReadTimeout(TimeUnit.SECONDS.toMillis(readTimeoutSecs).toInt)
+          .build()
+      )
+      .setRetrySettings(
+        RetrySettings
+          .newBuilder()
+          .setMaxAttempts(3)
+          .setInitialRetryDelay(Duration.ofSeconds(1))
+          .setMaxRetryDelay(Duration.ofMinutes(2))
+          .setRetryDelayMultiplier(2.0)
+          .setTotalTimeout(Duration.ofMinutes(5))
+          .setInitialRpcTimeout(Duration.ZERO)
+          .setRpcTimeoutMultiplier(1.0)
+          .setMaxRpcTimeout(Duration.ZERO)
+          .build()
+      )
+
   def readerResource(
       credentials: Credentials
   ): Resource[IO, BigQueryReadClient] =
@@ -459,43 +486,29 @@ object BigQueryClient {
       }
     )
 
-  def fromCredentials(credentials: Credentials): IO[BigQuery] =
-    IO {
-      BigQueryOptions
-        .newBuilder()
-        .setTransportOptions(
-          HttpTransportOptions
-            .newBuilder()
-            .setConnectTimeout(
-              TimeUnit.SECONDS.toMillis(connectTimeoutSecs).toInt
-            )
-            .setReadTimeout(TimeUnit.SECONDS.toMillis(readTimeoutSecs).toInt)
-            .build()
-        )
+  def fromCredentials(
+      credentials: Credentials,
+      configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] =
+        None
+  ): IO[BigQuery] =
+    IO.blocking {
+      val conf = configure.getOrElse(defaultConfigure)
+      conf(BigQueryOptions.newBuilder())
         .setCredentials(credentials)
-        .setRetrySettings(
-          RetrySettings
-            .newBuilder()
-            .setMaxAttempts(3)
-            .setInitialRetryDelay(Duration.ofSeconds(1))
-            .setMaxRetryDelay(Duration.ofMinutes(2))
-            .setRetryDelayMultiplier(2.0)
-            .setTotalTimeout(Duration.ofMinutes(5))
-            .setInitialRpcTimeout(Duration.ZERO)
-            .setRpcTimeoutMultiplier(1.0)
-            .setMaxRpcTimeout(Duration.ZERO)
-            .build()
-        )
         .build()
         .getService
     }
 
   def resource(
       credentials: Credentials,
-      tracker: BQTracker
+      tracker: BQTracker,
+      configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] =
+        None
   ): Resource[IO, BigQueryClient] =
     for {
-      bq <- Resource.eval(BigQueryClient.fromCredentials(credentials))
+      bq <- Resource.eval(
+        BigQueryClient.fromCredentials(credentials, configure)
+      )
       bqRead <- BigQueryClient.readerResource(credentials)
     } yield new BigQueryClient(bq, bqRead, tracker)
 }
