@@ -24,8 +24,10 @@ trait GeneratedTest {
     f.getParentFile.toPath
   }
 
+  def generatedDir = basedir.resolve("generated")
+
   def testFileForName(name: String): Path =
-    basedir.resolve(name)
+    generatedDir.resolve(name.replaceAll("\\s", "_"))
 
   def writeAndCompare(testFile: Path, value: String)(implicit
       loc: Location
