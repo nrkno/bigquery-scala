@@ -29,7 +29,9 @@ object BQRead extends BQReadCompat {
 
   def apply[A: BQRead]: BQRead[A] = implicitly
 
-  private[bigquery] def firstNotNullable(schema: avro.Schema): Option[avro.Schema] =
+  private[bigquery] def firstNotNullable(
+      schema: avro.Schema
+  ): Option[avro.Schema] =
     if (schema.isUnion) schema.getTypes.asScala.collectFirst {
       case s if !s.isNullable => s
     }

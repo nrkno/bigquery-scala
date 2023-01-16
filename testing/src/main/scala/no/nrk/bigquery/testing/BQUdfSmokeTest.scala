@@ -19,7 +19,6 @@ class BQUdfSmokeTest extends CatsEffectSuite {
   )
   override def munitFixtures = List(bqClient)
 
-
   /** Evaluates the call against BQ but caches it. This is only meant to be used
     * with pure UDFs, not those which reads tables.
     *
