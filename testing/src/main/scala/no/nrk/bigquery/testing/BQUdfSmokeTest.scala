@@ -10,6 +10,7 @@ import munit.{CatsEffectSuite, Location}
 import no.nrk.bigquery.implicits._
 import org.typelevel.log4cats.slf4j._
 
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 class BQUdfSmokeTest extends CatsEffectSuite {
@@ -87,12 +88,12 @@ object BQUdfSmokeTest {
     def writeRow(row: Json): IO[Path] =
       IO {
         Files.createDirectories(cacheFile.getParent)
-        Files.writeString(cacheFile, row.asJson.noSpaces)
+        Files.write(cacheFile, row.asJson.noSpaces.getBytes(StandardCharsets.UTF_8))
       }
 
     val readRow: IO[Option[Json]] = IO {
       if (Files.exists(cacheFile)) {
-        decode[Json](Files.readString(cacheFile)) match {
+        decode[Json](new String(Files.readAllBytes(cacheFile), StandardCharsets.UTF_8)) match {
           case Left(err) =>
             System.err.println(
               s"Couldn't parse query cache file $cacheFile. Rerunning query. ${err.getMessage}"

@@ -11,10 +11,11 @@ import io.circe.syntax._
 import munit.Assertions.fail
 import munit.{CatsEffectSuite, Location}
 import no.nrk.bigquery._
-import no.nrk.bigquery.testing.BQSmokeTest.{bqCheckFragment, CheckType}
+import no.nrk.bigquery.testing.BQSmokeTest.{CheckType, bqCheckFragment}
 import org.typelevel.log4cats.slf4j._
 import no.nrk.bigquery.implicits._
 
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 abstract class BQSmokeTest extends CatsEffectSuite {
@@ -422,12 +423,12 @@ private object BQSmokeTest {
     def write(schema: BQSchema): IO[Path] =
       IO {
         Files.createDirectories(cacheFile.getParent)
-        Files.writeString(cacheFile, schema.asJson.noSpaces)
+        Files.write(cacheFile, schema.asJson.noSpaces.getBytes(StandardCharsets.UTF_8))
       }
 
     val read: IO[Option[BQSchema]] = IO {
       if (Files.exists(cacheFile)) {
-        decode[BQSchema](Files.readString(cacheFile)) match {
+        decode[BQSchema](new String(Files.readAllBytes(cacheFile), StandardCharsets.UTF_8)) match {
           case Left(err) =>
             System.err.println(
               s"Couldn't parse query cache file $cacheFile. Rerunning query. ${err.getMessage}"
