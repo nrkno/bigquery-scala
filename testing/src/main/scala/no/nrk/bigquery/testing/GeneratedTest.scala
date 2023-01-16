@@ -37,7 +37,8 @@ trait GeneratedTest {
         Files.exists(testFile),
         s"Expected $testFile to exist. Run failing test locally and check in generated files"
       )
-      val storedJsonString = new String(Files.readAllBytes(testFile), StandardCharsets.UTF_8)
+      val storedJsonString =
+        new String(Files.readAllBytes(testFile), StandardCharsets.UTF_8)
       assertEquals(value, storedJsonString)
     } else {
       Files.createDirectories(testFile.getParent)

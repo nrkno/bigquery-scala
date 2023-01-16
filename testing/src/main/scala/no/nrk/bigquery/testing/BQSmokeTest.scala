@@ -423,12 +423,17 @@ private object BQSmokeTest {
     def write(schema: BQSchema): IO[Path] =
       IO {
         Files.createDirectories(cacheFile.getParent)
-        Files.write(cacheFile, schema.asJson.noSpaces.getBytes(StandardCharsets.UTF_8))
+        Files.write(
+          cacheFile,
+          schema.asJson.noSpaces.getBytes(StandardCharsets.UTF_8)
+        )
       }
 
     val read: IO[Option[BQSchema]] = IO {
       if (Files.exists(cacheFile)) {
-        decode[BQSchema](new String(Files.readAllBytes(cacheFile), StandardCharsets.UTF_8)) match {
+        decode[BQSchema](
+          new String(Files.readAllBytes(cacheFile), StandardCharsets.UTF_8)
+        ) match {
           case Left(err) =>
             System.err.println(
               s"Couldn't parse query cache file $cacheFile. Rerunning query. ${err.getMessage}"
