@@ -31,6 +31,8 @@ lazy val core = crossProject(JVMPlatform)
   .in(file("core"))
   .settings(
     name := "bigquery-core",
+    Compile / headerSources := Nil,
+    Test / headerSources := Nil,
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "2.9.0",
       "org.typelevel" %% "cats-effect" % "3.4.4",
@@ -82,6 +84,8 @@ lazy val testing = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
     scalacOptions -= "-source:3.0-migration",
+    Compile / headerSources := Nil,
+    Test / headerSources := Nil,
     scalacOptions ++= {
       if (scalaVersion.value.startsWith("3")) {
         Seq("-source:3.2-migration")
