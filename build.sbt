@@ -17,6 +17,7 @@ ThisBuild / tlSonatypeUseLegacyHost := false
 
 // publish website from this branch
 //ThisBuild / tlSitePublishBranch := Some("main")
+ThisBuild / githubWorkflowPublishTargetBranches := Nil
 
 val Scala212 = "2.12.17"
 val Scala213 = "2.13.10"
