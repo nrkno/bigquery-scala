@@ -7,10 +7,11 @@ import com.google.cloud.bigquery.StandardSQLTypeName
 import magnolia1.{CaseClass, ProductDerivation}
 import scala.deriving.Mirror
 
-private[bigquery] trait BQReadCompat extends ProductDerivation[BQRead] { self: BQRead.type =>
-   // magnolia automatic derivation begin
+private[bigquery] trait BQReadCompat extends ProductDerivation[BQRead] {
+  self: BQRead.type =>
+  // magnolia automatic derivation begin
   type Typeclass[T] = BQRead[T]
-  
+
   def join[T](ctx: CaseClass[BQRead, T]): BQRead[T] =
     new BQRead[T] {
       override val bqType: BQType =
@@ -24,12 +25,19 @@ private[bigquery] trait BQReadCompat extends ProductDerivation[BQRead] { self: B
         value match {
           case coll: GenericRecord =>
             // ignore if BQ thinks this record type is nullable if we think it's not
-            val schema1 = firstNotNullable(transportSchema).getOrElse(transportSchema)
+            val schema1 =
+              firstNotNullable(transportSchema).getOrElse(transportSchema)
             val fields = schema1.getFields
             ctx.construct { param =>
-              param.typeclass.read(fields.get(param.index).schema(), coll.get(param.index))
+              param.typeclass.read(
+                fields.get(param.index).schema(),
+                coll.get(param.index)
+              )
             }
-          case other => sys.error(s"Unexpected: ${other.getClass.getSimpleName} $other . Schema from BQ: $transportSchema")
+          case other =>
+            sys.error(
+              s"Unexpected: ${other.getClass.getSimpleName} $other . Schema from BQ: $transportSchema"
+            )
         }
     }
 
