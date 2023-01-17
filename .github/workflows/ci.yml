@@ -74,6 +74,8 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' headerCheckAll scalafmtCheckAll 'project /' scalafmtSbtCheck
 
       - name: Test
+        env:
+          BIGQUERY_SERVICE_ACCOUNT: ${{secrets.BIGQUERY_SERVICE_ACCOUNT}}
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' test
 
       - name: Check binary compatibility

@@ -18,6 +18,14 @@ ThisBuild / tlSonatypeUseLegacyHost := false
 // publish website from this branch
 //ThisBuild / tlSitePublishBranch := Some("main")
 ThisBuild / githubWorkflowPublishTargetBranches := Nil
+ThisBuild / githubWorkflowBuild := {
+  val list = (ThisBuild / githubWorkflowBuild).value
+  list.collect{
+    case step: WorkflowStep.Sbt if step.name.contains("Test") =>
+      step.copy(env = Map("BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}"))
+    case s => s
+  }
+}
 
 val Scala212 = "2.12.17"
 val Scala213 = "2.13.10"
