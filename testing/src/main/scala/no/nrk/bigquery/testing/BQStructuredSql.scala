@@ -56,7 +56,9 @@ object BQStructuredSql {
     */
   def parse(fullQuery: BQSqlFrag): BQStructuredSql = {
     val segmentList = SegmentList.from(fullQuery.asString)
-    val functionSegmentLists :+ querySegmentList = segmentList.split(';')
+    val split = segmentList.split(';')
+    val functionSegmentLists = split.init
+    val querySegmentList = split.last
 
     val functions: List[UserDefinedFunction] = {
       val fs1 = fullQuery.allReferencedUDFs.map(udf =>
@@ -134,14 +136,19 @@ object BQStructuredSql {
 
   object Segment {
     case class Normal(asString: String) extends Segment
+
     case class LineComment(asString: String) extends Segment
+
     case class BlockComment(asString: String) extends Segment
+
     case class StrDouble(asString: String) extends Segment {
       require(asString.startsWith("\"") && asString.endsWith("\""))
     }
+
     case class StrSingle(asString: String) extends Segment {
       require(asString.startsWith("'") && asString.endsWith("'"))
     }
+
     case class InParenthesis(values: List[Segment]) extends Segment {
       override def asString: String =
         values.map(_.asString).mkString("(", "", ")")
@@ -193,17 +200,23 @@ object BQStructuredSql {
 
   object SegmentList {
     private sealed trait State
+
     private object State {
       case object Normal extends State
+
       case object LineComment extends State
+
       case object BlockComment extends State
+
       case object StrDouble extends State
+
       case object StrSingle extends State
     }
 
     def from(sql: String): SegmentList = {
       // use `segments` to describe what we have collected so far. we need the stack to account for matching parentheses
       val segmentsStack = mutable.Stack(mutable.ArrayBuffer.empty[Segment])
+
       def segments = segmentsStack.head
 
       val currentSegment = new StringBuilder()
@@ -231,6 +244,7 @@ object BQStructuredSql {
           idx + 1 < sql.length && (sql(idx + 1) == char)
 
         def currentChar = sql(idx)
+
         def add() = currentSegment += currentChar
 
         (currentChar, lastState) match {
