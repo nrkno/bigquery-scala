@@ -20,9 +20,13 @@ ThisBuild / tlSonatypeUseLegacyHost := false
 ThisBuild / githubWorkflowPublishTargetBranches := Nil
 ThisBuild / githubWorkflowBuild := {
   val list = (ThisBuild / githubWorkflowBuild).value
-  list.collect{
+  list.collect {
     case step: WorkflowStep.Sbt if step.name.contains("Test") =>
-      step.copy(env = Map("BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}"))
+      step.copy(env =
+        Map(
+          "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}"
+        )
+      )
     case s => s
   }
 }
