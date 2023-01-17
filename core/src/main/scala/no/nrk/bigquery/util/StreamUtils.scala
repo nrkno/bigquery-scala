@@ -1,39 +1,33 @@
 package no.nrk.bigquery
 package util
 
-import cats.effect.IO
+import cats.Functor
+import cats.effect.Sync
+import cats.syntax.all._
+
 import fs2.compression.Compression
 import fs2.{Chunk, Pipe}
 import io.circe.Encoder
 import io.circe.syntax._
 import org.typelevel.log4cats.Logger
 
-import scala.io.Codec
-
 object StreamUtils {
   val Megabyte = 1024 * 1024
 
-  def toLineSeparatedJsonBytes[A: Encoder](
+  def toLineSeparatedJsonBytes[F[_]: Sync, A: Encoder](
       chunkSize: Int
-  ): Pipe[IO, A, Chunk[Byte]] =
+  ): Pipe[F, A, Chunk[Byte]] =
     _.map(_.asJson.noSpaces)
       .intersperse("\n")
       .through(fs2.text.utf8.encode)
-      .through(Compression[IO].gzip())
+      .through(Compression[F].gzip())
       .chunkN(chunkSize)
 
-  def iso8859Decode[F[_]]: Pipe[F, Byte, String] =
-    _.through(
-      _.chunks.map((bytes: Chunk[Byte]) =>
-        new String(bytes.toArray, Codec.ISO8859.charSet)
-      )
-    )
-
-  def logChunks[T](
-      logger: Logger[IO],
+  def logChunks[F[_]: Functor, T](
+      logger: Logger[F],
       maybeTotal: Option[Long],
       action: String
-  ): Pipe[IO, Chunk[T], Chunk[T]] =
+  ): Pipe[F, Chunk[T], Chunk[T]] =
     _.evalMapAccumulate(0L) { case (acc, chunk) =>
       def format(l: Long) = l.toString
 
@@ -47,11 +41,11 @@ object StreamUtils {
       logger.debug(msg).as((acc + chunk.size, chunk))
     }.map(_._2)
 
-  def log[T](
-      logger: Logger[IO],
+  def log[F[_]: Functor, T](
+      logger: Logger[F],
       maybeTotal: Option[Long],
       action: T => String
-  ): Pipe[IO, T, T] =
+  ): Pipe[F, T, T] =
     _.evalMapAccumulate(0L) { case (acc, t) =>
       def format(l: Long) = l.toString
 

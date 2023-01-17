@@ -1,7 +1,9 @@
 package no.nrk.bigquery
 
+import cats.effect.Concurrent
+import cats.syntax.all._
+
 import no.nrk.bigquery.implicits._
-import cats.effect.IO
 import com.google.cloud.bigquery.TableId
 import io.circe._
 import io.circe.syntax._
@@ -30,11 +32,11 @@ object BQTableLike {
 
   implicit class ExtensionMethods(private val table: BQTableLike[Any])
       extends AnyVal {
-    def loadGenericPartitions(
-        client: BigQueryClient,
+    def loadGenericPartitions[F[_]: Concurrent](
+        client: BigQueryClient[F],
         startDate: StartDate[Any],
         requireRowNums: Boolean = false
-    ): IO[Vector[(BQPartitionId[Any], PartitionMetadata)]] =
+    ): F[Vector[(BQPartitionId[Any], PartitionMetadata)]] =
       PartitionLoader.loadGenericPartitions(
         table,
         client,
@@ -51,13 +53,14 @@ object BQTableLike {
     ): BQPartitionId[P] =
       P.assertPartition(table, partition)
 
-    def loadPartitions(
-        client: BigQueryClient,
+    def loadPartitions[F[_]](
+        client: BigQueryClient[F],
         startDate: StartDate[P],
         requireRowNums: Boolean = false
     )(implicit
-        P: TableOps[P]
-    ): IO[Vector[(BQPartitionId[P], PartitionMetadata)]] =
+        P: TableOps[P],
+        C: Concurrent[F]
+    ): F[Vector[(BQPartitionId[P], PartitionMetadata)]] =
       P.loadPartitions(table, client, startDate, requireRowNums)
   }
 
@@ -67,10 +70,10 @@ object BQTableLike {
     def assertPartition: BQPartitionId[Unit] =
       TableOps.unit.assertPartition(table, ())
 
-    def loadPartition(
-        client: BigQueryClient
-    ): IO[(BQPartitionId[Unit], PartitionMetadata)] =
-      PartitionLoader.unpartitioned(table, client)
+    def loadPartition[F[_]: Concurrent](
+        client: BigQueryClient[F]
+    ): F[(BQPartitionId[Unit], PartitionMetadata)] =
+      PartitionLoader.unpartitioned(table, client).widen
   }
 }
 

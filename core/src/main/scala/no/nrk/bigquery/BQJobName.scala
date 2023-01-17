@@ -1,6 +1,6 @@
 package no.nrk.bigquery
 
-import cats.effect.IO
+import cats.effect.Sync
 import com.google.cloud.bigquery.JobId
 
 import java.util.UUID
@@ -10,7 +10,8 @@ import java.util.UUID
   * manual inspection
   */
 case class BQJobName private (value: String) extends AnyVal {
-  def freshJobId: IO[JobId] = IO(JobId.of(s"$value-${UUID.randomUUID}"))
+  def freshJobId[F[_]](implicit F: Sync[F]): F[JobId] =
+    F.delay(JobId.of(s"$value-${UUID.randomUUID}"))
   def +(str: String): BQJobName = BQJobName(value + str)
 }
 

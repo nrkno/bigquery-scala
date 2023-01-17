@@ -1,6 +1,7 @@
 package no.nrk.bigquery
 
-import cats.effect.IO
+import cats.effect.Concurrent
+import cats.syntax.all._
 
 import java.time.{LocalDate, YearMonth}
 import scala.annotation.implicitNotFound
@@ -11,12 +12,12 @@ import scala.annotation.implicitNotFound
 trait TableOps[P] {
   def assertPartition(table: BQTableLike[P], partition: P): BQPartitionId[P]
 
-  def loadPartitions(
+  def loadPartitions[F[_]: Concurrent](
       table: BQTableLike[P],
-      client: BigQueryClient,
+      client: BigQueryClient[F],
       startDate: StartDate[P],
       requireRowNums: Boolean
-  ): IO[Vector[(BQPartitionId[P], PartitionMetadata)]]
+  ): F[Vector[(BQPartitionId[P], PartitionMetadata)]]
 }
 
 object TableOps {
@@ -34,23 +35,25 @@ object TableOps {
           BQPartitionId.Sharded(table, partition)
       }
 
-    override def loadPartitions(
+    override def loadPartitions[F[_]: Concurrent](
         table: BQTableLike[LocalDate],
-        client: BigQueryClient,
+        client: BigQueryClient[F],
         startDate: StartDate[LocalDate],
         requireRowNums: Boolean
-    ): IO[Vector[(BQPartitionId[LocalDate], PartitionMetadata)]] =
+    ): F[Vector[(BQPartitionId[LocalDate], PartitionMetadata)]] =
       table.partitionType match {
         case x: BQPartitionType.DatePartitioned =>
-          PartitionLoader.date(
-            table,
-            x.field,
-            client,
-            startDate,
-            requireRowNums
-          )
+          PartitionLoader
+            .date(
+              table,
+              x.field,
+              client,
+              startDate,
+              requireRowNums
+            )
+            .widen
         case _: BQPartitionType.Sharded =>
-          PartitionLoader.shard(table, client, startDate)
+          PartitionLoader.shard(table, client, startDate).widen
       }
   }
 
@@ -61,21 +64,23 @@ object TableOps {
     ): BQPartitionId[YearMonth] =
       BQPartitionId.MonthPartitioned(table, partition)
 
-    override def loadPartitions(
+    override def loadPartitions[F[_]: Concurrent](
         table: BQTableLike[YearMonth],
-        client: BigQueryClient,
+        client: BigQueryClient[F],
         startDate: StartDate[YearMonth],
         requireRowNums: Boolean
-    ): IO[Vector[(BQPartitionId[YearMonth], PartitionMetadata)]] =
+    ): F[Vector[(BQPartitionId[YearMonth], PartitionMetadata)]] =
       table.partitionType match {
         case x: BQPartitionType.MonthPartitioned =>
-          PartitionLoader.month(
-            table,
-            x.field,
-            client,
-            startDate,
-            requireRowNums
-          )
+          PartitionLoader
+            .month(
+              table,
+              x.field,
+              client,
+              startDate,
+              requireRowNums
+            )
+            .widen
       }
   }
 
@@ -86,15 +91,15 @@ object TableOps {
     ): BQPartitionId[Unit] =
       BQPartitionId.NotPartitioned(table)
 
-    override def loadPartitions(
+    override def loadPartitions[F[_]: Concurrent](
         table: BQTableLike[Unit],
-        client: BigQueryClient,
+        client: BigQueryClient[F],
         startDate: StartDate[Unit],
         requireRowNums: Boolean
-    ): IO[Vector[(BQPartitionId[Unit], PartitionMetadata)]] =
+    ): F[Vector[(BQPartitionId[Unit], PartitionMetadata)]] =
       table.partitionType match {
         case _: BQPartitionType.NotPartitioned =>
-          PartitionLoader.unpartitioned(table, client).map(Vector(_))
+          PartitionLoader.unpartitioned(table, client).map(Vector(_)).widen
       }
   }
 }

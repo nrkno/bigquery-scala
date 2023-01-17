@@ -14,6 +14,7 @@ import org.apache.avro.generic.{
   GenericDatumWriter,
   GenericRecord
 }
+import org.typelevel.log4cats.slf4j._
 
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
@@ -41,7 +42,7 @@ object BigQueryTestClient {
       )
     )
 
-  val testClient: Resource[IO, BigQueryClient] =
+  val testClient: Resource[IO, BigQueryClient[IO]] =
     for {
       credentials <- Resource.eval(
         OptionT(IO(sys.env.get("BIGQUERY_SERVICE_ACCOUNT")))
@@ -50,10 +51,12 @@ object BigQueryTestClient {
             IO.blocking(GoogleCredentials.getApplicationDefault)
           )
       )
-      underlying <- BigQueryClient.resource(credentials, BQTracker.Noop)
+      underlying <- BigQueryClient.resource(credentials, new BQTracker.Noop[IO])
     } yield underlying
 
-  val cachingClient: Resource[IO, BigQueryClient] =
+  private val logger = Slf4jFactory.getLogger[IO]
+
+  val cachingClient: Resource[IO, BigQueryClient[IO]] =
     testClient.map(client =>
       new BigQueryClient(client.underlying, client.reader, client.track) {
         override protected def synchronousQueryExecute(

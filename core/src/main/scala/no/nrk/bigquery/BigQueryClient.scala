@@ -1,10 +1,12 @@
 package no.nrk.bigquery
 
 import no.nrk.bigquery.implicits._
+
 import cats.effect.kernel.Outcome
-import cats.effect.{IO, Resource}
-import cats.syntax.parallel._
-import cats.syntax.show._
+import cats.syntax.all._
+import cats.effect.{Resource, Async}
+import cats.effect.implicits._
+
 import com.google.api.gax.core.FixedCredentialsProvider
 import com.google.api.gax.retrying.RetrySettings
 import com.google.api.gax.rpc.ServerStream
@@ -30,12 +32,12 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
-class BigQueryClient(
+class BigQueryClient[F[_]](
     bigQuery: BigQuery,
     val reader: BigQueryReadClient,
-    val track: BQTracker
-) {
-  protected lazy val logger = Slf4jFactory.getLogger[IO]
+    val track: BQTracker[F]
+)(implicit F: Async[F]) {
+  private val logger = Slf4jFactory.getLogger[F]
 
   def underlying: BigQuery = bigQuery
 
@@ -56,7 +58,7 @@ class BigQueryClient(
       legacySql: Boolean = false,
       jobOptions: Seq[JobOption] = Nil,
       logStream: Boolean = false
-  ): Stream[IO, A] =
+  ): Stream[F, A] =
     Stream
       .resource(
         synchronousQueryExecute(
@@ -87,23 +89,23 @@ class BigQueryClient(
       legacySql: Boolean = false,
       jobOptions: Seq[JobOption] = Nil,
       logStream: Boolean = false
-  ): Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] = {
+  ): Resource[F, (avro.Schema, Stream[F, GenericRecord])] = {
 
-    val runQuery: IO[Job] = {
+    val runQuery: F[Job] = {
       val queryRequest = QueryJobConfiguration
         .newBuilder(query.asStringWithUDFs)
         .setUseLegacySql(legacySql)
         .build
       submitJob(jobName)(jobId =>
-        IO.blocking(
+        F.blocking(
           Option(
             bigQuery.create(JobInfo.of(jobId, queryRequest), jobOptions: _*)
           )
         )
       ).flatMap {
-        case Some(job) => IO.pure(job)
+        case Some(job) => F.pure(job)
         case None =>
-          IO.raiseError(
+          F.raiseError(
             new Exception(s"Unexpected: got no job after submitting $jobName")
           )
       }
@@ -112,7 +114,7 @@ class BigQueryClient(
     def openServerStreams(
         job: Job,
         numStreams: Int
-    ): Resource[IO, (ReadSession, List[ServerStream[ReadRowsResponse]])] = {
+    ): Resource[F, (ReadSession, List[ServerStream[ReadRowsResponse]])] = {
       val tempTable =
         job.getConfiguration[QueryJobConfiguration].getDestinationTable
 
@@ -131,18 +133,18 @@ class BigQueryClient(
         .build()
 
       for {
-        session <- Resource.eval(IO.blocking(reader.createReadSession(request)))
+        session <- Resource.eval(F.blocking(reader.createReadSession(request)))
         serverStreams <- 0.until(session.getStreamsCount).toList.parTraverse {
           streamN =>
             Resource.make(
-              IO.blocking(
+              F.blocking(
                 reader.readRowsCallable.call(
                   ReadRowsRequest.newBuilder
                     .setReadStream(session.getStreams(streamN).getName)
                     .build
                 )
               )
-            )(serverStream => IO.blocking(serverStream.cancel()))
+            )(serverStream => F.blocking(serverStream.cancel()))
         }
       } yield (session, serverStreams)
     }
@@ -150,9 +152,9 @@ class BigQueryClient(
     def rows(
         datumReader: GenericDatumReader[GenericRecord],
         stream: ServerStream[ReadRowsResponse]
-    ): Stream[IO, GenericRecord] =
+    ): Stream[F, GenericRecord] =
       Stream
-        .fromBlockingIterator[IO]
+        .fromBlockingIterator[F]
         .apply(stream.iterator.asScala, chunkSize = 1)
         .flatMap { response =>
           val b = Vector.newBuilder[GenericRecord]
@@ -172,7 +174,7 @@ class BigQueryClient(
       schema = new avro.Schema.Parser().parse(session.getAvroSchema.getSchema)
       datumReader = new GenericDatumReader[GenericRecord](schema)
     } yield {
-      val baseStream: Stream[IO, GenericRecord] = streams
+      val baseStream: Stream[F, GenericRecord] = streams
         .map(stream => rows(datumReader, stream))
         .reduceOption(_.merge(_))
         .getOrElse(Stream.empty)
@@ -195,11 +197,11 @@ class BigQueryClient(
       jobName: BQJobName,
       table: BQTableDef.Table[P],
       partition: P,
-      stream: fs2.Stream[IO, A],
+      stream: fs2.Stream[F, A],
       writeDisposition: WriteDisposition,
       chunkSize: Int = 10 * StreamUtils.Megabyte,
       logStream: Boolean = false
-  ): IO[Option[LoadStatistics]] =
+  ): F[Option[LoadStatistics]] =
     submitJob(jobName) { jobId =>
       val partitionId = table.assertPartition(partition)
       val formatOptions = FormatOptions.json()
@@ -212,10 +214,10 @@ class BigQueryClient(
         .setSchema(schema.toSchema)
         .build()
 
-      val writerResource: Resource[IO, TableDataWriteChannel] =
+      val writerResource: Resource[F, TableDataWriteChannel] =
         Resource.make(
-          IO.blocking(bigQuery.writer(jobId, writeChannelConfiguration))
-        )(writer => IO.blocking(writer.close()))
+          F.blocking(bigQuery.writer(jobId, writeChannelConfiguration))
+        )(writer => F.blocking(writer.close()))
 
       writerResource
         .use { writer =>
@@ -228,18 +230,18 @@ class BigQueryClient(
               else identity
             )
             .prefetch
-            .evalMap(chunk => IO.blocking(writer.write(chunk.toByteBuffer)))
+            .evalMap(chunk => F.blocking(writer.write(chunk.toByteBuffer)))
             .compile
             .drain
         }
-        .flatMap(_ => IO.blocking(Option(bigQuery.getJob(jobId))))
+        .flatMap(_ => F.blocking(Option(bigQuery.getJob(jobId))))
 
     }.map(jobOpt => jobOpt.map(_.getStatistics[LoadStatistics]))
 
   def createTempTable[Param](
       table: BQTableDef.Table[Param],
       expirationDuration: Option[FiniteDuration] = Some(1.hour)
-  ): IO[BQTableDef.Table[Param]] = {
+  ): F[BQTableDef.Table[Param]] = {
     // a copy of `table` with new coordinates
     val tempTableDef = table.copy(
       TableId.of(
@@ -256,7 +258,7 @@ class BigQueryClient(
       .setExpirationTime(expirationTime.toEpochMilli)
       .build()
 
-    IO.blocking(bigQuery.create(tempTableBqDefWithExpiry))
+    F.blocking(bigQuery.create(tempTableBqDefWithExpiry))
       .map(_ => tempTableDef)
   }
 
@@ -270,7 +272,7 @@ class BigQueryClient(
       writeDisposition: Option[WriteDisposition] = None,
       timePartitioning: Option[TimePartitioning] = None,
       jobOptions: Seq[JobOption] = Nil
-  ): IO[Job] =
+  ): F[Job] =
     submitJob(jobName) { jobId =>
       val jobConfiguration = {
         val b = QueryJobConfiguration.newBuilder(query.asStringWithUDFs)
@@ -282,15 +284,15 @@ class BigQueryClient(
         b.build()
       }
 
-      IO.blocking(
+      F.blocking(
         Option(
           bigQuery.create(JobInfo.of(jobId, jobConfiguration), jobOptions: _*)
         )
       )
     }.flatMap {
-      case Some(job) => IO.pure(job)
+      case Some(job) => F.pure(job)
       case None =>
-        IO.raiseError(
+        F.raiseError(
           new Exception(s"Unexpected: got no job after submitting $jobName")
         )
     }
@@ -300,27 +302,28 @@ class BigQueryClient(
     */
   def submitJob(
       jobName: BQJobName
-  )(runJob: JobId => IO[Option[Job]]): IO[Option[Job]] =
-    IO(System.currentTimeMillis)
+  )(runJob: JobId => F[Option[Job]]): F[Option[Job]] =
+    F.delay(System.currentTimeMillis)
       .product(jobName.freshJobId.flatMap(runJob))
       .flatMap {
         case (t0, Some(runningJob)) =>
-          val mkDuration = IO(System.currentTimeMillis)
+          val mkDuration = F
+            .delay(System.currentTimeMillis)
             .map(t1 => FiniteDuration.apply(t1 - t0, TimeUnit.MILLISECONDS))
 
-          val logged: IO[Job] =
+          val logged: F[Job] =
             BQPoll
-              .poll(
+              .poll[F](
                 runningJob,
                 baseDelay = 3.second,
                 maxDuration = 20.minutes,
                 maxErrorsTolerated = 10
               )(
-                retry = IO.blocking(bigQuery.getJob(runningJob.getJobId))
+                retry = F.blocking(bigQuery.getJob(runningJob.getJobId))
               )
               .flatMap {
-                case BQPoll.Failed(error) => IO.raiseError(error)
-                case BQPoll.Success(job)  => IO.pure(job)
+                case BQPoll.Failed(error) => F.raiseError[Job](error)
+                case BQPoll.Success(job)  => F.pure(job)
               }
               .guaranteeCase {
                 case Outcome.Errored(e) =>
@@ -347,7 +350,7 @@ class BigQueryClient(
                     )
                   } yield ()
                 case Outcome.Succeeded(_) =>
-                  IO.unit // we don't have access to the completed job here
+                  F.unit // we don't have access to the completed job here
               }
               .flatTap(succeededJob =>
                 for {
@@ -365,25 +368,25 @@ class BigQueryClient(
           logged.map(Some.apply)
 
         case (_, None) =>
-          IO.pure(None)
+          F.pure(None)
       }
 
   def getTable(
       tableId: TableId,
       tableOptions: Seq[TableOption] = Nil
-  ): IO[Option[Table]] =
-    IO.blocking(
+  ): F[Option[Table]] =
+    F.blocking(
       Option(bigQuery.getTable(tableId, tableOptions: _*)).filter(_.exists())
     )
 
-  def tableExists(tableId: TableId): IO[Table] =
+  def tableExists(tableId: TableId): F[Table] =
     getTable(tableId).flatMap {
       case None =>
-        IO.raiseError(new RuntimeException(s"Table $tableId does not exists"))
-      case Some(table) => IO.pure(table)
+        F.raiseError(new RuntimeException(s"Table $tableId does not exists"))
+      case Some(table) => F.pure(table)
     }
 
-  def dryRun(jobName: BQJobName, query: BQSqlFrag): IO[Job] =
+  def dryRun(jobName: BQJobName, query: BQSqlFrag): F[Job] =
     jobName.freshJobId.flatMap { jobId =>
       val jobInfo = JobInfo.of(
         jobId,
@@ -392,23 +395,23 @@ class BigQueryClient(
           .setDryRun(true)
           .build()
       )
-      IO.blocking(bigQuery.create(jobInfo))
+      F.blocking(bigQuery.create(jobInfo))
     }
 
-  def create(table: TableInfo): IO[Table] =
-    IO(bigQuery.create(table))
+  def create(table: TableInfo): F[Table] =
+    F.delay(bigQuery.create(table))
 
-  def update(table: TableInfo): IO[Table] =
-    IO(bigQuery.update(table))
+  def update(table: TableInfo): F[Table] =
+    F.delay(bigQuery.update(table))
 
-  def delete(tableId: TableId): IO[Boolean] =
-    IO(bigQuery.delete(tableId))
+  def delete(tableId: TableId): F[Boolean] =
+    F.delay(bigQuery.delete(tableId))
 
   def tablesIn(
       datasetId: DatasetId,
       datasetOptions: Seq[BigQuery.TableListOption] = Nil
-  ): IO[Vector[BQTableRef[Any]]] =
-    IO.blocking(bigQuery.listTables(datasetId, datasetOptions: _*)).flatMap {
+  ): F[Vector[BQTableRef[Any]]] =
+    F.blocking(bigQuery.listTables(datasetId, datasetOptions: _*)).flatMap {
       tables =>
         tables
           .iterateAll()
@@ -420,7 +423,7 @@ class BigQueryClient(
               case definition: StandardTableDefinition =>
                 BQPartitionType.from(definition) match {
                   case Right(partitionType) =>
-                    IO.pure(Some(BQTableRef(tableId, partitionType)))
+                    F.pure(Some(BQTableRef(tableId, partitionType)))
                   case Left(msg) =>
                     logger
                       .warn(
@@ -470,11 +473,11 @@ object BigQueryClient {
           .build()
       )
 
-  def readerResource(
+  def readerResource[F[_]](
       credentials: Credentials
-  ): Resource[IO, BigQueryReadClient] =
+  )(implicit F: Async[F]): Resource[F, BigQueryReadClient] =
     Resource.fromAutoCloseable(
-      IO.blocking {
+      F.blocking {
         BigQueryReadClient.create(
           BigQueryReadSettings
             .newBuilder()
@@ -486,12 +489,12 @@ object BigQueryClient {
       }
     )
 
-  def fromCredentials(
+  def fromCredentials[F[_]](
       credentials: Credentials,
       configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] =
         None
-  ): IO[BigQuery] =
-    IO.blocking {
+  )(implicit F: Async[F]): F[BigQuery] =
+    F.blocking {
       val conf = configure.getOrElse(defaultConfigure(_))
       conf(BigQueryOptions.newBuilder())
         .setCredentials(credentials)
@@ -499,12 +502,12 @@ object BigQueryClient {
         .getService
     }
 
-  def resource(
+  def resource[F[_]](
       credentials: Credentials,
-      tracker: BQTracker,
+      tracker: BQTracker[F],
       configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] =
         None
-  ): Resource[IO, BigQueryClient] =
+  )(implicit F: Async[F]): Resource[F, BigQueryClient[F]] =
     for {
       bq <- Resource.eval(
         BigQueryClient.fromCredentials(credentials, configure)

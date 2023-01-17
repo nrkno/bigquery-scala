@@ -1,42 +1,49 @@
 package no.nrk.bigquery
 
+import cats.effect.Concurrent
+import cats.syntax.all._
 import no.nrk.bigquery.implicits._
-import cats.effect.IO
 import com.google.cloud.bigquery.TableId
 import fs2.Stream
 
 import java.time.{Instant, LocalDate, YearMonth}
 
 private[bigquery] object PartitionLoader {
-  def loadGenericPartitions(
+  def loadGenericPartitions[F[_]: Concurrent](
       table: BQTableLike[Any],
-      client: BigQueryClient,
+      client: BigQueryClient[F],
       startDate: StartDate[Any],
       requireRowNums: Boolean = false
-  ): IO[Vector[(BQPartitionId[Any], PartitionMetadata)]] =
+  ): F[Vector[(BQPartitionId[Any], PartitionMetadata)]] =
     table.partitionType match {
       case x: BQPartitionType.DatePartitioned =>
-        PartitionLoader.date(
-          table.withTableType[LocalDate](x),
-          x.field,
-          client,
-          startDate.asDate,
-          requireRowNums
-        )
+        PartitionLoader
+          .date(
+            table.withTableType[LocalDate](x),
+            x.field,
+            client,
+            startDate.asDate,
+            requireRowNums
+          )
+          .widen
       case x: BQPartitionType.MonthPartitioned =>
-        PartitionLoader.month(
-          table.withTableType[YearMonth](x),
-          x.field,
-          client,
-          startDate.asMonth,
-          requireRowNums
-        )
+        PartitionLoader
+          .month(
+            table.withTableType[YearMonth](x),
+            x.field,
+            client,
+            startDate.asMonth,
+            requireRowNums
+          )
+          .widen
       case sharded: BQPartitionType.Sharded =>
-        PartitionLoader.shard(
-          table.withTableType[LocalDate](sharded),
-          client,
-          startDate.asDate
-        )
+        PartitionLoader
+          .shard(
+            table.withTableType[LocalDate](sharded),
+            client,
+            startDate.asDate
+          )
+          .widen
       case notPartitioned: BQPartitionType.NotPartitioned =>
         PartitionLoader
           .unpartitioned(table.withTableType[Unit](notPartitioned), client)
@@ -53,14 +60,16 @@ private[bigquery] object PartitionLoader {
     LocalDate.parse(tableName.takeRight(8), BQPartitionId.localDateNoDash)
 
   object date {
-    def apply(
+    def apply[F[_]](
         table: BQTableLike[LocalDate],
         field: Ident,
-        client: BigQueryClient,
+        client: BigQueryClient[F],
         startDate: StartDate[LocalDate],
         requireRowNums: Boolean
-    ): IO[Vector[(BQPartitionId.DatePartitioned, PartitionMetadata)]] = {
-      val rowNumByDate: IO[Map[LocalDate, Long]] =
+    )(implicit
+        F: Concurrent[F]
+    ): F[Vector[(BQPartitionId.DatePartitioned, PartitionMetadata)]] = {
+      val rowNumByDate: F[Map[LocalDate, Long]] =
         if (requireRowNums)
           client
             .synchronousQuery(
@@ -69,10 +78,10 @@ private[bigquery] object PartitionLoader {
             )
             .compile
             .to(Map)
-        else IO.pure(Map.empty)
+        else F.pure(Map.empty)
 
       // views do not have metadata we can ask with partitions, so fire an actual query to get the data
-      val rowsIO: Stream[IO, (LocalDate, Option[Instant], Option[Instant])] =
+      val rowsIO: Stream[F, (LocalDate, Option[Instant], Option[Instant])] =
         table match {
           case view: BQTableDef.View[LocalDate] =>
             client
@@ -143,14 +152,16 @@ private[bigquery] object PartitionLoader {
   }
 
   object month {
-    def apply(
+    def apply[F[_]](
         table: BQTableLike[YearMonth],
         field: Ident,
-        client: BigQueryClient,
+        client: BigQueryClient[F],
         start: StartDate[YearMonth],
         requireRowNums: Boolean
-    ): IO[Vector[(BQPartitionId.MonthPartitioned, PartitionMetadata)]] = {
-      val rowNumByDate: IO[Map[YearMonth, Long]] =
+    )(implicit
+        F: Concurrent[F]
+    ): F[Vector[(BQPartitionId.MonthPartitioned, PartitionMetadata)]] = {
+      val rowNumByDate: F[Map[YearMonth, Long]] =
         if (requireRowNums)
           client
             .synchronousQuery(
@@ -159,10 +170,10 @@ private[bigquery] object PartitionLoader {
             )
             .compile
             .to(Map)
-        else IO.pure(Map.empty)
+        else F.pure(Map.empty)
 
       // views do not have metadata we can ask with partitions, so fire an actual query to get the data
-      val rowsIO: Stream[IO, (YearMonth, Option[Instant], Option[Instant])] =
+      val rowsIO: Stream[F, (YearMonth, Option[Instant], Option[Instant])] =
         table match {
           case view: BQTableDef.View[YearMonth] =>
             val query = allPartitionsQueries
@@ -235,11 +246,13 @@ private[bigquery] object PartitionLoader {
   }
 
   object shard {
-    def apply(
+    def apply[F[_]](
         table: BQTableLike[LocalDate],
-        client: BigQueryClient,
+        client: BigQueryClient[F],
         startDate: StartDate[LocalDate]
-    ): IO[Vector[(BQPartitionId.Sharded, PartitionMetadata)]] =
+    )(implicit
+        F: Concurrent[F]
+    ): F[Vector[(BQPartitionId.Sharded, PartitionMetadata)]] =
       client
         .synchronousQuery(
           BQJobName.auto,
@@ -286,10 +299,12 @@ private[bigquery] object PartitionLoader {
   }
 
   object unpartitioned {
-    def apply(
+    def apply[F[_]](
         table: BQTableLike[Unit],
-        client: BigQueryClient
-    ): IO[(BQPartitionId.NotPartitioned, PartitionMetadata)] =
+        client: BigQueryClient[F]
+    )(implicit
+        F: Concurrent[F]
+    ): F[(BQPartitionId.NotPartitioned, PartitionMetadata)] =
       client
         .synchronousQuery(
           BQJobName.auto,
