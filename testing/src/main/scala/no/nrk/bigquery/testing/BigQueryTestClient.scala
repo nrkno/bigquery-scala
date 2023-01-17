@@ -105,21 +105,21 @@ object BigQueryTestClient {
     )
 
   def serializeSchema(path: Path, schema: avro.Schema): IO[Unit] =
-    IO {
+    IO.blocking {
       Files.createDirectories(path.getParent)
-      Files.writeString(path, schema.toString(true), StandardCharsets.UTF_8)
+      Files.write(path, schema.toString(true).getBytes(StandardCharsets.UTF_8))
       ()
     }
 
   def deserializeSchema(path: Path): IO[avro.Schema] =
-    IO(new avro.Schema.Parser().parse(Files.readString(path)))
+    IO.blocking(new avro.Schema.Parser().parse(Files.newInputStream(path)))
 
   def serializeRows(
       path: Path,
       schema: avro.Schema,
       rows: Vector[GenericRecord]
   ): IO[Unit] =
-    IO {
+    IO.blocking {
       Files.createDirectories(path.getParent)
       val fileWriter =
         new DataFileWriter(new GenericDatumWriter[GenericRecord](schema))
@@ -133,14 +133,14 @@ object BigQueryTestClient {
       schema: avro.Schema
   ): Stream[IO, GenericRecord] = {
     val reader: Resource[IO, DataFileReader[GenericRecord]] =
-      Resource.make(
-        IO(
+      Resource.fromAutoCloseable(
+        IO.blocking(
           new DataFileReader(
             path.toFile,
             new GenericDatumReader[GenericRecord](schema)
           )
         )
-      )(reader => IO(reader.close()))
+      )
 
     Stream.resource(reader).flatMap { reader =>
       Stream.fromBlockingIterator[IO].apply(reader.iterator().asScala, 1000)
