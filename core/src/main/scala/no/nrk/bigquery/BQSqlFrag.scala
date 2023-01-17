@@ -146,7 +146,7 @@ object BQSqlFrag {
     *
     * Note that the implementation will give you what you ask for, unless the
     * list is empty
-    * @throws Exception
+    * @throws java.lang.IllegalArgumentException
     *   if the list is empty
     */
   def asSubQuery[I[t] <: Iterable[t], Pid <: BQPartitionId[Any]](
@@ -162,15 +162,15 @@ object BQSqlFrag {
               x
             }.sorted match {
               case sharded @ (first :: _) =>
-                /** Note: it's physically impossible to perform this query
-                  * without splitting the date:
-                  * shard.partition.format(localDateNoDash) == for instance
-                  * "20210101"
-                  *
-                  * If we ask for `gasessions_*` BQ will match a view and bail
-                  * out So we ask for `gasessions_2*` and strip the `2` in the
-                  * table suffix
-                  */
+                /* Note: it's physically impossible to perform this query
+                 * without splitting the date:
+                 * shard.partition.format(localDateNoDash) == for instance
+                 * "20210101"
+                 *
+                 * If we ask for `gasessions_*` BQ will match a view and bail
+                 * out So we ask for `gasessions_2*` and strip the `2` in the
+                 * table suffix
+                 */
                 sharded
                   .map(_.partition.format(BQPartitionId.localDateNoDash))
                   .groupBy(_.head)

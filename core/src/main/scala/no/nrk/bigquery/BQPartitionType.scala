@@ -21,15 +21,8 @@ import java.time.{LocalDate, YearMonth}
   *
   * It is parametrized by two types
   * @tparam Param
-  *   A type which distinguishes one partition, typically [[LocalDate]]
-  * @tparam Id
-  *   a subtype of [[BQPartitionId]]
-  *
-  * As such the [[BQPartitionType]] establishes a mapping from [[Param]] to
-  * [[Id]].
-  *
-  * It is also a mapping back and forth to [[TimePartitioning]] /
-  * [[RangePartitioning]]
+  *   A type which distinguishes one partition, typically
+  *   [[java.time.LocalDate]]
   *
   * It is meant that when we add support for more partition schemes, the first
   * step is to add a new subtype here.
