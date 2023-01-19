@@ -21,7 +21,7 @@ import java.nio.file.{Files, Path}
 abstract class BQSmokeTest extends CatsEffectSuite {
   val assertStableTables: List[BQTableLike[Any]] = Nil
 
-  val bqClient: Fixture[BigQueryClient] = ResourceSuiteLocalFixture(
+  val bqClient: Fixture[BigQueryClient[IO]] = ResourceSuiteLocalFixture(
     "bqClient",
     BigQueryTestClient.testClient
   )
@@ -179,7 +179,7 @@ private object BQSmokeTest {
       checkType: CheckType,
       assertStable: Seq[BQTableLike[Any]],
       target: GeneratedTest
-  ): BigQueryClient => IO[Unit] = { bqClient =>
+  ): BigQueryClient[IO] => IO[Unit] = { bqClient =>
     val compareAsIs = IO(
       target.writeAndCompare(
         target.testFileForName(s"$testName.sql"),

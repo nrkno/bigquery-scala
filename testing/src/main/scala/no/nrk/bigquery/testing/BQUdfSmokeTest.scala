@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 class BQUdfSmokeTest extends CatsEffectSuite {
-  val bqClient: Fixture[BigQueryClient] = ResourceSuiteLocalFixture(
+  val bqClient: Fixture[BigQueryClient[IO]] = ResourceSuiteLocalFixture(
     "bqClient",
     BigQueryTestClient.testClient
   )
@@ -52,7 +52,7 @@ object BQUdfSmokeTest {
   def bqEvaluateCall(
       testName: String,
       call: BQSqlFrag.Call
-  ): BigQueryClient => IO[Json] = { bqClient =>
+  ): BigQueryClient[IO] => IO[Json] = { bqClient =>
     val query = bqfr"SELECT TO_JSON_STRING($call)"
     val cachedQuery = CachedQuery(query)
 

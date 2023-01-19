@@ -1,8 +1,10 @@
 package no.nrk.bigquery
 
-import cats.effect.IO
+import cats.effect.Async
+import cats.effect.implicits._
+import cats.syntax.all._
 import com.google.cloud.bigquery.{BigQueryError, Job, JobStatus}
-import org.typelevel.log4cats.slf4j._
+import org.typelevel.log4cats.LoggerFactory
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
@@ -12,8 +14,6 @@ import scala.util.Random
 sealed trait BQPoll
 
 object BQPoll {
-  protected lazy val logger = Slf4jFactory.getLogger[IO]
-
   sealed trait NotFinished extends BQPoll
   case object Unknown extends NotFinished
   case object Pending extends NotFinished
@@ -23,19 +23,22 @@ object BQPoll {
   case class Failed(error: BQExecutionException) extends Finished
   case class Success(job: Job) extends Finished
 
-  def poll(
+  def poll[F[_]](
       runningJob: Job,
       baseDelay: FiniteDuration,
       maxDuration: FiniteDuration,
       maxErrorsTolerated: Int
-  )(retry: IO[Job]): IO[BQPoll.Finished] = {
+  )(
+      retry: F[Job]
+  )(implicit F: Async[F], lf: LoggerFactory[F]): F[BQPoll.Finished] = {
+    val logger = lf.getLogger
     def go(
         runningJob: Job,
         seenErrors: List[Throwable],
         seenNotFinished: List[BQPoll.NotFinished]
-    ): IO[BQPoll.Finished] =
+    ): F[BQPoll.Finished] =
       fromJob(runningJob) match {
-        case x: BQPoll.Finished => IO.pure(x)
+        case x: BQPoll.Finished => F.pure(x)
         case notFinished: BQPoll.NotFinished =>
           val jobId = runningJob.getJobId
           val newSeenNotFinished = notFinished :: seenNotFinished
@@ -43,13 +46,13 @@ object BQPoll {
 
           logger.info(
             s"sleeping ${waitFor.toMillis}ms before polling ${jobId.getJob}. Current status $notFinished"
-          ) >> IO.sleep(waitFor) >> retry.attempt
+          ) >> F.sleep(waitFor) >> retry.attempt
             .flatMap {
               case Left(error) =>
                 val newSeenErrors = error :: seenErrors
 
                 if (newSeenErrors.length == maxErrorsTolerated) {
-                  IO.raiseError(error) // will be logged later
+                  F.raiseError(error) // will be logged later
                 } else {
                   logger.info(error)(
                     s"Network error while polling $jobId. Retrying"
@@ -62,10 +65,10 @@ object BQPoll {
             }
       }
 
-    IO.sleep(maxDuration).race(go(runningJob, Nil, Nil)).flatMap {
+    F.sleep(maxDuration).race(go(runningJob, Nil, Nil)).flatMap {
       case Left(_) =>
-        IO.raiseError(BQExecutionException(runningJob.getJobId, None, Nil))
-      case Right(finished) => IO.pure(finished)
+        F.raiseError(BQExecutionException(runningJob.getJobId, None, Nil))
+      case Right(finished) => F.pure(finished)
     }
   }
 

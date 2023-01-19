@@ -1,10 +1,10 @@
 package no.nrk.bigquery
 
+import cats.{Applicative, MonadThrow}
+import cats.syntax.all._
 import no.nrk.bigquery.implicits._
-import cats.effect.IO
-import cats.syntax.show._
 import com.google.cloud.bigquery.{Option => _, _}
-import org.typelevel.log4cats.slf4j._
+import org.typelevel.log4cats.LoggerFactory
 
 import scala.jdk.CollectionConverters._
 
@@ -360,18 +360,20 @@ object UpdateOperation {
 
 }
 
-class EnsureUpdated(bqClient: BigQueryClient) {
-  private val logger = Slf4jFactory.getLogger[IO]
+class EnsureUpdated[F[_]](
+    bqClient: BigQueryClient[F]
+)(implicit F: MonadThrow[F], lf: LoggerFactory[F]) {
+  private val logger = lf.getLogger
 
-  def check(template: BQTableDef[Any]): IO[UpdateOperation] =
+  def check(template: BQTableDef[Any]): F[UpdateOperation] =
     bqClient.getTable(template.tableId).map { maybeExisting =>
       UpdateOperation.from(template, maybeExisting)
     }
 
-  def perform(updateOperation: UpdateOperation): IO[TableInfo] =
+  def perform(updateOperation: UpdateOperation): F[TableInfo] =
     updateOperation match {
       case UpdateOperation.Noop(existingRemoteTable, _) =>
-        IO.pure(existingRemoteTable)
+        Applicative[F].pure(existingRemoteTable)
 
       case UpdateOperation.Create(to, table, maybePatchedTable) =>
         for {
@@ -381,14 +383,14 @@ class EnsureUpdated(bqClient: BigQueryClient) {
           created <- bqClient.create(table)
           updated <- maybePatchedTable match {
             case Some(patchedTable) => bqClient.update(patchedTable)
-            case None               => IO.pure(created)
+            case None               => Applicative[F].pure(created)
           }
         } yield updated
 
       case UpdateOperation.UpdateTable(from, to, table) =>
         val msg =
           show"Updating ${table.getTableId} of type ${to.getClass.getSimpleName} from ${from.toString}, to ${to.toString}"
-        logger.warn(msg) >> bqClient.update(table)
+        logger.warn(msg) >> bqClient.update(table).widen[TableInfo]
 
       case UpdateOperation.RecreateView(from, to, createNew) =>
         val msg =
@@ -400,7 +402,7 @@ class EnsureUpdated(bqClient: BigQueryClient) {
         } yield updated
 
       case UpdateOperation.Illegal(existingRemoteTable, _, reason) =>
-        IO.raiseError(
+        MonadThrow[F].raiseError(
           new RuntimeException(
             show"Illegal update of ${existingRemoteTable.getTableId}: $reason"
           )
@@ -411,7 +413,7 @@ class EnsureUpdated(bqClient: BigQueryClient) {
             _,
             reason
           ) =>
-        IO.raiseError(
+        MonadThrow[F].raiseError(
           new RuntimeException(
             show"Illegal change of partition schema for ${existingRemoteTable.getTableId}. $reason"
           )
@@ -422,7 +424,7 @@ class EnsureUpdated(bqClient: BigQueryClient) {
             _,
             reason
           ) =>
-        IO.raiseError(
+        MonadThrow[F].raiseError(
           new RuntimeException(
             show"Invalid table update of ${existingRemoteTable.getTableId}: $reason"
           )

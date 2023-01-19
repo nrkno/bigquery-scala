@@ -1,26 +1,26 @@
 package no.nrk.bigquery
 
-import cats.effect.IO
+import cats.Applicative
 import com.google.cloud.bigquery.JobStatistics
 
 import scala.concurrent.duration.FiniteDuration
 
-trait BQTracker {
+trait BQTracker[F[_]] {
   def apply(
       duration: FiniteDuration,
       jobName: BQJobName,
       isSuccess: Boolean,
       stats: Option[JobStatistics]
-  ): IO[Unit]
+  ): F[Unit]
 }
 
 object BQTracker {
-  object Noop extends BQTracker {
+  class Noop[F[_]](implicit F: Applicative[F]) extends BQTracker[F] {
     override def apply(
         duration: FiniteDuration,
         jobName: BQJobName,
         isSuccess: Boolean,
         stats: Option[JobStatistics]
-    ): IO[Unit] = IO.unit
+    ): F[Unit] = F.unit
   }
 }
