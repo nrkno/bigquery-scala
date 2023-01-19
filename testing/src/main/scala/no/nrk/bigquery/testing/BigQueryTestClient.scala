@@ -14,6 +14,7 @@ import org.apache.avro.generic.{
   GenericDatumWriter,
   GenericRecord
 }
+import org.typelevel.log4cats.LoggerFactory
 import org.typelevel.log4cats.slf4j._
 
 import java.io.ByteArrayInputStream
@@ -54,7 +55,7 @@ object BigQueryTestClient {
       underlying <- BigQueryClient.resource(credentials, new BQTracker.Noop[IO])
     } yield underlying
 
-  private val logger = Slf4jFactory.getLogger[IO]
+  private val logger = LoggerFactory.getLogger[IO]
 
   val cachingClient: Resource[IO, BigQueryClient[IO]] =
     testClient.map(client =>

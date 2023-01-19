@@ -1,12 +1,10 @@
 package no.nrk.bigquery
 
 import no.nrk.bigquery.implicits._
-
 import cats.effect.kernel.Outcome
 import cats.syntax.all._
-import cats.effect.{Resource, Async}
+import cats.effect.{Async, Resource}
 import cats.effect.implicits._
-
 import com.google.api.gax.core.FixedCredentialsProvider
 import com.google.api.gax.retrying.RetrySettings
 import com.google.api.gax.rpc.ServerStream
@@ -24,7 +22,7 @@ import org.apache.avro
 import org.apache.avro.generic.{GenericDatumReader, GenericRecord}
 import org.apache.avro.io.DecoderFactory
 import org.threeten.bp.Duration
-import org.typelevel.log4cats.slf4j._
+import org.typelevel.log4cats.LoggerFactory
 
 import java.time.Instant
 import java.util.UUID
@@ -36,8 +34,8 @@ class BigQueryClient[F[_]](
     bigQuery: BigQuery,
     val reader: BigQueryReadClient,
     val track: BQTracker[F]
-)(implicit F: Async[F]) {
-  private val logger = Slf4jFactory.getLogger[F]
+)(implicit F: Async[F], lf: LoggerFactory[F]) {
+  private val logger = lf.getLogger
 
   def underlying: BigQuery = bigQuery
 
@@ -502,12 +500,12 @@ object BigQueryClient {
         .getService
     }
 
-  def resource[F[_]](
+  def resource[F[_]: Async: LoggerFactory](
       credentials: Credentials,
       tracker: BQTracker[F],
       configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] =
         None
-  )(implicit F: Async[F]): Resource[F, BigQueryClient[F]] =
+  ): Resource[F, BigQueryClient[F]] =
     for {
       bq <- Resource.eval(
         BigQueryClient.fromCredentials(credentials, configure)

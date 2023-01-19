@@ -360,10 +360,10 @@ object UpdateOperation {
 
 }
 
-class EnsureUpdated[F[_]: MonadThrow: LoggerFactory](
+class EnsureUpdated[F[_]](
     bqClient: BigQueryClient[F]
-) {
-  private val logger = LoggerFactory.getLogger[F]
+)(implicit F: MonadThrow[F], lf: LoggerFactory[F]) {
+  private val logger = lf.getLogger
 
   def check(template: BQTableDef[Any]): F[UpdateOperation] =
     bqClient.getTable(template.tableId).map { maybeExisting =>
