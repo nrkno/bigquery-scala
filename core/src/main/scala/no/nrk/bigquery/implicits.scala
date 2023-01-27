@@ -86,11 +86,11 @@ object implicits {
   implicit val showDataset: Show[DatasetId] =
     Show.show(tid => s"`${tid.getProject}.${tid.getDataset}`")
 
-  @deprecated(message = "use BQTableId instead", since="0.1")
+  @deprecated(message = "use BQTableId instead", since = "0.1")
   def formatTableId(tableId: TableId): String =
     s"${tableId.getProject}.${tableId.getDataset}.${tableId.getTable}"
   // note, this is not a `BQShow` instance because we're no longer supposed to use TableId, and rather use descendants of `BQData`
-  @deprecated(message = "use BQTableId instead", since="0.1")
+  @deprecated(message = "use BQTableId instead", since = "0.1")
   def bqFormatTableId(tableId: TableId): BQSqlFrag = BQSqlFrag(
     s"`${formatTableId(tableId)}`"
   )

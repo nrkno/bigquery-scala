@@ -285,7 +285,9 @@ private[bigquery] object PartitionLoader {
 
       BQQuery {
         bqfr"""|SELECT table_id, creation_time, last_modified_time, row_count, size_bytes
-               |FROM [${BQSqlFrag(table.tableId.dataset.project.value)}:${BQSqlFrag(
+               |FROM [${BQSqlFrag(
+                table.tableId.dataset.project.value
+              )}:${BQSqlFrag(
                 table.tableId.dataset.id
               )}.__TABLES__]
                |WHERE REGEXP_MATCH(table_id, r"${BQSqlFrag(
@@ -329,7 +331,9 @@ private[bigquery] object PartitionLoader {
       val query =
         bqfr"""
       SELECT creation_time, last_modified_time, row_count, size_bytes
-      FROM [${BQSqlFrag(tableId.dataset.project.value)}:${BQSqlFrag(tableId.dataset.id)}.__TABLES__]
+      FROM [${BQSqlFrag(tableId.dataset.project.value)}:${BQSqlFrag(
+            tableId.dataset.id
+          )}.__TABLES__]
       WHERE table_id = ${StringValue(tableId.tableName)}"""
 
       BQQuery(query)(BQRead.derived)
@@ -345,7 +349,9 @@ private[bigquery] object PartitionLoader {
     ): BQQuery[(String, LongInstant, LongInstant)] = {
       // legacy sql table reference with a table decorator to ask for all partitions. this syntax is not available in standard sql
       val partitionsSummary =
-        bqfr"[${BQSqlFrag(table.tableId.dataset.project.value)}.${BQSqlFrag(table.tableId.dataset.id)}.${BQSqlFrag(table.tableId.tableName)}$$__PARTITIONS_SUMMARY__]"
+        bqfr"[${BQSqlFrag(table.tableId.dataset.project.value)}.${BQSqlFrag(
+            table.tableId.dataset.id
+          )}.${BQSqlFrag(table.tableId.tableName)}$$__PARTITIONS_SUMMARY__]"
 
       BQQuery {
         bqfr"""|SELECT x.partition_id, x.creation_time, x.last_modified_time
