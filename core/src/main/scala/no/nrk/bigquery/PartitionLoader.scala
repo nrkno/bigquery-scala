@@ -3,7 +3,6 @@ package no.nrk.bigquery
 import cats.effect.Concurrent
 import cats.syntax.all._
 import no.nrk.bigquery.implicits._
-import com.google.cloud.bigquery.TableId
 import fs2.Stream
 
 import java.time.{Instant, LocalDate, YearMonth}
@@ -281,16 +280,16 @@ private[bigquery] object PartitionLoader {
       val inRange = startDate match {
         case StartDate.All => bqfr"true"
         case StartDate.FromDate(startInclusive) =>
-          bqfr"table_id >= ${StringValue(BQPartitionId.Sharded(table, startInclusive).asTableId.getTable)}"
+          bqfr"table_id >= ${StringValue(BQPartitionId.Sharded(table, startInclusive).asTableId.tableName)}"
       }
 
       BQQuery {
         bqfr"""|SELECT table_id, creation_time, last_modified_time, row_count, size_bytes
-               |FROM [${BQSqlFrag(table.tableId.getProject)}:${BQSqlFrag(
-                table.tableId.getDataset
+               |FROM [${BQSqlFrag(table.tableId.dataset.project.value)}:${BQSqlFrag(
+                table.tableId.dataset.id
               )}.__TABLES__]
                |WHERE REGEXP_MATCH(table_id, r"${BQSqlFrag(
-                table.tableId.getTable
+                table.tableId.tableName
               )}_[0-9]+")
                |AND $inRange
                |ORDER BY 1 DESC""".stripMargin
@@ -324,16 +323,14 @@ private[bigquery] object PartitionLoader {
         .compile
         .lastOrError
 
-    def partitionQuery(tableId: TableId): BQQuery[
+    def partitionQuery(tableId: BQTableId): BQQuery[
       (Option[LongInstant], Option[LongInstant], Option[Long], Option[Long])
     ] = {
       val query =
         bqfr"""
       SELECT creation_time, last_modified_time, row_count, size_bytes
-      FROM [${BQSqlFrag(tableId.getProject)}:${BQSqlFrag(
-            tableId.getDataset
-          )}.__TABLES__]
-      WHERE table_id = ${StringValue(tableId.getTable)}"""
+      FROM [${BQSqlFrag(tableId.dataset.project.value)}:${BQSqlFrag(tableId.dataset.id)}.__TABLES__]
+      WHERE table_id = ${StringValue(tableId.tableName)}"""
 
       BQQuery(query)(BQRead.derived)
     }
@@ -348,9 +345,7 @@ private[bigquery] object PartitionLoader {
     ): BQQuery[(String, LongInstant, LongInstant)] = {
       // legacy sql table reference with a table decorator to ask for all partitions. this syntax is not available in standard sql
       val partitionsSummary =
-        bqfr"[${BQSqlFrag(table.tableId.getProject)}.${BQSqlFrag(
-            table.tableId.getDataset
-          )}.${BQSqlFrag(table.tableId.getTable)}$$__PARTITIONS_SUMMARY__]"
+        bqfr"[${BQSqlFrag(table.tableId.dataset.project.value)}.${BQSqlFrag(table.tableId.dataset.id)}.${BQSqlFrag(table.tableId.tableName)}$$__PARTITIONS_SUMMARY__]"
 
       BQQuery {
         bqfr"""|SELECT x.partition_id, x.creation_time, x.last_modified_time

@@ -8,12 +8,13 @@ import no.nrk.bigquery.implicits._
 
 class EnsureUpdatedTest extends FunSuite {
 
-  val a: BQField = BQField("a", StandardSQLTypeName.INT64, Mode.REQUIRED)
-  val b: BQField = BQField("b", StandardSQLTypeName.INT64, Mode.REQUIRED)
-  val c: BQField = BQField("c", StandardSQLTypeName.INT64, Mode.REQUIRED)
-  val viewId: TableId = TableId.of("project", "dataset", "view")
-  val tableId: TableId = TableId.of("project", "dataset", "table")
-  val materializedViewId: TableId = TableId.of("project", "dataset", "mat_view")
+  val a = BQField("a", StandardSQLTypeName.INT64, Mode.REQUIRED)
+  val b = BQField("b", StandardSQLTypeName.INT64, Mode.REQUIRED)
+  val c = BQField("c", StandardSQLTypeName.INT64, Mode.REQUIRED)
+  val viewId = BQTableId.of(ProjectId("project"), "dataset", "view")
+  val tableId = BQTableId.of(ProjectId("project"), "dataset", "table")
+  val materializedViewId =
+    BQTableId.of(ProjectId("project"), "dataset", "mat_view")
 
   test("views with schema should trigger update after create") {
     val schema = BQSchema.of(a)
@@ -52,7 +53,7 @@ class EnsureUpdatedTest extends FunSuite {
     val remote = Some(
       TableInfo
         .newBuilder(
-          viewId,
+          viewId.underlying,
           ViewDefinition
             .newBuilder(query.asStringWithUDFs)
             .setSchema(schema.toSchema)
@@ -95,7 +96,7 @@ class EnsureUpdatedTest extends FunSuite {
       Some(
         TableInfo
           .newBuilder(
-            viewId,
+            viewId.underlying,
             ViewDefinition
               .newBuilder(query.asStringWithUDFs)
               .setSchema(schema.toSchema)
@@ -126,7 +127,7 @@ class EnsureUpdatedTest extends FunSuite {
     val remote = Some(
       TableInfo
         .newBuilder(
-          viewId,
+          viewId.underlying,
           StandardTableDefinition.newBuilder.setSchema(schema.toSchema).build()
         )
         .setFriendlyName(friendlyName)
@@ -155,7 +156,7 @@ class EnsureUpdatedTest extends FunSuite {
     val actualTable = Some(
       TableInfo
         .newBuilder(
-          viewId,
+          viewId.underlying,
           StandardTableDefinition.newBuilder
             .setSchema(BQSchema.of(a, b).toSchema)
             .build()
@@ -181,7 +182,7 @@ class EnsureUpdatedTest extends FunSuite {
     val actualTable = Some(
       TableInfo
         .newBuilder(
-          viewId,
+          viewId.underlying,
           StandardTableDefinition.newBuilder
             .setSchema(BQSchema.of(a, b).toSchema)
             .build()
@@ -211,7 +212,7 @@ class EnsureUpdatedTest extends FunSuite {
     val actualTable = Some(
       TableInfo
         .newBuilder(
-          viewId,
+          viewId.underlying,
           StandardTableDefinition.newBuilder
             .setSchema(BQSchema.of(ba).toSchema)
             .build()
@@ -240,7 +241,7 @@ class EnsureUpdatedTest extends FunSuite {
     val actualTable = Some(
       TableInfo
         .newBuilder(
-          viewId,
+          viewId.underlying,
           StandardTableDefinition.newBuilder
             .setSchema(BQSchema.of(bab).toSchema)
             .build()
@@ -273,7 +274,7 @@ class EnsureUpdatedTest extends FunSuite {
     val remote = Some(
       TableInfo
         .newBuilder(
-          materializedViewId,
+          materializedViewId.underlying,
           MaterializedViewDefinition
             .newBuilder(query.asStringWithUDFs)
             .setSchema(testView.schema.toSchema)
@@ -302,7 +303,7 @@ class EnsureUpdatedTest extends FunSuite {
     val remote = Some(
       TableInfo
         .newBuilder(
-          viewId,
+          viewId.underlying,
           StandardTableDefinition.newBuilder
             .setSchema(BQSchema.of(a).toSchema)
             .setTimePartitioning(TimePartitioning.of(Type.HOUR))
@@ -333,7 +334,7 @@ class EnsureUpdatedTest extends FunSuite {
     val remote = Some(
       TableInfo
         .newBuilder(
-          viewId,
+          viewId.underlying,
           StandardTableDefinition.newBuilder
             .setSchema(BQSchema.of(a).toSchema)
             .setTimePartitioning(
@@ -366,7 +367,7 @@ class EnsureUpdatedTest extends FunSuite {
     val remote = Some(
       TableInfo
         .newBuilder(
-          viewId,
+          viewId.underlying,
           StandardTableDefinition.newBuilder
             .setSchema(BQSchema.of(a, c, b).toSchema)
             .build()

@@ -1,8 +1,7 @@
 package no.nrk.bigquery
 
-import no.nrk.bigquery.implicits._
 import cats.syntax.show._
-import com.google.cloud.bigquery.{TableId, TableInfo}
+import com.google.cloud.bigquery.{TableInfo}
 import io.circe.{Decoder, Encoder}
 
 import scala.collection.immutable.SortedMap
@@ -11,7 +10,7 @@ import scala.jdk.CollectionConverters._
 /** @param values sorted for consistent behaviour */
 case class TableLabels(values: SortedMap[String, String]) {
   // https://cloud.google.com/bigquery/docs/labels-intro#requirements
-  def verify(tableId: TableId): Unit = {
+  def verify(tableId: BQTableId): Unit = {
     def fail(msg: String) =
       System.err.println(show"Table $tableId: requirement failed: $msg")
 

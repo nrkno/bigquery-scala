@@ -1,4 +1,5 @@
-package no.nrk.bigquery.testing
+package no.nrk.bigquery
+package testing
 
 import cats.data.OptionT
 import cats.effect.{IO, Resource}
@@ -6,7 +7,6 @@ import cats.syntax.all._
 import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
 import com.google.cloud.bigquery.BigQuery.JobOption
 import fs2.Stream
-import no.nrk.bigquery.{BQJobName, BQSqlFrag, BQTracker, BigQueryClient}
 import org.apache.avro
 import org.apache.avro.file.{DataFileReader, DataFileWriter}
 import org.apache.avro.generic.{
@@ -65,7 +65,8 @@ object BigQueryTestClient {
             query: BQSqlFrag,
             legacySql: Boolean,
             jobOptions: Seq[JobOption],
-            logStream: Boolean
+            logStream: Boolean,
+            location: Option[LocationId]
         ): Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] = {
           val hash =
             java.util.Objects.hash(query, Boolean.box(legacySql), jobOptions)
@@ -78,7 +79,14 @@ object BigQueryTestClient {
               : Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] =
             for {
               tuple <- super
-                .synchronousQueryExecute(jobName, query, legacySql, jobOptions)
+                .synchronousQueryExecute(
+                  jobName,
+                  query,
+                  legacySql,
+                  jobOptions,
+                  logStream,
+                  location
+                )
               (schema, rowStream) = tuple
               _ <- Resource.liftK(serializeSchema(hashedSchemaPath, schema))
               rows <- Resource.liftK(rowStream.compile.toVector)

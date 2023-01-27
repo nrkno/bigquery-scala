@@ -3,8 +3,6 @@ package no.nrk.bigquery
 import cats.effect.Concurrent
 import cats.syntax.all._
 
-import no.nrk.bigquery.implicits._
-import com.google.cloud.bigquery.TableId
 import io.circe._
 import io.circe.syntax._
 
@@ -12,8 +10,8 @@ import io.circe.syntax._
   *   partition specifier. typically [[java.time.LocalDate]] or [[scala.Unit]]
   */
 sealed trait BQTableLike[+P] {
-  val tableId: TableId
-  val partitionType: BQPartitionType[P]
+  def tableId: BQTableId
+  def partitionType: BQPartitionType[P]
   def withTableType[PP](tpe: BQPartitionType[PP]): BQTableLike[PP]
   def unpartitioned: BQTableLike[Unit]
 }
@@ -94,7 +92,7 @@ object BQTableLike {
   * also lose the ability to construct legal [[BQPartitionId]] s with
   * `assertPartition`
   */
-case class BQTableRef[+P](tableId: TableId, partitionType: BQPartitionType[P])
+case class BQTableRef[+P](tableId: BQTableId, partitionType: BQPartitionType[P])
     extends BQTableLike[P] {
   override def unpartitioned: BQTableRef[Unit] =
     withTableType(BQPartitionType.ignoredPartitioning(partitionType))
@@ -106,10 +104,10 @@ case class BQTableRef[+P](tableId: TableId, partitionType: BQPartitionType[P])
 /** Our version of a description of what a BQ table/view should look like.
   */
 sealed trait BQTableDef[+P] extends BQTableLike[P] {
-  val tableId: TableId
-  val description: Option[String]
-  val schema: BQSchema
-  val labels: TableLabels
+  def tableId: BQTableId
+  def description: Option[String]
+  def schema: BQSchema
+  def labels: TableLabels
 
   labels.verify(tableId)
 }
@@ -163,7 +161,7 @@ object BQTableDef {
     *   table description
     */
   case class Table[+P](
-      tableId: TableId,
+      tableId: BQTableId,
       schema: BQSchema,
       partitionType: BQPartitionType[P],
       description: Option[String] = None,
@@ -184,7 +182,7 @@ object BQTableDef {
   }
 
   case class View[+P](
-      tableId: TableId,
+      tableId: BQTableId,
       // this doesn't exist physically, only in a sense when querying
       partitionType: BQPartitionType[P],
       query: BQSqlFrag,
@@ -212,7 +210,7 @@ object BQTableDef {
     *   on.
     */
   case class MaterializedView[+P](
-      tableId: TableId,
+      tableId: BQTableId,
       partitionType: BQPartitionType[P],
       query: BQSqlFrag,
       schema: BQSchema,

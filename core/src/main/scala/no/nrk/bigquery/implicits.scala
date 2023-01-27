@@ -4,6 +4,8 @@ import cats.Show
 import com.google.cloud.bigquery.{Option => _, _}
 import io.circe.{Decoder, Encoder}
 
+import scala.annotation.nowarn
+
 object implicits {
   // suppress not used warnings
   private[bigquery] def assertIsUsed(a: Any*): Unit = (a, ())._2
@@ -84,13 +86,19 @@ object implicits {
   implicit val showDataset: Show[DatasetId] =
     Show.show(tid => s"`${tid.getProject}.${tid.getDataset}`")
 
+  @deprecated(message = "use BQTableId instead", since="0.1")
   def formatTableId(tableId: TableId): String =
     s"${tableId.getProject}.${tableId.getDataset}.${tableId.getTable}"
   // note, this is not a `BQShow` instance because we're no longer supposed to use TableId, and rather use descendants of `BQData`
+  @deprecated(message = "use BQTableId instead", since="0.1")
   def bqFormatTableId(tableId: TableId): BQSqlFrag = BQSqlFrag(
     s"`${formatTableId(tableId)}`"
   )
+
+  @nowarn
   implicit val showTableId: Show[TableId] = tid => s"`${formatTableId(tid)}`"
+
+  @nowarn
   implicit val orderingTableId: Ordering[TableId] = Ordering.by(formatTableId)
 
   implicit val tableIdEncoder: Encoder[TableId] =

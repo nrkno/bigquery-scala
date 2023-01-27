@@ -2,7 +2,6 @@ package no.nrk.bigquery
 
 import no.nrk.bigquery.implicits._
 import cats.Show
-import com.google.cloud.bigquery.TableId
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, YearMonth}
@@ -24,7 +23,7 @@ import java.time.{LocalDate, YearMonth}
 sealed trait BQPartitionId[+P] {
   val partition: P
   val wholeTable: BQTableLike[P]
-  def asTableId: TableId
+  def asTableId: BQTableId
   def asSubQuery: BQSqlFrag
 
   /** This is a compromise. Originally `BQPartitionId` was parametrized by
@@ -33,7 +32,7 @@ sealed trait BQPartitionId[+P] {
     * for `BQPartitionId`s across different tables, for instance
     */
   def partitionString: String
-  final override def toString: String = formatTableId(asTableId)
+  final override def toString: String = asTableId.asString
 }
 
 object BQPartitionId {
@@ -48,7 +47,7 @@ object BQPartitionId {
     Ordering.by((x: Pid) => (x.partitionString, x.wholeTable.toString)).reverse
 
   implicit def shows[Pid <: BQPartitionId[Any]]: Show[Pid] =
-    pid => formatTableId(pid.asTableId)
+    pid => pid.asTableId.asString
 
   final case class DatePartitioned(
       wholeTable: BQTableLike[LocalDate],
@@ -60,16 +59,10 @@ object BQPartitionId {
     }
 
     def asSubQuery: BQSqlFrag =
-      bqfr"""(select * from ${bqFormatTableId(
-          wholeTable.tableId
-        )} where $field = $partition)"""
+      bqfr"""(select * from ${wholeTable.tableId.asFragment} where $field = $partition)"""
 
-    def asTableId: TableId =
-      TableId.of(
-        wholeTable.tableId.getProject,
-        wholeTable.tableId.getDataset,
-        wholeTable.tableId.getTable + "$" + partitionString
-      )
+    def asTableId: BQTableId =
+      wholeTable.tableId.modifyTableName(_ + "$" + partitionString)
 
     override def partitionString: String =
       partition.format(localDateNoDash)
@@ -85,16 +78,10 @@ object BQPartitionId {
     }
 
     def asSubQuery: BQSqlFrag =
-      bqfr"""(select * from ${bqFormatTableId(
-          wholeTable.tableId
-        )} where $field = $partition)"""
+      bqfr"""(select * from ${wholeTable.tableId.asFragment} where $field = $partition)"""
 
-    def asTableId: TableId =
-      TableId.of(
-        wholeTable.tableId.getProject,
-        wholeTable.tableId.getDataset,
-        wholeTable.tableId.getTable + "$" + partitionString
-      )
+    def asTableId: BQTableId =
+      wholeTable.tableId.modifyTableName(_ + "$" + partitionString)
 
     override def partitionString: String =
       partition.format(yearMonthNoDash)
@@ -105,19 +92,15 @@ object BQPartitionId {
       partition: LocalDate
   ) extends BQPartitionId[LocalDate] {
     require(
-      !wholeTable.tableId.getTable.endsWith("_"),
+      !wholeTable.tableId.tableName.endsWith("_"),
       s"we no longer use `_` suffix for sharded table names. Found in $wholeTable"
     )
 
-    override def asTableId: TableId =
-      TableId.of(
-        wholeTable.tableId.getProject,
-        wholeTable.tableId.getDataset,
-        wholeTable.tableId.getTable + "_" + partitionString
-      )
+    override def asTableId: BQTableId =
+      wholeTable.tableId.modifyTableName(_ + "_" + partitionString)
 
     override def asSubQuery: BQSqlFrag =
-      bqsql"(select * from ${bqFormatTableId(asTableId)})"
+      bqsql"(select * from ${asTableId.asFragment})"
 
     override def partitionString: String =
       partition.format(localDateNoDash)
@@ -128,9 +111,9 @@ object BQPartitionId {
     override val partition: Unit = ()
 
     override def asSubQuery: BQSqlFrag =
-      bqsql"(select * from ${bqFormatTableId(asTableId)})"
+      bqsql"(select * from ${asTableId.asFragment})"
 
-    override def asTableId: TableId =
+    override def asTableId: BQTableId =
       wholeTable.tableId
 
     override def partitionString: String =

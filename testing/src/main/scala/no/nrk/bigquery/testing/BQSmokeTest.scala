@@ -205,7 +205,7 @@ private object BQSmokeTest {
                 s"Running $testName against BQ (could have been cached)"
               )
               val run = bqClient
-                .dryRun(BQJobName("smoketest"), staticFrag)
+                .dryRun(BQJobName("smoketest"), staticFrag, None)
                 .map(job =>
                   BQSchema.fromSchema(
                     job.getStatistics[QueryStatistics]().getSchema
@@ -228,7 +228,7 @@ private object BQSmokeTest {
         val log = logger.warn(s"Running $testName becase $notStaticBecause")
 
         val runCheck = bqClient
-          .dryRun(BQJobName("smoketest"), frag)
+          .dryRun(BQJobName("smoketest"), frag, None)
           .guaranteeCase {
             case Outcome.Errored(_) if checkType != CheckType.Failing =>
               IO(println(s"failed query: ${frag.asStringWithUDFs}"))
@@ -286,7 +286,7 @@ private object BQSmokeTest {
       Left(s"Can only cache SELECT queries, not ${structured.queryType}")
     } else if (unstableTables.nonEmpty)
       Left(
-        s"References unstable tables ${unstableTables.map(t => formatTableId(t.tableId)).toList.sorted.mkString(", ")}"
+        s"References unstable tables ${unstableTables.map(_.tableId.asString).toList.sorted.mkString(", ")}"
       )
     else
       Right(structured.copy(ctes = ctes.distinct ++ structured.ctes).asFragment)

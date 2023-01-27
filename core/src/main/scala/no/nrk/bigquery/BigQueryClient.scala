@@ -39,6 +39,35 @@ class BigQueryClient[F[_]](
 
   def underlying: BigQuery = bigQuery
 
+  def synchronousQuery[A](
+      jobName: BQJobName,
+      query: BQQuery[A]
+  ): Stream[F, A] =
+    synchronousQuery(jobName, query, false)
+  def synchronousQuery[A](
+      jobName: BQJobName,
+      query: BQQuery[A],
+      legacySql: Boolean
+  ): Stream[F, A] =
+    synchronousQuery(jobName, query, legacySql, Nil)
+
+  def synchronousQuery[A](
+      jobName: BQJobName,
+      query: BQQuery[A],
+      legacySql: Boolean,
+      jobOptions: Seq[JobOption]
+  ): Stream[F, A] =
+    synchronousQuery(jobName, query, legacySql, jobOptions, false)
+
+  def synchronousQuery[A](
+      jobName: BQJobName,
+      query: BQQuery[A],
+      legacySql: Boolean,
+      jobOptions: Seq[JobOption],
+      logStream: Boolean
+  ): Stream[F, A] =
+    synchronousQuery(jobName, query, legacySql, jobOptions, logStream, None)
+
   /** Synchronous query to BQ.
     *
     * Must be called with the type of the row. The type must have a [[BQRead]]
@@ -53,9 +82,10 @@ class BigQueryClient[F[_]](
   def synchronousQuery[A](
       jobName: BQJobName,
       query: BQQuery[A],
-      legacySql: Boolean = false,
-      jobOptions: Seq[JobOption] = Nil,
-      logStream: Boolean = false
+      legacySql: Boolean,
+      jobOptions: Seq[JobOption],
+      logStream: Boolean,
+      locationId: Option[LocationId]
   ): Stream[F, A] =
     Stream
       .resource(
@@ -64,7 +94,8 @@ class BigQueryClient[F[_]](
           query.sql,
           legacySql,
           jobOptions,
-          logStream
+          logStream,
+          locationId
         )
       )
       .flatMap { case (_, rowStream) =>
@@ -84,9 +115,10 @@ class BigQueryClient[F[_]](
   protected def synchronousQueryExecute(
       jobName: BQJobName,
       query: BQSqlFrag,
-      legacySql: Boolean = false,
-      jobOptions: Seq[JobOption] = Nil,
-      logStream: Boolean = false
+      legacySql: Boolean,
+      jobOptions: Seq[JobOption],
+      logStream: Boolean,
+      locationId: Option[LocationId]
   ): Resource[F, (avro.Schema, Stream[F, GenericRecord])] = {
 
     val runQuery: F[Job] = {
@@ -94,7 +126,7 @@ class BigQueryClient[F[_]](
         .newBuilder(query.asStringWithUDFs)
         .setUseLegacySql(legacySql)
         .build
-      submitJob(jobName)(jobId =>
+      submitJob(jobName, locationId)(jobId =>
         F.blocking(
           Option(
             bigQuery.create(JobInfo.of(jobId, queryRequest), jobOptions: _*)
@@ -188,6 +220,39 @@ class BigQueryClient[F[_]](
     }
   }
 
+  def loadJson[A: Encoder, P: TableOps](
+      jobName: BQJobName,
+      table: BQTableDef.Table[P],
+      partition: P,
+      stream: fs2.Stream[F, A],
+      writeDisposition: WriteDisposition
+  ): F[Option[LoadStatistics]] = loadJson(
+    jobName = jobName,
+    table = table,
+    partition = partition,
+    stream = stream,
+    writeDisposition = writeDisposition,
+    logStream = false
+  )
+
+  def loadJson[A: Encoder, P: TableOps](
+      jobName: BQJobName,
+      table: BQTableDef.Table[P],
+      partition: P,
+      stream: fs2.Stream[F, A],
+      writeDisposition: WriteDisposition,
+      logStream: Boolean
+  ): F[Option[LoadStatistics]] =
+    loadJson(
+      jobName = jobName,
+      table = table,
+      partition = partition,
+      stream = stream,
+      writeDisposition = writeDisposition,
+      logStream = logStream,
+      chunkSize = 10 * StreamUtils.Megabyte
+    )
+
   /** @return
     *   None, if `chunkedStream` is empty
     */
@@ -197,16 +262,16 @@ class BigQueryClient[F[_]](
       partition: P,
       stream: fs2.Stream[F, A],
       writeDisposition: WriteDisposition,
-      chunkSize: Int = 10 * StreamUtils.Megabyte,
-      logStream: Boolean = false
+      logStream: Boolean,
+      chunkSize: Int
   ): F[Option[LoadStatistics]] =
-    submitJob(jobName) { jobId =>
+    submitJob(jobName, table.tableId.dataset.location) { jobId =>
       val partitionId = table.assertPartition(partition)
       val formatOptions = FormatOptions.json()
       val schema = table.schema
 
       val writeChannelConfiguration = WriteChannelConfiguration
-        .newBuilder(partitionId.asTableId)
+        .newBuilder(partitionId.asTableId.underlying)
         .setWriteDisposition(writeDisposition)
         .setFormatOptions(formatOptions)
         .setSchema(schema.toSchema)
@@ -238,14 +303,20 @@ class BigQueryClient[F[_]](
 
   def createTempTable[Param](
       table: BQTableDef.Table[Param],
-      expirationDuration: Option[FiniteDuration] = Some(1.hour)
+      tmpDataset: BQDataset
+  ): F[BQTableDef.Table[Param]] =
+    createTempTable(table, tmpDataset, Some(1.hour))
+
+  def createTempTable[Param](
+      table: BQTableDef.Table[Param],
+      tmpDataset: BQDataset,
+      expirationDuration: Option[FiniteDuration]
   ): F[BQTableDef.Table[Param]] = {
     // a copy of `table` with new coordinates
-    val tempTableDef = table.copy(
-      TableId.of(
-        "nrk-datahub",
-        "tmp",
-        table.tableId.getTable + UUID.randomUUID().toString
+    val tempTableDef = table.copy(tableId =
+      BQTableId(
+        tmpDataset,
+        table.tableId.tableName + UUID.randomUUID().toString
       )
     )
     val tempTableBqDef = UpdateOperation.createNew(tempTableDef).table
@@ -266,16 +337,17 @@ class BigQueryClient[F[_]](
   def submitQuery[P](
       jobName: BQJobName,
       query: BQSqlFrag,
-      destination: Option[BQPartitionId[P]] = None,
-      writeDisposition: Option[WriteDisposition] = None,
-      timePartitioning: Option[TimePartitioning] = None,
-      jobOptions: Seq[JobOption] = Nil
+      destination: Option[BQPartitionId[P]],
+      writeDisposition: Option[WriteDisposition],
+      timePartitioning: Option[TimePartitioning],
+      jobOptions: Seq[JobOption],
+      locationId: Option[LocationId]
   ): F[Job] =
-    submitJob(jobName) { jobId =>
+    submitJob(jobName, locationId) { jobId =>
       val jobConfiguration = {
         val b = QueryJobConfiguration.newBuilder(query.asStringWithUDFs)
         destination.foreach(partitionId =>
-          b.setDestinationTable(partitionId.asTableId)
+          b.setDestinationTable(partitionId.asTableId.underlying)
         )
         writeDisposition.foreach(b.setWriteDisposition)
         timePartitioning.foreach(b.setTimePartitioning)
@@ -298,11 +370,12 @@ class BigQueryClient[F[_]](
   /** Submit a job to BQ, wait for it to finish, log results, track as
     * dependency
     */
-  def submitJob(
-      jobName: BQJobName
+  private def submitJob(
+      jobName: BQJobName,
+      location: Option[LocationId]
   )(runJob: JobId => F[Option[Job]]): F[Option[Job]] =
     F.delay(System.currentTimeMillis)
-      .product(jobName.freshJobId.flatMap(runJob))
+      .product(jobName.freshJobId(location).flatMap(runJob))
       .flatMap {
         case (t0, Some(runningJob)) =>
           val mkDuration = F
@@ -371,7 +444,7 @@ class BigQueryClient[F[_]](
 
   def getTable(
       tableId: TableId,
-      tableOptions: Seq[TableOption] = Nil
+      tableOptions: TableOption*
   ): F[Option[Table]] =
     F.blocking(
       Option(bigQuery.getTable(tableId, tableOptions: _*)).filter(_.exists())
@@ -384,8 +457,12 @@ class BigQueryClient[F[_]](
       case Some(table) => F.pure(table)
     }
 
-  def dryRun(jobName: BQJobName, query: BQSqlFrag): F[Job] =
-    jobName.freshJobId.flatMap { jobId =>
+  def dryRun(
+      jobName: BQJobName,
+      query: BQSqlFrag,
+      location: Option[LocationId]
+  ): F[Job] =
+    jobName.freshJobId(location).flatMap { jobId =>
       val jobInfo = JobInfo.of(
         jobId,
         QueryJobConfiguration
@@ -406,17 +483,17 @@ class BigQueryClient[F[_]](
     F.delay(bigQuery.delete(tableId))
 
   def tablesIn(
-      datasetId: DatasetId,
-      datasetOptions: Seq[BigQuery.TableListOption] = Nil
+      dataset: BQDataset,
+      datasetOptions: BigQuery.TableListOption*
   ): F[Vector[BQTableRef[Any]]] =
-    F.blocking(bigQuery.listTables(datasetId, datasetOptions: _*)).flatMap {
+    F.blocking(bigQuery.listTables(dataset.id, datasetOptions: _*)).flatMap {
       tables =>
         tables
           .iterateAll()
           .asScala
           .toVector
           .parTraverseFilter { table =>
-            val tableId = table.getTableId
+            val tableId = BQTableId.unsafeFromGoogle(dataset, table.getTableId)
             table.getDefinition[TableDefinition] match {
               case definition: StandardTableDefinition =>
                 BQPartitionType.from(definition) match {
