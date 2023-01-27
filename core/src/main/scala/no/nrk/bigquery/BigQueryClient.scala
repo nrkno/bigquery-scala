@@ -331,17 +331,66 @@ class BigQueryClient[F[_]](
       .map(_ => tempTableDef)
   }
 
+  def submitQuery[P](jobName: BQJobName, query: BQSqlFrag): F[Job] =
+    submitQuery(jobName, query, None)
+
+  def submitQuery[P](
+      jobName: BQJobName,
+      query: BQSqlFrag,
+      locationId: Option[LocationId]
+  ): F[Job] = submitQuery(jobName, query, locationId, None)
+
+  def submitQuery[P](
+      jobName: BQJobName,
+      query: BQSqlFrag,
+      locationId: Option[LocationId],
+      destination: Option[BQPartitionId[P]]
+  ): F[Job] =
+    submitQuery(jobName, query, locationId, destination, None)
+
+  def submitQuery[P](
+      jobName: BQJobName,
+      query: BQSqlFrag,
+      locationId: Option[LocationId],
+      destination: Option[BQPartitionId[P]],
+      writeDisposition: Option[WriteDisposition]
+  ): F[Job] = submitQuery(
+    jobName,
+    query,
+    locationId,
+    destination,
+    writeDisposition,
+    None
+  )
+
+  def submitQuery[P](
+      jobName: BQJobName,
+      query: BQSqlFrag,
+      locationId: Option[LocationId],
+      destination: Option[BQPartitionId[P]],
+      writeDisposition: Option[WriteDisposition],
+      timePartitioning: Option[TimePartitioning]
+  ): F[Job] = submitQuery(
+    jobName,
+    query,
+    locationId,
+    destination,
+    writeDisposition,
+    timePartitioning,
+    Nil
+  )
+
   /** Submit any SQL statement to BQ, perfect for BQ to BQ insertions or data
     * mutation
     */
   def submitQuery[P](
       jobName: BQJobName,
       query: BQSqlFrag,
+      locationId: Option[LocationId],
       destination: Option[BQPartitionId[P]],
       writeDisposition: Option[WriteDisposition],
       timePartitioning: Option[TimePartitioning],
-      jobOptions: Seq[JobOption],
-      locationId: Option[LocationId]
+      jobOptions: Seq[JobOption]
   ): F[Job] =
     submitJob(jobName, locationId) { jobId =>
       val jobConfiguration = {
