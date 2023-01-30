@@ -17,7 +17,7 @@ class RoundtripTest extends CatsEffectSuite {
     BQQuery(bqfr"select * from unnest([${ps.mkFragment(", ")}])")
 
   def roundtrip[P: BQShow: BQRead](expectedValues: P*): IO[Unit] =
-    BigQueryTestClient.cachingClient
+    BigQueryTestClient.cachingClient(BigQueryTestClient.testClient)
       .use(
         _.synchronousQuery(
           BQJobName.auto,

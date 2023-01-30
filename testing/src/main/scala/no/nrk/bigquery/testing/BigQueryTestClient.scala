@@ -43,7 +43,7 @@ object BigQueryTestClient {
       )
     )
 
-  val testClient: Resource[IO, BigQueryClient[IO]] =
+  def testClient: Resource[IO, BigQueryClient[IO]] =
     for {
       credentials <- Resource.eval(
         OptionT(IO(sys.env.get("BIGQUERY_SERVICE_ACCOUNT")))
@@ -57,8 +57,8 @@ object BigQueryTestClient {
 
   private val logger = LoggerFactory.getLogger[IO]
 
-  val cachingClient: Resource[IO, BigQueryClient[IO]] =
-    testClient.map(client =>
+  def cachingClient(cacheFrom: Resource[IO, BigQueryClient[IO]]): Resource[IO, BigQueryClient[IO]] =
+    cacheFrom.map(client =>
       new BigQueryClient(client.underlying, client.reader, client.track) {
         override protected def synchronousQueryExecute(
             jobName: BQJobName,

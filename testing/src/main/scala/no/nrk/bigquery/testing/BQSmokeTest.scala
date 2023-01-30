@@ -1,7 +1,7 @@
 package no.nrk.bigquery
 package testing
 
-import cats.effect.IO
+import cats.effect.{IO, Resource}
 import cats.effect.kernel.Outcome
 import cats.syntax.alternative._
 import com.google.cloud.bigquery.JobStatistics.QueryStatistics
@@ -18,12 +18,12 @@ import no.nrk.bigquery.implicits._
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-abstract class BQSmokeTest extends CatsEffectSuite {
+abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends CatsEffectSuite {
   val assertStableTables: List[BQTableLike[Any]] = Nil
 
   val bqClient: Fixture[BigQueryClient[IO]] = ResourceSuiteLocalFixture(
     "bqClient",
-    BigQueryTestClient.testClient
+    testClient
   )
 
   override def munitFixtures = List(bqClient)
