@@ -102,6 +102,7 @@ sealed trait BQSqlFrag {
 
 object BQSqlFrag {
   def apply(string: String): BQSqlFrag = Frag(string)
+  def backticks(string: String): BQSqlFrag = Frag("`" + string + "`")
 
   case class Frag(string: String) extends BQSqlFrag
   case class Call(udf: UDF, args: Seq[BQSqlFrag]) extends BQSqlFrag {

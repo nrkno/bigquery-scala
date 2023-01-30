@@ -51,7 +51,7 @@ final case class BQTableId(dataset: BQDataset, tableName: String) {
     TableId.of(dataset.project.value, dataset.id, tableName)
 
   def asString: String = s"${dataset.project.value}.${dataset.id}.${tableName}"
-  def asFragment: BQSqlFrag = BQSqlFrag(asString)
+  def asFragment: BQSqlFrag = BQSqlFrag.backticks(asString)
 }
 
 object BQTableId {
