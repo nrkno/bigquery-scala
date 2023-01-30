@@ -1,7 +1,7 @@
 package no.nrk.bigquery
 
 import cats.Show
-import com.google.cloud.bigquery.TableId
+import com.google.cloud.bigquery.{DatasetId, TableId}
 import io.circe.{Codec, Decoder, Encoder}
 
 final case class LocationId(value: String) extends AnyVal
@@ -26,7 +26,9 @@ final case class BQDataset(
     project: ProjectId,
     id: String,
     location: Option[LocationId]
-)
+) {
+  def underlying: DatasetId = DatasetId.of(project.value, id)
+}
 
 object BQDataset {
   def of(project: ProjectId, dataset: String) =
