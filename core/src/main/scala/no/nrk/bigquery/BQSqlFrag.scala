@@ -58,9 +58,9 @@ sealed trait BQSqlFrag {
           case x @ BQPartitionId.MonthPartitioned(_, _) => x.asSubQuery.asString
           case x @ BQPartitionId.DatePartitioned(_, _)  => x.asSubQuery.asString
           case x @ BQPartitionId.Sharded(_, _) =>
-            x.asTableId.asString
+            x.asTableId.asFragment.asString
           case x @ BQPartitionId.NotPartitioned(_) =>
-            x.asTableId.asString
+            x.asTableId.asFragment.asString
         }
     }
 
