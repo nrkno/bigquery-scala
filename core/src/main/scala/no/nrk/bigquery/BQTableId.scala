@@ -81,5 +81,7 @@ object BQTableId {
       "table"
     )(apply)
 
+  implicit val orderingTableId: Ordering[BQTableId] = Ordering.by(_.asString)
+
   // TODO: Maybe implement BQShow
 }
