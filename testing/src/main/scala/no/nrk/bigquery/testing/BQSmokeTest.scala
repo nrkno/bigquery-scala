@@ -18,8 +18,29 @@ import no.nrk.bigquery.implicits._
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends CatsEffectSuite {
+abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]])
+    extends CatsEffectSuite
+    with GeneratedTest { self =>
+
+  override def testType: String = "big-query"
+
   val assertStableTables: List[BQTableLike[Any]] = Nil
+
+  object StaticQueries extends GeneratedTest {
+    override def basedir: Path = self.basedir
+
+    override def testType: String = "bq-query-static"
+  }
+
+  object Queries extends GeneratedTest {
+    override def basedir: Path = self.basedir
+    override def testType: String = "bq-query"
+  }
+
+  object ExampleQueries extends GeneratedTest {
+    override def basedir: Path = self.basedir
+    override def testType: String = "bq-example-query"
+  }
 
   val bqClient: Fixture[BigQueryClient[IO]] = ResourceSuiteLocalFixture(
     "bqClient",
@@ -37,7 +58,8 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
         query.sql,
         CheckType.Type(query.bqRead.bqType),
         assertStableTables,
-        BQSmokeTest.queries
+        Queries,
+        StaticQueries
       )(bqClient())
     }
 
@@ -53,7 +75,8 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
         combinedSql,
         CheckType.Type(queries.head.bqRead.bqType),
         assertStableTables,
-        BQSmokeTest.queries
+        Queries,
+        StaticQueries
       )(bqClient())
     }
 
@@ -66,7 +89,8 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
         frag,
         CheckType.Untyped,
         assertStableTables,
-        BQSmokeTest.queries
+        Queries,
+        StaticQueries
       )(bqClient())
     }
 
@@ -79,7 +103,8 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
         frag,
         CheckType.Untyped,
         assertStableTables,
-        BQSmokeTest.exampleQueries
+        ExampleQueries,
+        StaticQueries
       )(bqClient())
     }
 
@@ -88,8 +113,8 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
       testName: String
   )(frag: BQSqlFrag)(implicit loc: Location): Unit =
     test(s"bqCheck: $testName".tag(TestTags.Generated)) {
-      BQSmokeTest.queries.writeAndCompare(
-        BQSmokeTest.queries.testFileForName(s"$testName.sql"),
+      Queries.writeAndCompare(
+        Queries.testFileForName(s"$testName.sql"),
         frag.asStringWithUDFs
       )
     }
@@ -103,7 +128,8 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
         tuple._1,
         CheckType.Schema(tuple._2),
         assertStableTables,
-        BQSmokeTest.queries
+        Queries,
+        StaticQueries
       )(bqClient())
     }
 
@@ -116,7 +142,8 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
         fill.query,
         CheckType.Schema(fill.tableDef.schema),
         assertStableTables,
-        BQSmokeTest.queries
+        Queries,
+        StaticQueries
       )(bqClient())
     }
 
@@ -130,7 +157,8 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
         view.query,
         CheckType.Schema(view.schema),
         assertStableTables,
-        BQSmokeTest.queries
+        Queries,
+        StaticQueries
       )(bqClient())
     }
 
@@ -144,7 +172,8 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
         frag,
         CheckType.Failing,
         assertStableTables,
-        BQSmokeTest.queries
+        Queries,
+        StaticQueries
       )(bqClient()).attempt
         .flatMap {
           case Left(e: BigQueryException) if e.getMessage != null =>
@@ -163,22 +192,13 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
 private object BQSmokeTest {
   private val logger = Slf4jFactory.getLogger[IO]
 
-  object staticQueries extends GeneratedTest {
-    override def testType: String = "bq-query-static"
-  }
-  object queries extends GeneratedTest {
-    override def testType: String = "bq-query"
-  }
-  object exampleQueries extends GeneratedTest {
-    override def testType: String = "bq-example-query"
-  }
-
   def bqCheckFragment(
       testName: String,
       frag: BQSqlFrag,
       checkType: CheckType,
       assertStable: Seq[BQTableLike[Any]],
-      target: GeneratedTest
+      target: GeneratedTest,
+      static: GeneratedTest
   ): BigQueryClient[IO] => IO[Unit] = { bqClient =>
     val compareAsIs = IO(
       target.writeAndCompare(
@@ -190,8 +210,8 @@ private object BQSmokeTest {
     dependenciesAsStaticData(frag, assertStable) match {
       case Right(staticFrag) =>
         val compareStatic = IO(
-          staticQueries.writeAndCompare(
-            staticQueries.testFileForName(s"$testName.sql"),
+          static.writeAndCompare(
+            static.testFileForName(s"$testName.sql"),
             staticFrag.asStringWithUDFs
           )
         )
