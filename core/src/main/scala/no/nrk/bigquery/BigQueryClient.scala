@@ -43,7 +43,7 @@ class BigQueryClient[F[_]](
       jobName: BQJobName,
       query: BQQuery[A]
   ): Stream[F, A] =
-    synchronousQuery(jobName, query, false)
+    synchronousQuery(jobName, query, legacySql = false)
   def synchronousQuery[A](
       jobName: BQJobName,
       query: BQQuery[A],
@@ -57,7 +57,7 @@ class BigQueryClient[F[_]](
       legacySql: Boolean,
       jobOptions: Seq[JobOption]
   ): Stream[F, A] =
-    synchronousQuery(jobName, query, legacySql, jobOptions, false)
+    synchronousQuery(jobName, query, legacySql, jobOptions, logStream = false)
 
   def synchronousQuery[A](
       jobName: BQJobName,
@@ -419,10 +419,9 @@ class BigQueryClient[F[_]](
   /** Submit a job to BQ, wait for it to finish, log results, track as
     * dependency
     */
-  private def submitJob(
-      jobName: BQJobName,
-      location: Option[LocationId]
-  )(runJob: JobId => F[Option[Job]]): F[Option[Job]] =
+  def submitJob(jobName: BQJobName, location: Option[LocationId])(
+      runJob: JobId => F[Option[Job]]
+  ): F[Option[Job]] =
     F.delay(System.currentTimeMillis)
       .product(jobName.freshJobId(location).flatMap(runJob))
       .flatMap {
