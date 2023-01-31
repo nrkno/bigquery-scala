@@ -11,12 +11,12 @@ ThisBuild / developers := List(
   tlGitHubDev("HenningKoller", "Henning Grimeland Koller"),
   tlGitHubDev("hamnis", "Erlend Hamnaberg")
 )
-
-// publish to s01.oss.sonatype.org (set to true to publish to oss.sonatype.org instead)
-ThisBuild / tlSonatypeUseLegacyHost := false
+ThisBuild / tlCiHeaderCheck := false
+ThisBuild / tlCiScalafmtCheck := true
 
 // publish website from this branch
 //ThisBuild / tlSitePublishBranch := Some("main")
+ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
 ThisBuild / githubWorkflowPublishTargetBranches :=
   Seq(RefPredicate.StartsWith(Ref.Tag("v")))
 
@@ -36,7 +36,9 @@ ThisBuild / githubWorkflowBuild := {
     case step: WorkflowStep.Sbt if step.name.contains("Test") =>
       step.copy(env =
         Map(
-          "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}"
+          "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}",
+          "MYGET_USERNAME" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_ID }}",
+          "MYGET_PASSWORD" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_SECRET }}"
         )
       )
     case s => s
@@ -49,6 +51,7 @@ ThisBuild / crossScalaVersions := Seq(Scala213, Scala212, "3.2.1")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 
 val commonSettings = Seq(
+  resolvers += "MyGet - datahub" at s"https://nrk.myget.org/F/datahub/maven/",
   Compile / headerSources := Nil,
   Test / headerSources := Nil,
   publishTo := {
@@ -72,7 +75,9 @@ val commonSettings = Seq(
   }
 )
 
-lazy val root = tlCrossRootProject.aggregate(core, testing)
+lazy val root = tlCrossRootProject
+  .aggregate(core, testing)
+  .disablePlugins(TypelevelCiSigningPlugin, Sonatype)
 
 lazy val core = crossProject(JVMPlatform)
   .crossType(CrossType.Pure)
@@ -113,6 +118,7 @@ lazy val core = crossProject(JVMPlatform)
       }
     }
   )
+  .disablePlugins(TypelevelCiSigningPlugin, Sonatype)
 
 lazy val testing = crossProject(JVMPlatform)
   .crossType(CrossType.Pure)
@@ -126,5 +132,6 @@ lazy val testing = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     )
   )
+  .disablePlugins(TypelevelCiSigningPlugin, Sonatype)
 
 //lazy val docs = project.in(file("site")).enablePlugins(TypelevelSitePlugin)
