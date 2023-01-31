@@ -36,7 +36,9 @@ ThisBuild / githubWorkflowBuild := {
     case step: WorkflowStep.Sbt if step.name.contains("Test") =>
       step.copy(env =
         Map(
-          "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}"
+          "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}",
+          "MYGET_USERNAME" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_ID }}",
+          "MYGET_PASSWORD" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_SECRET }}"
         )
       )
     case s => s
@@ -49,6 +51,7 @@ ThisBuild / crossScalaVersions := Seq(Scala213, Scala212, "3.2.1")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 
 val commonSettings = Seq(
+  resolvers += "MyGet - datahub" at s"https://nrk.myget.org/F/datahub/maven/",
   Compile / headerSources := Nil,
   Test / headerSources := Nil,
   publishTo := {
