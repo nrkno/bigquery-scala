@@ -62,6 +62,7 @@ val commonSettings = Seq(
       case _ => Nil
     }
   },
+  scalacOptions -= "-source:3.0-migration",
   scalacOptions ++= {
     if (scalaVersion.value.startsWith("3")) {
       Seq("-source:3.2-migration")
