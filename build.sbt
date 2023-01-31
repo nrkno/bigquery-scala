@@ -17,7 +17,19 @@ ThisBuild / tlSonatypeUseLegacyHost := false
 
 // publish website from this branch
 //ThisBuild / tlSitePublishBranch := Some("main")
-ThisBuild / githubWorkflowPublishTargetBranches := Nil
+ThisBuild / githubWorkflowPublishTargetBranches :=
+  Seq(RefPredicate.StartsWith(Ref.Tag("v")))
+
+ThisBuild / githubWorkflowPublish := Seq(
+  WorkflowStep.Sbt(
+    commands = List("publish"),
+    name = Some("Publish project"),
+    env = Map(
+      "MYGET_USERNAME" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_WRITE_ID }}",
+      "MYGET_PASSWORD" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_WRITE_SECRET }}"
+    )
+  )
+)
 ThisBuild / githubWorkflowBuild := {
   val list = (ThisBuild / githubWorkflowBuild).value
   list.collect {
@@ -36,11 +48,35 @@ val Scala213 = "2.13.10"
 ThisBuild / crossScalaVersions := Seq(Scala213, Scala212, "3.2.1")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 
+val commonSettings = Seq(
+  Compile / headerSources := Nil,
+  Test / headerSources := Nil,
+  publishTo := {
+    val MyGet = "https://nrk.myget.org/F/datahub/maven/"
+    if (isSnapshot.value) None else Some("releases" at MyGet)
+  },
+  credentials ++= {
+    (sys.env.get("MYGET_USERNAME"), sys.env.get("MYGET_PASSWORD")) match {
+      case (Some(username), Some(password)) =>
+        List(Credentials("Myget", "nrk.myget.org", username, password))
+      case _ => Nil
+    }
+  },
+  scalacOptions ++= {
+    if (scalaVersion.value.startsWith("3")) {
+      Seq("-source:3.2-migration")
+    } else {
+      Seq()
+    }
+  }
+)
+
 lazy val root = tlCrossRootProject.aggregate(core, testing)
 
 lazy val core = crossProject(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("core"))
+  .settings(commonSettings)
   .settings(
     name := "bigquery-core",
     Compile / headerSources := Nil,
@@ -74,14 +110,6 @@ lazy val core = crossProject(JVMPlatform)
           "org.scala-lang" % "scala-reflect" % scalaVersion.value
         )
       }
-    },
-    scalacOptions -= "-source:3.0-migration",
-    scalacOptions ++= {
-      if (scalaVersion.value.startsWith("3")) {
-        Seq("-source:3.2-migration")
-      } else {
-        Seq()
-      }
     }
   )
 
@@ -89,22 +117,13 @@ lazy val testing = crossProject(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("testing"))
   .dependsOn(core)
+  .settings(commonSettings)
   .settings(
     name := "bigquery-testing",
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
-    ),
-    scalacOptions -= "-source:3.0-migration",
-    Compile / headerSources := Nil,
-    Test / headerSources := Nil,
-    scalacOptions ++= {
-      if (scalaVersion.value.startsWith("3")) {
-        Seq("-source:3.2-migration")
-      } else {
-        Seq()
-      }
-    }
+    )
   )
 
 //lazy val docs = project.in(file("site")).enablePlugins(TypelevelSitePlugin)
