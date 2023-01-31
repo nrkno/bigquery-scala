@@ -77,7 +77,7 @@ val commonSettings = Seq(
 
 lazy val root = tlCrossRootProject
   .aggregate(core, testing)
-  .disablePlugins(TypelevelCiSigningPlugin, Sonatype)
+  .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val core = crossProject(JVMPlatform)
   .crossType(CrossType.Pure)
@@ -118,7 +118,7 @@ lazy val core = crossProject(JVMPlatform)
       }
     }
   )
-  .disablePlugins(TypelevelCiSigningPlugin, Sonatype)
+  .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val testing = crossProject(JVMPlatform)
   .crossType(CrossType.Pure)
@@ -132,6 +132,6 @@ lazy val testing = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     )
   )
-  .disablePlugins(TypelevelCiSigningPlugin, Sonatype)
+  .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 //lazy val docs = project.in(file("site")).enablePlugins(TypelevelSitePlugin)
