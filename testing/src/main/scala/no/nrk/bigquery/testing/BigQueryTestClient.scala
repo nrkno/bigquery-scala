@@ -57,7 +57,9 @@ object BigQueryTestClient {
 
   private val logger = LoggerFactory.getLogger[IO]
 
-  def cachingClient(cacheFrom: Resource[IO, BigQueryClient[IO]]): Resource[IO, BigQueryClient[IO]] =
+  def cachingClient(
+      cacheFrom: Resource[IO, BigQueryClient[IO]]
+  ): Resource[IO, BigQueryClient[IO]] =
     cacheFrom.map(client =>
       new BigQueryClient(client.underlying, client.reader, client.track) {
         override protected def synchronousQueryExecute(
