@@ -69,7 +69,7 @@ object BQTableId {
   }
 
   implicit val show: Show[BQTableId] =
-    Show.show(_.asString)
+    Show.show(_.asFragment.asString)
 
   implicit val tableIdEncoder: Encoder[BQTableId] =
     Encoder.forProduct2("dataset", "table")(table =>
