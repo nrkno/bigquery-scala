@@ -10,8 +10,16 @@ import java.util.UUID
   * manual inspection
   */
 case class BQJobName private (value: String) extends AnyVal {
-  def freshJobId[F[_]](implicit F: Sync[F]): F[JobId] =
-    F.delay(JobId.of(s"$value-${UUID.randomUUID}"))
+  def freshJobId[F[_]](
+      locationId: Option[LocationId]
+  )(implicit F: Sync[F]): F[JobId] =
+    F.delay(
+      JobId
+        .newBuilder()
+        .setJob(s"$value-${UUID.randomUUID}")
+        .setLocation(locationId.map(_.value).orNull)
+        .build()
+    )
   def +(str: String): BQJobName = BQJobName(value + str)
 }
 

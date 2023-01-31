@@ -1,4 +1,5 @@
-package no.nrk.bigquery.testing
+package no.nrk.bigquery
+package testing
 
 import cats.data.OptionT
 import cats.effect.{IO, Resource}
@@ -6,7 +7,6 @@ import cats.syntax.all._
 import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
 import com.google.cloud.bigquery.BigQuery.JobOption
 import fs2.Stream
-import no.nrk.bigquery.{BQJobName, BQSqlFrag, BQTracker, BigQueryClient}
 import org.apache.avro
 import org.apache.avro.file.{DataFileReader, DataFileWriter}
 import org.apache.avro.generic.{
@@ -43,7 +43,7 @@ object BigQueryTestClient {
       )
     )
 
-  val testClient: Resource[IO, BigQueryClient[IO]] =
+  def testClient: Resource[IO, BigQueryClient[IO]] =
     for {
       credentials <- Resource.eval(
         OptionT(IO(sys.env.get("BIGQUERY_SERVICE_ACCOUNT")))
@@ -57,15 +57,18 @@ object BigQueryTestClient {
 
   private val logger = LoggerFactory.getLogger[IO]
 
-  val cachingClient: Resource[IO, BigQueryClient[IO]] =
-    testClient.map(client =>
+  def cachingClient(
+      cacheFrom: Resource[IO, BigQueryClient[IO]]
+  ): Resource[IO, BigQueryClient[IO]] =
+    cacheFrom.map(client =>
       new BigQueryClient(client.underlying, client.reader, client.track) {
         override protected def synchronousQueryExecute(
             jobName: BQJobName,
             query: BQSqlFrag,
             legacySql: Boolean,
             jobOptions: Seq[JobOption],
-            logStream: Boolean
+            logStream: Boolean,
+            location: Option[LocationId]
         ): Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] = {
           val hash =
             java.util.Objects.hash(query, Boolean.box(legacySql), jobOptions)
@@ -78,7 +81,14 @@ object BigQueryTestClient {
               : Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] =
             for {
               tuple <- super
-                .synchronousQueryExecute(jobName, query, legacySql, jobOptions)
+                .synchronousQueryExecute(
+                  jobName,
+                  query,
+                  legacySql,
+                  jobOptions,
+                  logStream,
+                  location
+                )
               (schema, rowStream) = tuple
               _ <- Resource.liftK(serializeSchema(hashedSchemaPath, schema))
               rows <- Resource.liftK(rowStream.compile.toVector)

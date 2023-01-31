@@ -12,7 +12,7 @@ import java.nio.file.Path
 trait GeneratedTest {
   def testType: String
 
-  val assertCurrentGeneratedFiles: Boolean =
+  def assertCurrentGeneratedFiles: Boolean =
     sys.env.contains("ASSERT_CURRENT_GENERATED_FILES")
 
   def basedir: Path = {
@@ -27,7 +27,7 @@ trait GeneratedTest {
   def generatedDir = basedir.resolve("generated")
 
   def testFileForName(name: String): Path =
-    generatedDir.resolve(name.replaceAll("\\s", "_"))
+    generatedDir.resolve(testType).resolve(name.replaceAll("\\s", "_"))
 
   def writeAndCompare(testFile: Path, value: String)(implicit
       loc: Location

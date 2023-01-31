@@ -88,7 +88,10 @@ object UpdateOperation {
               case Right(remotePartitionType)
                   if remotePartitionType == localTableDef.partitionType =>
                 val remoteAsTableDef = BQTableDef.Table(
-                  tableId = existingRemoteTable.getTableId,
+                  tableId = BQTableId.unsafeFromGoogle(
+                    localTableDef.tableId.dataset,
+                    existingRemoteTable.getTableId
+                  ),
                   schema = BQSchema.fromSchema(remoteTableDef.getSchema),
                   partitionType = remotePartitionType,
                   description = Option(existingRemoteTable.getDescription),
@@ -203,7 +206,10 @@ object UpdateOperation {
               case Right(remotePartitionType)
                   if remotePartitionType == localTableDef.partitionType =>
                 val remoteAsTableDef = BQTableDef.MaterializedView(
-                  tableId = existingRemoteTable.getTableId,
+                  tableId = BQTableId.unsafeFromGoogle(
+                    localTableDef.tableId.dataset,
+                    existingRemoteTable.getTableId
+                  ),
                   partitionType = remotePartitionType,
                   query = BQSqlFrag(remoteMVDef.getQuery),
                   schema = BQSchema.fromSchema(remoteMVDef.getSchema),
@@ -289,7 +295,7 @@ object UpdateOperation {
       case BQTableDef.View(tableId, _, query, schema, description, labels) =>
         val withoutSchema: TableInfo =
           newTable(
-            tableId,
+            tableId.underlying,
             ViewDefinition.of(query.asStringWithUDFs),
             description,
             labels
@@ -318,7 +324,7 @@ object UpdateOperation {
           ) =>
         val toCreate: TableInfo =
           newTable(
-            tableId,
+            tableId.underlying,
             StandardTableDefinition.newBuilder
               .setSchema(schema.toSchema)
               .setTimePartitioning(partitionType.timePartitioning.orNull)
@@ -342,7 +348,7 @@ object UpdateOperation {
           ) =>
         val toCreate: TableInfo =
           newTable(
-            tableId,
+            tableId.underlying,
             MaterializedViewDefinition
               .newBuilder(query.asStringWithUDFs)
               .setEnableRefresh(enableRefresh)
@@ -366,7 +372,7 @@ class EnsureUpdated[F[_]](
   private val logger = lf.getLogger
 
   def check(template: BQTableDef[Any]): F[UpdateOperation] =
-    bqClient.getTable(template.tableId).map { maybeExisting =>
+    bqClient.getTable(template.tableId.underlying).map { maybeExisting =>
       UpdateOperation.from(template, maybeExisting)
     }
 

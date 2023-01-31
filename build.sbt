@@ -3,7 +3,7 @@ ThisBuild / tlBaseVersion := "0.1" // your current series x.y
 
 ThisBuild / organization := "no.nrk.bigquery"
 ThisBuild / organizationName := "NRK"
-ThisBuild / startYear := Some(2023)
+ThisBuild / startYear := Some(2020)
 ThisBuild / licenses := Seq(License.Apache2)
 ThisBuild / developers := List(
   tlGitHubDev("oyvindberg", "Øyvind Raddum Berg"),

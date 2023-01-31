@@ -1,9 +1,9 @@
 package no.nrk.bigquery
 
 import no.nrk.bigquery.implicits._
-import no.nrk.bigquery.testing.BQSmokeTest
+import no.nrk.bigquery.testing.{BQSmokeTest, BigQueryTestClient}
 
-class BQReadTest extends BQSmokeTest {
+class BQReadTest extends BQSmokeTest(BigQueryTestClient.testClient) {
   case class Nested(a: String, b: Long)
   object Nested {
     implicit val bqRead: BQRead[Nested] = BQRead.derived

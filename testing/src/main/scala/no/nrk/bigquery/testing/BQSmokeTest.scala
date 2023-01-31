@@ -1,7 +1,7 @@
 package no.nrk.bigquery
 package testing
 
-import cats.effect.IO
+import cats.effect.{IO, Resource}
 import cats.effect.kernel.Outcome
 import cats.syntax.alternative._
 import com.google.cloud.bigquery.JobStatistics.QueryStatistics
@@ -18,12 +18,33 @@ import no.nrk.bigquery.implicits._
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-abstract class BQSmokeTest extends CatsEffectSuite {
+abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]])
+    extends CatsEffectSuite
+    with GeneratedTest { self =>
+
+  override def testType: String = "big-query"
+
   val assertStableTables: List[BQTableLike[Any]] = Nil
+
+  object StaticQueries extends GeneratedTest {
+    override def basedir: Path = self.basedir
+
+    override def testType: String = "bq-query-static"
+  }
+
+  object Queries extends GeneratedTest {
+    override def basedir: Path = self.basedir
+    override def testType: String = "bq-query"
+  }
+
+  object ExampleQueries extends GeneratedTest {
+    override def basedir: Path = self.basedir
+    override def testType: String = "bq-example-query"
+  }
 
   val bqClient: Fixture[BigQueryClient[IO]] = ResourceSuiteLocalFixture(
     "bqClient",
-    BigQueryTestClient.testClient
+    testClient
   )
 
   override def munitFixtures = List(bqClient)
@@ -37,7 +58,8 @@ abstract class BQSmokeTest extends CatsEffectSuite {
         query.sql,
         CheckType.Type(query.bqRead.bqType),
         assertStableTables,
-        BQSmokeTest.queries
+        Queries,
+        StaticQueries
       )(bqClient())
     }
 
@@ -53,7 +75,8 @@ abstract class BQSmokeTest extends CatsEffectSuite {
         combinedSql,
         CheckType.Type(queries.head.bqRead.bqType),
         assertStableTables,
-        BQSmokeTest.queries
+        Queries,
+        StaticQueries
       )(bqClient())
     }
 
@@ -66,7 +89,8 @@ abstract class BQSmokeTest extends CatsEffectSuite {
         frag,
         CheckType.Untyped,
         assertStableTables,
-        BQSmokeTest.queries
+        Queries,
+        StaticQueries
       )(bqClient())
     }
 
@@ -79,7 +103,8 @@ abstract class BQSmokeTest extends CatsEffectSuite {
         frag,
         CheckType.Untyped,
         assertStableTables,
-        BQSmokeTest.exampleQueries
+        ExampleQueries,
+        StaticQueries
       )(bqClient())
     }
 
@@ -88,8 +113,8 @@ abstract class BQSmokeTest extends CatsEffectSuite {
       testName: String
   )(frag: BQSqlFrag)(implicit loc: Location): Unit =
     test(s"bqCheck: $testName".tag(TestTags.Generated)) {
-      BQSmokeTest.queries.writeAndCompare(
-        BQSmokeTest.queries.testFileForName(s"$testName.sql"),
+      Queries.writeAndCompare(
+        Queries.testFileForName(s"$testName.sql"),
         frag.asStringWithUDFs
       )
     }
@@ -103,7 +128,8 @@ abstract class BQSmokeTest extends CatsEffectSuite {
         tuple._1,
         CheckType.Schema(tuple._2),
         assertStableTables,
-        BQSmokeTest.queries
+        Queries,
+        StaticQueries
       )(bqClient())
     }
 
@@ -116,7 +142,8 @@ abstract class BQSmokeTest extends CatsEffectSuite {
         fill.query,
         CheckType.Schema(fill.tableDef.schema),
         assertStableTables,
-        BQSmokeTest.queries
+        Queries,
+        StaticQueries
       )(bqClient())
     }
 
@@ -130,7 +157,8 @@ abstract class BQSmokeTest extends CatsEffectSuite {
         view.query,
         CheckType.Schema(view.schema),
         assertStableTables,
-        BQSmokeTest.queries
+        Queries,
+        StaticQueries
       )(bqClient())
     }
 
@@ -144,7 +172,8 @@ abstract class BQSmokeTest extends CatsEffectSuite {
         frag,
         CheckType.Failing,
         assertStableTables,
-        BQSmokeTest.queries
+        Queries,
+        StaticQueries
       )(bqClient()).attempt
         .flatMap {
           case Left(e: BigQueryException) if e.getMessage != null =>
@@ -163,22 +192,13 @@ abstract class BQSmokeTest extends CatsEffectSuite {
 private object BQSmokeTest {
   private val logger = Slf4jFactory.getLogger[IO]
 
-  object staticQueries extends GeneratedTest {
-    override def testType: String = "bq-query-static"
-  }
-  object queries extends GeneratedTest {
-    override def testType: String = "bq-query"
-  }
-  object exampleQueries extends GeneratedTest {
-    override def testType: String = "bq-example-query"
-  }
-
   def bqCheckFragment(
       testName: String,
       frag: BQSqlFrag,
       checkType: CheckType,
       assertStable: Seq[BQTableLike[Any]],
-      target: GeneratedTest
+      target: GeneratedTest,
+      static: GeneratedTest
   ): BigQueryClient[IO] => IO[Unit] = { bqClient =>
     val compareAsIs = IO(
       target.writeAndCompare(
@@ -190,8 +210,8 @@ private object BQSmokeTest {
     dependenciesAsStaticData(frag, assertStable) match {
       case Right(staticFrag) =>
         val compareStatic = IO(
-          staticQueries.writeAndCompare(
-            staticQueries.testFileForName(s"$testName.sql"),
+          static.writeAndCompare(
+            static.testFileForName(s"$testName.sql"),
             staticFrag.asStringWithUDFs
           )
         )
@@ -205,7 +225,7 @@ private object BQSmokeTest {
                 s"Running $testName against BQ (could have been cached)"
               )
               val run = bqClient
-                .dryRun(BQJobName("smoketest"), staticFrag)
+                .dryRun(BQJobName("smoketest"), staticFrag, None)
                 .map(job =>
                   BQSchema.fromSchema(
                     job.getStatistics[QueryStatistics]().getSchema
@@ -228,7 +248,7 @@ private object BQSmokeTest {
         val log = logger.warn(s"Running $testName becase $notStaticBecause")
 
         val runCheck = bqClient
-          .dryRun(BQJobName("smoketest"), frag)
+          .dryRun(BQJobName("smoketest"), frag, None)
           .guaranteeCase {
             case Outcome.Errored(_) if checkType != CheckType.Failing =>
               IO(println(s"failed query: ${frag.asStringWithUDFs}"))
@@ -286,7 +306,7 @@ private object BQSmokeTest {
       Left(s"Can only cache SELECT queries, not ${structured.queryType}")
     } else if (unstableTables.nonEmpty)
       Left(
-        s"References unstable tables ${unstableTables.map(t => formatTableId(t.tableId)).toList.sorted.mkString(", ")}"
+        s"References unstable tables ${unstableTables.map(_.tableId.asString).toList.sorted.mkString(", ")}"
       )
     else
       Right(structured.copy(ctes = ctes.distinct ++ structured.ctes).asFragment)

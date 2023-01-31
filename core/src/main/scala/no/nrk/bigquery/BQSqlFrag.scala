@@ -1,7 +1,6 @@
 package no.nrk.bigquery
 
 import no.nrk.bigquery.implicits._
-import com.google.cloud.bigquery.TableId
 import io.circe.{Encoder, Json}
 import no.nrk.bigquery.BQSqlFrag.asSubQuery
 
@@ -59,9 +58,9 @@ sealed trait BQSqlFrag {
           case x @ BQPartitionId.MonthPartitioned(_, _) => x.asSubQuery.asString
           case x @ BQPartitionId.DatePartitioned(_, _)  => x.asSubQuery.asString
           case x @ BQPartitionId.Sharded(_, _) =>
-            bqFormatTableId(x.asTableId).asString
+            x.asTableId.asFragment.asString
           case x @ BQPartitionId.NotPartitioned(_) =>
-            bqFormatTableId(x.asTableId).asString
+            x.asTableId.asFragment.asString
         }
     }
 
@@ -103,6 +102,7 @@ sealed trait BQSqlFrag {
 
 object BQSqlFrag {
   def apply(string: String): BQSqlFrag = Frag(string)
+  def backticks(string: String): BQSqlFrag = Frag("`" + string + "`")
 
   case class Frag(string: String) extends BQSqlFrag
   case class Call(udf: UDF, args: Seq[BQSqlFrag]) extends BQSqlFrag {
@@ -179,13 +179,11 @@ object BQSqlFrag {
                       .map(s => StringValue(s.drop(1)))
                       .mkFragment("[", ", ", "]")
 
-                    val wildcard = TableId.of(
-                      first.wholeTable.tableId.getProject,
-                      first.wholeTable.tableId.getDataset,
-                      first.wholeTable.tableId.getTable + "_" + firstDigit.toString + "*"
+                    val wildcard = first.wholeTable.tableId.modifyTableName(
+                      _ + "_" + firstDigit.toString + "*"
                     )
 
-                    bqfr"(select * from ${bqFormatTableId(wildcard)} WHERE _TABLE_SUFFIX IN UNNEST($in))"
+                    bqfr"(select * from ${wildcard.asFragment} WHERE _TABLE_SUFFIX IN UNNEST($in))"
 
                   }
               case Nil => None
@@ -206,7 +204,7 @@ object BQSqlFrag {
               case partitions @ (first :: _) =>
                 val in = partitions.map(_.partition).mkFragment("[", ", ", "]")
                 Some(
-                  bqfr"(select * from ${bqFormatTableId(first.wholeTable.tableId)} WHERE ${first.field} IN UNNEST($in))"
+                  bqfr"(select * from ${first.wholeTable.tableId.asFragment} WHERE ${first.field} IN UNNEST($in))"
                 )
               case Nil => None
             }
@@ -218,7 +216,7 @@ object BQSqlFrag {
               case partitions @ (first :: _) =>
                 val in = partitions.map(_.partition).mkFragment("[", ", ", "]")
                 Some(
-                  bqfr"(select * from ${bqFormatTableId(first.wholeTable.tableId)} WHERE ${first.field} IN UNNEST($in))"
+                  bqfr"(select * from ${first.wholeTable.tableId.asFragment} WHERE ${first.field} IN UNNEST($in))"
                 )
               case Nil => None
             }
