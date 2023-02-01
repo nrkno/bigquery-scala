@@ -22,7 +22,7 @@ ThisBuild / githubWorkflowPublishTargetBranches :=
 
 ThisBuild / githubWorkflowPublish := Seq(
   WorkflowStep.Sbt(
-    commands = List("publish"),
+    commands = List("+publish"),
     name = Some("Publish project"),
     env = Map(
       "MYGET_USERNAME" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_WRITE_ID }}",
@@ -56,6 +56,11 @@ val Scala212 = "2.12.17"
 val Scala213 = "2.13.10"
 ThisBuild / crossScalaVersions := Seq(Scala213, Scala212, "3.2.1")
 ThisBuild / scalaVersion := Scala213 // the default Scala
+ThisBuild / tlVersionIntroduced := Map(
+  "2.12" -> "0.1.1",
+  "3" -> "0.1.1",
+  "2.13" -> "0.1.0"
+)
 
 val commonSettings = Seq(
   resolvers += "MyGet - datahub" at s"https://nrk.myget.org/F/datahub/maven/",
