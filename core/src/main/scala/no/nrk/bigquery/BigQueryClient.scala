@@ -491,14 +491,15 @@ class BigQueryClient[F[_]](
       }
 
   def getTable(
-      tableId: TableId,
+      tableId: BQTableId,
       tableOptions: TableOption*
   ): F[Option[Table]] =
     F.blocking(
-      Option(bigQuery.getTable(tableId, tableOptions: _*)).filter(_.exists())
+      Option(bigQuery.getTable(tableId.underlying, tableOptions: _*))
+        .filter(_.exists())
     )
 
-  def tableExists(tableId: TableId): F[Table] =
+  def tableExists(tableId: BQTableId): F[Table] =
     getTable(tableId).flatMap {
       case None =>
         F.raiseError(new RuntimeException(s"Table $tableId does not exists"))
@@ -527,8 +528,8 @@ class BigQueryClient[F[_]](
   def update(table: TableInfo): F[Table] =
     F.delay(bigQuery.update(table))
 
-  def delete(tableId: TableId): F[Boolean] =
-    F.delay(bigQuery.delete(tableId))
+  def delete(tableId: BQTableId): F[Boolean] =
+    F.delay(bigQuery.delete(tableId.underlying))
 
   def tablesIn(
       dataset: BQDataset,
