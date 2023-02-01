@@ -423,41 +423,41 @@ class BigQueryClient[F[_]](
   def submitJob(jobName: BQJobName, location: Option[LocationId])(
       runJob: JobId => F[Option[Job]]
   ): F[Option[Job]] = {
-    BQMetrics(metricOps, None) {
-      jobName
-        .freshJobId(location)
-        .flatMap(runJob)
-        .flatMap {
-          case Some(runningJob) =>
-            val logged: F[Job] =
-              BQPoll
-                .poll[F](
-                  runningJob,
-                  baseDelay = 3.second,
-                  maxDuration = 20.minutes,
-                  maxErrorsTolerated = 10
-                )(
-                  retry = F.blocking(bigQuery.getJob(runningJob.getJobId))
-                )
-                .flatMap {
-                  case BQPoll.Failed(error) => F.raiseError[Job](error)
-                  case BQPoll.Success(job)  => F.pure(job)
-                }
-                .guaranteeCase {
-                  case Outcome.Errored(e) =>
-                    logger.warn(e)(show"${runningJob.show} failed")
-                  case Outcome.Canceled() =>
-                    logger.warn(show"${runningJob.show} cancelled")
-                  case Outcome.Succeeded(_) =>
-                    logger.debug(show"${runningJob.show} succeeded")
-                }
+    val loggedJob: JobId => F[Option[Job]] = id =>
+      runJob(id).flatMap {
+        case Some(runningJob) =>
+          val logged: F[Job] =
+            BQPoll
+              .poll[F](
+                runningJob,
+                baseDelay = 3.second,
+                maxDuration = 20.minutes,
+                maxErrorsTolerated = 10
+              )(
+                retry = F.blocking(bigQuery.getJob(runningJob.getJobId))
+              )
+              .flatMap {
+                case BQPoll.Failed(error) => F.raiseError[Job](error)
+                case BQPoll.Success(job)  => F.pure(job)
+              }
+              .guaranteeCase {
+                case Outcome.Errored(e) =>
+                  logger.warn(e)(show"${runningJob.show} failed")
+                case Outcome.Canceled() =>
+                  logger.warn(show"${runningJob.show} cancelled")
+                case Outcome.Succeeded(_) =>
+                  logger.debug(show"${runningJob.show} succeeded")
+              }
 
-            logged.map(Some.apply)
+          logged.map(Some.apply)
 
-          case None =>
-            F.pure(None)
-        }
-    }
+        case None =>
+          F.pure(None)
+      }
+
+    jobName
+      .freshJobId(location)
+      .flatMap(id => BQMetrics(metricOps, id)(loggedJob(id)))
   }
 
   def getTable(

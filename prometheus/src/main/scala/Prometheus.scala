@@ -1,8 +1,8 @@
 import cats.data.NonEmptyList
 import cats.effect.{Resource, Sync}
 import cats.syntax.apply._
-import com.google.cloud.bigquery.JobStatistics
 import com.google.cloud.bigquery.JobStatistics.QueryStatistics
+import com.google.cloud.bigquery.{JobId, JobStatistics}
 import io.prometheus.client._
 import no.nrk.bigquery.metrics.{MetricsOps, TerminationType}
 
@@ -25,6 +25,7 @@ object Prometheus {
     def apply[F[_]: Sync](
         registry: CollectorRegistry,
         prefix: String = "com_google_bigquery",
+        classifierF: JobId => Option[String],
         responseDurationSecondsHistogramBuckets: NonEmptyList[Double] =
           DefaultHistogramBuckets
     ): Resource[F, MetricsOps[F]] =
@@ -34,64 +35,65 @@ object Prometheus {
           prefix,
           responseDurationSecondsHistogramBuckets
         )
-      } yield createMetricsOps(metrics)
+      } yield createMetricsOps(metrics, classifierF)
 
     private def createMetricsOps[F[_]](
-        metrics: MetricsCollection
+        metrics: MetricsCollection,
+        classifierF: JobId => Option[String]
     )(implicit F: Sync[F]): MetricsOps[F] =
       new MetricsOps[F] {
         override def increaseActiveRequests(
-            classifier: Option[String]
+            jobId: JobId
         ): F[Unit] =
           F.delay {
             metrics.activeRequests
-              .labels(label(classifier))
+              .labels(label(classifierF(jobId)))
               .inc()
           }
 
         override def decreaseActiveRequests(
-            classifier: Option[String]
+            jobId: JobId
         ): F[Unit] =
           F.delay {
             metrics.activeRequests
-              .labels(label(classifier))
+              .labels(label(classifierF(jobId)))
               .dec()
           }
 
         override def recordTotalTime(
             elapsed: Long,
-            classifier: Option[String]
+            jobId: JobId
         ): F[Unit] =
           F.delay {
             metrics.responseDuration
-              .labels(label(classifier))
+              .labels(label(classifierF(jobId)))
               .observe(SimpleTimer.elapsedSecondsFromNanos(0, elapsed))
             metrics.requests
-              .labels(label(classifier))
+              .labels(label(classifierF(jobId)))
               .inc()
           }
 
         override def recordAbnormalTermination(
             elapsed: Long,
             terminationType: TerminationType,
-            classifier: Option[String]
+            jobId: JobId
         ): F[Unit] =
           terminationType match {
             case TerminationType.Abnormal(e) =>
-              recordAbnormal(elapsed, classifier, e)
-            case TerminationType.Error(e) => recordError(elapsed, classifier, e)
-            case TerminationType.Canceled => recordCanceled(elapsed, classifier)
-            case TerminationType.Timeout  => recordTimeout(elapsed, classifier)
+              recordAbnormal(elapsed, jobId, e)
+            case TerminationType.Error(e) => recordError(elapsed, jobId, e)
+            case TerminationType.Canceled => recordCanceled(elapsed, jobId)
+            case TerminationType.Timeout  => recordTimeout(elapsed, jobId)
           }
 
         private def recordCanceled(
             elapsed: Long,
-            classifier: Option[String]
+            jobId: JobId
         ): F[Unit] =
           F.delay {
             metrics.abnormalTerminations
               .labels(
-                label(classifier),
+                label(classifierF(jobId)),
                 AbnormalTermination.report(AbnormalTermination.Canceled),
                 label(Option.empty)
               )
@@ -100,13 +102,13 @@ object Prometheus {
 
         private def recordAbnormal(
             elapsed: Long,
-            classifier: Option[String],
+            jobId: JobId,
             cause: Throwable
         ): F[Unit] =
           F.delay {
             metrics.abnormalTerminations
               .labels(
-                label(classifier),
+                label(classifierF(jobId)),
                 AbnormalTermination.report(AbnormalTermination.Abnormal),
                 label(Option(cause.getClass.getName))
               )
@@ -115,13 +117,13 @@ object Prometheus {
 
         private def recordError(
             elapsed: Long,
-            classifier: Option[String],
+            jobId: JobId,
             cause: Throwable
         ): F[Unit] =
           F.delay {
             metrics.abnormalTerminations
               .labels(
-                label(classifier),
+                label(classifierF(jobId)),
                 AbnormalTermination.report(AbnormalTermination.Error),
                 label(Option(cause.getClass.getName))
               )
@@ -130,12 +132,12 @@ object Prometheus {
 
         private def recordTimeout(
             elapsed: Long,
-            classifier: Option[String]
+            jobId: JobId
         ): F[Unit] =
           F.delay {
             metrics.abnormalTerminations
               .labels(
-                label(classifier),
+                label(classifierF(jobId)),
                 AbnormalTermination.report(AbnormalTermination.Timeout),
                 label(Option.empty)
               )
@@ -144,7 +146,7 @@ object Prometheus {
 
         override def recordTotalBytesBilled(
             job: Option[JobStatistics],
-            classifier: Option[String]
+            jobId: JobId
         ): F[Unit] =
           job
             .collect { case stats: QueryStatistics =>
@@ -154,7 +156,7 @@ object Prometheus {
               F.delay {
                 metrics.bytesBilled
                   .labels(
-                    label(classifier)
+                    label(classifierF(jobId))
                   )
                   .inc(totalBytesBilled.toDouble)
               }
