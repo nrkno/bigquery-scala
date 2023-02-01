@@ -14,27 +14,6 @@ object Prometheus {
       F.blocking(cr.clear())
     )
 
-  def NoopMetricsOps[F[_]](implicit F: Sync[F]): Resource[F, MetricsOps[F]] =
-    Resource.pure(new MetricsOps[F] {
-      override def increaseActiveRequests(classifier: Option[String]): F[Unit] =
-        F.unit
-      override def decreaseActiveRequests(classifier: Option[String]): F[Unit] =
-        F.unit
-      override def recordTotalTime(
-          elapsed: Long,
-          classifier: Option[String]
-      ): F[Unit] = F.unit
-      override def recordAbnormalTermination(
-          elapsed: Long,
-          terminationType: TerminationType,
-          classifier: Option[String]
-      ): F[Unit] = F.unit
-      override def recordTotalBytesBilled(
-          job: Option[JobStatistics],
-          classifier: Option[String]
-      ): F[Unit] = F.unit
-    })
-
   /** Creates a [[MetricsOps]] that supports Prometheus metrics
     *
     * @param registry

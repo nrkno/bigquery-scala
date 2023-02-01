@@ -1,5 +1,7 @@
 package no.nrk.bigquery.metrics
 
+import cats.effect.Sync
+import cats.effect.kernel.Resource
 import com.google.cloud.bigquery.JobStatistics
 
 trait MetricsOps[F[_]] {
@@ -15,6 +17,33 @@ trait MetricsOps[F[_]] {
       job: Option[JobStatistics],
       classifier: Option[String]
   ): F[Unit]
+}
+
+object MetricsOps {
+  def NoopMetricsOps[F[_]](implicit F: Sync[F]): Resource[F, MetricsOps[F]] =
+    Resource.pure(new MetricsOps[F] {
+      override def increaseActiveRequests(classifier: Option[String]): F[Unit] =
+        F.unit
+
+      override def decreaseActiveRequests(classifier: Option[String]): F[Unit] =
+        F.unit
+
+      override def recordTotalTime(
+          elapsed: Long,
+          classifier: Option[String]
+      ): F[Unit] = F.unit
+
+      override def recordAbnormalTermination(
+          elapsed: Long,
+          terminationType: TerminationType,
+          classifier: Option[String]
+      ): F[Unit] = F.unit
+
+      override def recordTotalBytesBilled(
+          job: Option[JobStatistics],
+          classifier: Option[String]
+      ): F[Unit] = F.unit
+    })
 }
 
 /** Describes the type of abnormal termination */
