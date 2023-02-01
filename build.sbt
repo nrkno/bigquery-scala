@@ -37,6 +37,13 @@ ThisBuild / githubWorkflowBuild := {
       step.copy(env =
         Map(
           "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}",
+          "ASSERT_CURRENT_GENERATED_FILES" -> "1"
+        )
+      )
+    case step: WorkflowStep.Sbt
+        if step.name.contains("Check binary compatibility") =>
+      step.copy(env =
+        Map(
           "MYGET_USERNAME" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_ID }}",
           "MYGET_PASSWORD" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_SECRET }}"
         )
