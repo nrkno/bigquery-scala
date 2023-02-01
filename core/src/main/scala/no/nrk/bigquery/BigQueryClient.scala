@@ -457,7 +457,7 @@ class BigQueryClient[F[_]](
 
     jobName
       .freshJobId(location)
-      .flatMap(id => BQMetrics(metricOps, id)(loggedJob(id)))
+      .flatMap(id => BQMetrics(metricOps, jobName)(loggedJob(id)))
   }
 
   def getTable(

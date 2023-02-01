@@ -2,46 +2,47 @@ package no.nrk.bigquery.metrics
 
 import cats.effect.Sync
 import cats.effect.kernel.Resource
-import com.google.cloud.bigquery.{JobId, JobStatistics}
+import com.google.cloud.bigquery.JobStatistics
+import no.nrk.bigquery.BQJobName
 
 trait MetricsOps[F[_]] {
-  def increaseActiveRequests(jobId: JobId): F[Unit]
-  def decreaseActiveRequests(jobId: JobId): F[Unit]
-  def recordTotalTime(elapsed: Long, jobId: JobId): F[Unit]
+  def increaseActiveRequests(jobName: BQJobName): F[Unit]
+  def decreaseActiveRequests(jobName: BQJobName): F[Unit]
+  def recordTotalTime(elapsed: Long, jobName: BQJobName): F[Unit]
   def recordAbnormalTermination(
       elapsed: Long,
       terminationType: TerminationType,
-      jobId: JobId
+      jobName: BQJobName
   ): F[Unit]
   def recordTotalBytesBilled(
       job: Option[JobStatistics],
-      jobId: JobId
+      jobName: BQJobName
   ): F[Unit]
 }
 
 object MetricsOps {
   def NoopMetricsOps[F[_]](implicit F: Sync[F]): Resource[F, MetricsOps[F]] =
     Resource.pure(new MetricsOps[F] {
-      override def increaseActiveRequests(jobId: JobId): F[Unit] =
+      override def increaseActiveRequests(jobName: BQJobName): F[Unit] =
         F.unit
 
-      override def decreaseActiveRequests(jobId: JobId): F[Unit] =
+      override def decreaseActiveRequests(jobName: BQJobName): F[Unit] =
         F.unit
 
       override def recordTotalTime(
           elapsed: Long,
-          jobId: JobId
+          jobName: BQJobName
       ): F[Unit] = F.unit
 
       override def recordAbnormalTermination(
           elapsed: Long,
           terminationType: TerminationType,
-          jobId: JobId
+          jobName: BQJobName
       ): F[Unit] = F.unit
 
       override def recordTotalBytesBilled(
           job: Option[JobStatistics],
-          jobId: JobId
+          jobName: BQJobName
       ): F[Unit] = F.unit
     })
 }
