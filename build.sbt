@@ -36,7 +36,8 @@ ThisBuild / githubWorkflowBuild := {
     case step: WorkflowStep.Sbt if step.name.contains("Test") =>
       step.copy(env =
         Map(
-          "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}"
+          "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}",
+          "ASSERT_CURRENT_GENERATED_FILES" -> "1"
         )
       )
     case step: WorkflowStep.Sbt

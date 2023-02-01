@@ -71,6 +71,7 @@ jobs:
       - name: Test
         env:
           BIGQUERY_SERVICE_ACCOUNT: ${{secrets.BIGQUERY_SERVICE_ACCOUNT}}
+          ASSERT_CURRENT_GENERATED_FILES: 1
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' test
 
       - name: Check binary compatibility
