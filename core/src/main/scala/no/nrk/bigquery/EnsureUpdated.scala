@@ -372,7 +372,7 @@ class EnsureUpdated[F[_]](
   private val logger = lf.getLogger
 
   def check(template: BQTableDef[Any]): F[UpdateOperation] =
-    bqClient.getTable(template.tableId.underlying).map { maybeExisting =>
+    bqClient.getTable(template.tableId).map { maybeExisting =>
       UpdateOperation.from(template, maybeExisting)
     }
 
@@ -403,7 +403,7 @@ class EnsureUpdated[F[_]](
           show"Recreating ${to.tableId} of type ${to.getClass.getSimpleName} from ${from.toString}, to ${to.toString}"
         for {
           _ <- logger.warn(msg)
-          _ <- bqClient.delete(createNew.table.getTableId)
+          _ <- bqClient.delete(createNew.localTableDef.tableId)
           updated <- perform(createNew)
         } yield updated
 
