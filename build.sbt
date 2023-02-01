@@ -36,7 +36,13 @@ ThisBuild / githubWorkflowBuild := {
     case step: WorkflowStep.Sbt if step.name.contains("Test") =>
       step.copy(env =
         Map(
-          "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}",
+          "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}"
+        )
+      )
+    case step: WorkflowStep.Sbt
+        if step.name.contains("Check binary compatibility") =>
+      step.copy(env =
+        Map(
           "MYGET_USERNAME" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_ID }}",
           "MYGET_PASSWORD" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_SECRET }}"
         )

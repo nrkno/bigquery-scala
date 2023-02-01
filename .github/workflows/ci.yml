@@ -71,12 +71,13 @@ jobs:
       - name: Test
         env:
           BIGQUERY_SERVICE_ACCOUNT: ${{secrets.BIGQUERY_SERVICE_ACCOUNT}}
-          MYGET_USERNAME: ${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_ID }}
-          MYGET_PASSWORD: ${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_SECRET }}
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' test
 
       - name: Check binary compatibility
         if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-latest'
+        env:
+          MYGET_USERNAME: ${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_ID }}
+          MYGET_PASSWORD: ${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_SECRET }}
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' mimaReportBinaryIssues
 
       - name: Generate API documentation
