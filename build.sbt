@@ -61,7 +61,7 @@ val commonSettings = Seq(
   credentials ++= {
     (sys.env.get("MYGET_USERNAME"), sys.env.get("MYGET_PASSWORD")) match {
       case (Some(username), Some(password)) =>
-        List(Credentials("Myget", "nrk.myget.org", username, password))
+        List(Credentials("MyGet - datahub", "nrk.myget.org", username, password))
       case _ => Nil
     }
   },
