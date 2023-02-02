@@ -7,6 +7,7 @@ import cats.syntax.all._
 import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
 import com.google.cloud.bigquery.BigQuery.JobOption
 import fs2.Stream
+import no.nrk.bigquery.metrics.MetricsOps
 import org.apache.avro
 import org.apache.avro.file.{DataFileReader, DataFileWriter}
 import org.apache.avro.generic.{
@@ -52,7 +53,8 @@ object BigQueryTestClient {
             IO.blocking(GoogleCredentials.getApplicationDefault)
           )
       )
-      underlying <- BigQueryClient.resource(credentials, new BQTracker.Noop[IO])
+      noopMetrics <- MetricsOps.NoopMetricsOps[IO]
+      underlying <- BigQueryClient.resource(credentials, noopMetrics)
     } yield underlying
 
   private val logger = LoggerFactory.getLogger[IO]
@@ -61,7 +63,7 @@ object BigQueryTestClient {
       cacheFrom: Resource[IO, BigQueryClient[IO]]
   ): Resource[IO, BigQueryClient[IO]] =
     cacheFrom.map(client =>
-      new BigQueryClient(client.underlying, client.reader, client.track) {
+      new BigQueryClient(client.underlying, client.reader, client.metricOps) {
         override protected def synchronousQueryExecute(
             jobName: BQJobName,
             query: BQSqlFrag,

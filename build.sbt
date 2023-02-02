@@ -1,5 +1,5 @@
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
-ThisBuild / tlBaseVersion := "0.2" // your current series x.y
+ThisBuild / tlBaseVersion := "0.3" // your current series x.y
 
 ThisBuild / organization := "no.nrk.bigquery"
 ThisBuild / organizationName := "NRK"
@@ -131,6 +131,19 @@ lazy val core = crossProject(JVMPlatform)
         )
       }
     }
+  )
+  .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
+
+lazy val prometheus = crossProject(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("prometheus"))
+  .settings(commonSettings)
+  .dependsOn(core)
+  .settings(
+    name := "bigquery-prometheus",
+    libraryDependencies ++= Seq(
+      "io.prometheus" % "simpleclient" % "0.16.0"
+    )
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 

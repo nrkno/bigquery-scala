@@ -1,10 +1,9 @@
 package no.nrk.bigquery
 
-import no.nrk.bigquery.implicits._
-import cats.effect.kernel.Outcome
-import cats.syntax.all._
-import cats.effect.{Async, Resource}
 import cats.effect.implicits._
+import cats.effect.kernel.Outcome
+import cats.effect.{Async, Resource}
+import cats.syntax.all._
 import com.google.api.gax.core.FixedCredentialsProvider
 import com.google.api.gax.retrying.RetrySettings
 import com.google.api.gax.rpc.ServerStream
@@ -15,9 +14,11 @@ import com.google.cloud.bigquery.JobStatistics.LoadStatistics
 import com.google.cloud.bigquery.storage.v1._
 import com.google.cloud.bigquery.{Option => _, _}
 import com.google.cloud.http.HttpTransportOptions
-import util.StreamUtils
 import fs2.{Chunk, Stream}
 import io.circe.Encoder
+import no.nrk.bigquery.implicits.showJob
+import no.nrk.bigquery.metrics.{BQMetrics, MetricsOps}
+import no.nrk.bigquery.util.StreamUtils
 import org.apache.avro
 import org.apache.avro.generic.{GenericDatumReader, GenericRecord}
 import org.apache.avro.io.DecoderFactory
@@ -33,7 +34,7 @@ import scala.jdk.CollectionConverters._
 class BigQueryClient[F[_]](
     bigQuery: BigQuery,
     val reader: BigQueryReadClient,
-    val track: BQTracker[F]
+    val metricOps: MetricsOps[F]
 )(implicit F: Async[F], lf: LoggerFactory[F]) {
   private val logger = lf.getLogger
 
@@ -421,15 +422,10 @@ class BigQueryClient[F[_]](
     */
   def submitJob(jobName: BQJobName, location: Option[LocationId])(
       runJob: JobId => F[Option[Job]]
-  ): F[Option[Job]] =
-    F.delay(System.currentTimeMillis)
-      .product(jobName.freshJobId(location).flatMap(runJob))
-      .flatMap {
-        case (t0, Some(runningJob)) =>
-          val mkDuration = F
-            .delay(System.currentTimeMillis)
-            .map(t1 => FiniteDuration.apply(t1 - t0, TimeUnit.MILLISECONDS))
-
+  ): F[Option[Job]] = {
+    val loggedJob: JobId => F[Option[Job]] = id =>
+      runJob(id).flatMap {
+        case Some(runningJob) =>
           val logged: F[Job] =
             BQPoll
               .poll[F](
@@ -446,49 +442,23 @@ class BigQueryClient[F[_]](
               }
               .guaranteeCase {
                 case Outcome.Errored(e) =>
-                  for {
-                    _ <- logger.warn(e)(show"${runningJob.show} failed")
-                    duration <- mkDuration
-                    _ <- track(
-                      duration,
-                      jobName,
-                      isSuccess = false,
-                      stats = None
-                    )
-                  } yield ()
-
+                  logger.warn(e)(show"${runningJob.show} failed")
                 case Outcome.Canceled() =>
-                  for {
-                    _ <- logger.warn(show"${runningJob.show} cancelled")
-                    duration <- mkDuration
-                    _ <- track(
-                      duration,
-                      jobName,
-                      isSuccess = false,
-                      stats = None
-                    )
-                  } yield ()
+                  logger.warn(show"${runningJob.show} cancelled")
                 case Outcome.Succeeded(_) =>
-                  F.unit // we don't have access to the completed job here
+                  logger.debug(show"${runningJob.show} succeeded")
               }
-              .flatTap(succeededJob =>
-                for {
-                  _ <- logger.debug(show"${succeededJob.show} succeeded")
-                  duration <- mkDuration
-                  _ <- track(
-                    duration,
-                    jobName,
-                    isSuccess = true,
-                    stats = Option(succeededJob.getStatistics[JobStatistics])
-                  )
-                } yield ()
-              )
 
           logged.map(Some.apply)
 
-        case (_, None) =>
+        case None =>
           F.pure(None)
       }
+
+    jobName
+      .freshJobId(location)
+      .flatMap(id => BQMetrics(metricOps, jobName)(loggedJob(id)))
+  }
 
   def getTable(
       tableId: BQTableId,
@@ -628,7 +598,7 @@ object BigQueryClient {
 
   def resource[F[_]: Async: LoggerFactory](
       credentials: Credentials,
-      tracker: BQTracker[F],
+      metricsOps: MetricsOps[F],
       configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] =
         None
   ): Resource[F, BigQueryClient[F]] =
@@ -637,5 +607,5 @@ object BigQueryClient {
         BigQueryClient.fromCredentials(credentials, configure)
       )
       bqRead <- BigQueryClient.readerResource(credentials)
-    } yield new BigQueryClient(bq, bqRead, tracker)
+    } yield new BigQueryClient(bq, bqRead, metricsOps)
 }
