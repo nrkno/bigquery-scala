@@ -1,6 +1,6 @@
 package no.nrk.bigquery.metrics
 
-import cats.effect.Sync
+import cats.Applicative
 import cats.effect.kernel.Resource
 import com.google.cloud.bigquery.JobStatistics
 import no.nrk.bigquery.BQJobName
@@ -21,7 +21,7 @@ trait MetricsOps[F[_]] {
 }
 
 object MetricsOps {
-  def NoopMetricsOps[F[_]](implicit F: Sync[F]): Resource[F, MetricsOps[F]] =
+  def NoopMetricsOps[F[_]](implicit F: Applicative[F]): Resource[F, MetricsOps[F]] =
     Resource.pure(new MetricsOps[F] {
       override def increaseActiveJobs(jobName: BQJobName): F[Unit] =
         F.unit
