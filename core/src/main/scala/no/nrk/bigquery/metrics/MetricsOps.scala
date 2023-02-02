@@ -6,8 +6,8 @@ import com.google.cloud.bigquery.JobStatistics
 import no.nrk.bigquery.BQJobName
 
 trait MetricsOps[F[_]] {
-  def increaseActiveRequests(jobName: BQJobName): F[Unit]
-  def decreaseActiveRequests(jobName: BQJobName): F[Unit]
+  def increaseActiveJobs(jobName: BQJobName): F[Unit]
+  def decreaseActiveJobs(jobName: BQJobName): F[Unit]
   def recordTotalTime(elapsed: Long, jobName: BQJobName): F[Unit]
   def recordAbnormalTermination(
       elapsed: Long,
@@ -23,10 +23,10 @@ trait MetricsOps[F[_]] {
 object MetricsOps {
   def NoopMetricsOps[F[_]](implicit F: Sync[F]): Resource[F, MetricsOps[F]] =
     Resource.pure(new MetricsOps[F] {
-      override def increaseActiveRequests(jobName: BQJobName): F[Unit] =
+      override def increaseActiveJobs(jobName: BQJobName): F[Unit] =
         F.unit
 
-      override def decreaseActiveRequests(jobName: BQJobName): F[Unit] =
+      override def decreaseActiveJobs(jobName: BQJobName): F[Unit] =
         F.unit
 
       override def recordTotalTime(

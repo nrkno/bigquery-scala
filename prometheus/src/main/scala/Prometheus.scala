@@ -43,20 +43,20 @@ object Prometheus {
         classifierF: BQJobName => Option[String]
     )(implicit F: Sync[F]): MetricsOps[F] =
       new MetricsOps[F] {
-        override def increaseActiveRequests(
+        override def increaseActiveJobs(
             jobName: BQJobName
         ): F[Unit] =
           F.delay {
-            metrics.activeRequests
+            metrics.activeJobs
               .labels(label(classifierF(jobName)))
               .inc()
           }
 
-        override def decreaseActiveRequests(
+        override def decreaseActiveJobs(
             jobName: BQJobName
         ): F[Unit] =
           F.delay {
-            metrics.activeRequests
+            metrics.activeJobs
               .labels(label(classifierF(jobName)))
               .dec()
           }
@@ -66,10 +66,10 @@ object Prometheus {
             jobName: BQJobName
         ): F[Unit] =
           F.delay {
-            metrics.responseDuration
+            metrics.jobDuration
               .labels(label(classifierF(jobName)))
               .observe(SimpleTimer.elapsedSecondsFromNanos(0, elapsed))
-            metrics.requests
+            metrics.jobs
               .labels(label(classifierF(jobName)))
               .inc()
           }
@@ -165,40 +165,39 @@ object Prometheus {
             .getOrElse(F.unit)
 
         private def label(value: Option[String]): String = value.getOrElse("")
-
       }
 
     private def createMetricsCollection[F[_]: Sync](
         registry: CollectorRegistry,
         prefix: String,
-        responseDurationSecondsHistogramBuckets: NonEmptyList[Double]
+        jobDurationSecondsHistogramBuckets: NonEmptyList[Double]
     ): Resource[F, MetricsCollection] = {
-      val responseDuration: Resource[F, Histogram] = registerCollector(
+      val jobDuration: Resource[F, Histogram] = registerCollector(
         Histogram
           .build()
-          .buckets(responseDurationSecondsHistogramBuckets.toList: _*)
-          .name(prefix + "_" + "response_duration_seconds")
-          .help("Response Duration in seconds.")
+          .buckets(jobDurationSecondsHistogramBuckets.toList: _*)
+          .name(prefix + "_" + "job_duration_seconds")
+          .help("Job Duration in seconds.")
           .labelNames("classifier")
           .create(),
         registry
       )
 
-      val activeRequests: Resource[F, Gauge] = registerCollector(
+      val activeJobs: Resource[F, Gauge] = registerCollector(
         Gauge
           .build()
-          .name(prefix + "_" + "active_request_count")
-          .help("Total Active Requests.")
+          .name(prefix + "_" + "active_jobs_count")
+          .help("Total Active Jobs Requests.")
           .labelNames("classifier")
           .create(),
         registry
       )
 
-      val requests: Resource[F, Counter] = registerCollector(
+      val jobs: Resource[F, Counter] = registerCollector(
         Counter
           .build()
-          .name(prefix + "_" + "request_count")
-          .help("Total Requests.")
+          .name(prefix + "_" + "jobs_count")
+          .help("Total Jobs.")
           .labelNames("classifier")
           .create(),
         registry
@@ -214,8 +213,8 @@ object Prometheus {
         registry
       )
 
-      val bytesBilled: Resource[F, Gauge] = registerCollector(
-        Gauge
+      val bytesBilled: Resource[F, Counter] = registerCollector(
+        Counter
           .build()
           .name(prefix + "_" + "bytes_billed")
           .help("Total bytes billed.")
@@ -225,9 +224,9 @@ object Prometheus {
       )
 
       (
-        responseDuration,
-        activeRequests,
-        requests,
+        jobDuration,
+        activeJobs,
+        jobs,
         abnormalTerminations,
         bytesBilled
       ).mapN(MetricsCollection.apply)
@@ -251,11 +250,11 @@ object Prometheus {
 }
 
 final case class MetricsCollection(
-    responseDuration: Histogram,
-    activeRequests: Gauge,
-    requests: Counter,
+    jobDuration: Histogram,
+    activeJobs: Gauge,
+    jobs: Counter,
     abnormalTerminations: Histogram,
-    bytesBilled: Gauge
+    bytesBilled: Counter
 )
 
 private sealed trait AbnormalTermination
