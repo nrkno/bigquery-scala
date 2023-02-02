@@ -140,29 +140,10 @@ lazy val prometheus = crossProject(JVMPlatform)
   .settings(commonSettings)
   .dependsOn(core)
   .settings(
-    name := "bigquery-core",
-    Compile / headerSources := Nil,
-    Test / headerSources := Nil,
+    name := "bigquery-prometheus",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.9.0",
-      "org.typelevel" %% "cats-effect" % "3.4.4",
-      "com.google.cloud" % "google-cloud-bigquery" % "2.21.0",
-      "io.prometheus" % "simpleclient_caffeine" % "0.16.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.9.0"
-    ),
-    libraryDependencies ++= {
-      if (scalaVersion.value.startsWith("3")) {
-        Seq(
-          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.1.2"
-        )
-      } else {
-        // scala2
-        Seq(
-          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.2",
-          "org.scala-lang" % "scala-reflect" % scalaVersion.value
-        )
-      }
-    }
+      "io.prometheus" % "simpleclient" % "0.16.0",
+    )
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
