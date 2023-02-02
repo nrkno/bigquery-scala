@@ -9,16 +9,13 @@ case class BQSchema(fields: List[BQField]) {
   def toSchema: Schema =
     Schema.of(fields.map(_.toField): _*)
 
-  /** This is useful for views, because we're unable to create views with
-    * required columns.
+  /** This is useful for views, because we're unable to create views with required columns.
     *
-    * This is enforced by BQ at create-time because we *have* to create the view
-    * without a schema, and then we may optionally update the view to add our
-    * schema, and in that case it can only legally extend what was inferred.
+    * This is enforced by BQ at create-time because we *have* to create the view without a schema, and then we may
+    * optionally update the view to add our schema, and in that case it can only legally extend what was inferred.
     *
     * @return
-    *   a version of the BQSchema with all fields set to nullable. repeated
-    *   fields are still allowed.
+    *   a version of the BQSchema with all fields set to nullable. repeated fields are still allowed.
     */
   def recursivelyNullable: BQSchema =
     copy(fields = fields.map(_.recursivelyNullable))

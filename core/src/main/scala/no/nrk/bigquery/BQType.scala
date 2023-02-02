@@ -5,12 +5,10 @@ import io.circe.{Decoder, Encoder}
 
 import scala.util.Try
 
-/** This is the schema of a BQ type, where fields don't have names until they
-  * are placed inside a struct.
+/** This is the schema of a BQ type, where fields don't have names until they are placed inside a struct.
   *
-  * We also use it for query responses, where single-column corresponds to a
-  * non-struct `BQType`, and otherwise all chosen columns are packed into a
-  * struct
+  * We also use it for query responses, where single-column corresponds to a non-struct `BQType`, and otherwise all
+  * chosen columns are packed into a struct
   */
 case class BQType(
     mode: Field.Mode,
@@ -91,8 +89,7 @@ object BQType {
 
   def format(f: BQType): String =
     f match {
-      case f
-          if f.tpe == StandardSQLTypeName.STRUCT && f.mode == Field.Mode.REPEATED =>
+      case f if f.tpe == StandardSQLTypeName.STRUCT && f.mode == Field.Mode.REPEATED =>
         s"ARRAY<STRUCT<${f.subFields
             .map { case (name, sf) => s"$name ${format(sf)}" }
             .mkString(", ")}>>"

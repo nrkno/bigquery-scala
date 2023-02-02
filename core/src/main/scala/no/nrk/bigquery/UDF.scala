@@ -12,7 +12,7 @@ case class UDF(
   lazy val definition: BQSqlFrag = {
     val returning = returnType match {
       case Some(returnType) => bqfr" RETURNS $returnType"
-      case None             => BQSqlFrag.Empty
+      case None => BQSqlFrag.Empty
     }
     bqfr"CREATE TEMP FUNCTION $name${params.map(_.definition).mkFragment("(", ", ", ")")}$returning AS ($body);"
   }
@@ -26,7 +26,7 @@ object UDF {
     def definition: BQSqlFrag =
       maybeType match {
         case Some(tpe) => bqfr"$name $tpe"
-        case None      => bqfr"$name ANY TYPE"
+        case None => bqfr"$name ANY TYPE"
       }
   }
   object Param {

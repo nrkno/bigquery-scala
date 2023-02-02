@@ -13,7 +13,7 @@ sealed trait StartDate[+T] {
 
   def asDate: StartDate[LocalDate] =
     this match {
-      case StartDate.All         => StartDate.All
+      case StartDate.All => StartDate.All
       case x: StartDate.FromDate => x
       case x: StartDate.FromMonth =>
         StartDate.FromDate(x.startInclusive.atDay(1))

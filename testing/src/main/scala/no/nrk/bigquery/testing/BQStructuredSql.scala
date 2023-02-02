@@ -5,12 +5,10 @@ import no.nrk.bigquery._
 
 import scala.collection.mutable
 
-/** We need to insert functions and CTEs into a query which might already have
-  * them. In order to produce legal SQL we don't really have any option other
-  * than to look into the provided SQL a bit
+/** We need to insert functions and CTEs into a query which might already have them. In order to produce legal SQL we
+  * don't really have any option other than to look into the provided SQL a bit
   *
-  * This whole thing should preferably be replaced by something which can
-  * *actually* parse SQL
+  * This whole thing should preferably be replaced by something which can *actually* parse SQL
   */
 case class BQStructuredSql(
     udfs: List[UserDefinedFunction],
@@ -51,8 +49,7 @@ case class BQStructuredSql(
 
 object BQStructuredSql {
 
-  /** This will do its best to separate UDFs and CTEs from the rest of the
-    * query.
+  /** This will do its best to separate UDFs and CTEs from the rest of the query.
     */
   def parse(fullQuery: BQSqlFrag): BQStructuredSql = {
     val segmentList = SegmentList.from(fullQuery.asString)
@@ -61,12 +58,8 @@ object BQStructuredSql {
     val querySegmentList = split.last
 
     val functions: List[UserDefinedFunction] = {
-      val fs1 = fullQuery.allReferencedUDFs.map(udf =>
-        UserDefinedFunction.inline(udf.definition.asString)
-      )
-      val fs2 = functionSegmentLists.map(segmentList =>
-        UserDefinedFunction.inline(segmentList.asString + ";")
-      )
+      val fs1 = fullQuery.allReferencedUDFs.map(udf => UserDefinedFunction.inline(udf.definition.asString))
+      val fs2 = functionSegmentLists.map(segmentList => UserDefinedFunction.inline(segmentList.asString + ";"))
       fs1.toList ++ fs2
     }
     val (ctes, queryPartSegments) = extractCTEs(querySegmentList)
@@ -227,11 +220,11 @@ object BQStructuredSql {
         val segmentText = currentSegment.result()
         if (segmentText.nonEmpty) {
           val created = lastState match {
-            case State.Normal       => Segment.Normal(segmentText)
-            case State.LineComment  => Segment.LineComment(segmentText)
+            case State.Normal => Segment.Normal(segmentText)
+            case State.LineComment => Segment.LineComment(segmentText)
             case State.BlockComment => Segment.BlockComment(segmentText)
-            case State.StrDouble    => Segment.StrDouble(segmentText)
-            case State.StrSingle    => Segment.StrSingle(segmentText)
+            case State.StrDouble => Segment.StrDouble(segmentText)
+            case State.StrSingle => Segment.StrSingle(segmentText)
           }
           segments += created
           currentSegment.clear()

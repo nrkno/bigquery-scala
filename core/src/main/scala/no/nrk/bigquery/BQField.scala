@@ -1,28 +1,19 @@
 package no.nrk.bigquery
 
-import com.google.cloud.bigquery.{
-  Field,
-  FieldList,
-  PolicyTags,
-  StandardSQLTypeName
-}
+import com.google.cloud.bigquery.{Field, FieldList, PolicyTags, StandardSQLTypeName}
 import io.circe.{Decoder, Encoder}
 
 import no.nrk.bigquery.implicits._
 import scala.jdk.CollectionConverters._
 
-/** This is isomorphic to `Field` (can translate back and forth without data
-  * lass)
+/** This is isomorphic to `Field` (can translate back and forth without data lass)
   *
   * We need this because
-  *   - it avoids quite a few inconsistencies (see `BQField.setDescription` and
-  *     `BQField.mapMode`)
-  *   - for that reason it can more safely be compared, including with
-  *     descriptions and modes. If you want to compare it without those, see
-  *     `BQType` and `BQTypeOutline`
+  *   - it avoids quite a few inconsistencies (see `BQField.setDescription` and `BQField.mapMode`)
+  *   - for that reason it can more safely be compared, including with descriptions and modes. If you want to compare it
+  *     without those, see `BQType` and `BQTypeOutline`
   *   - it has nicer syntax to construct
-  *   - it is also way easier to write transform and write recursive code on top
-  *     of
+  *   - it is also way easier to write transform and write recursive code on top of
   */
 case class BQField(
     name: String,
@@ -122,20 +113,20 @@ object BQField {
 
   def mapMode(mode: Field.Mode): Field.Mode =
     mode match {
-      case null  => Field.Mode.NULLABLE
+      case null => Field.Mode.NULLABLE
       case other => other
     }
 
   def mapDescription(description: String): Option[String] =
     description match {
-      case null  => None
-      case ""    => None
+      case null => None
+      case "" => None
       case other => Some(other)
     }
 
   def mapSubFields(fs: FieldList): List[BQField] =
     Option(fs) match {
       case Some(fs) => fs.asScala.toList.map(fromField)
-      case None     => List.empty
+      case None => List.empty
     }
 }

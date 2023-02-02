@@ -108,7 +108,7 @@ class EnsureUpdatedTest extends FunSuite {
 
     UpdateOperation.from(testView, remote) match {
       case UpdateOperation.Noop(_, _) =>
-      case other                      => fail(other.toString)
+      case other => fail(other.toString)
     }
   }
 
@@ -166,7 +166,7 @@ class EnsureUpdatedTest extends FunSuite {
 
     UpdateOperation.from(givenTable, actualTable) match {
       case UpdateOperation.UpdateTable(_, _, _) => assert(cond = true)
-      case other                                => fail(other.toString)
+      case other => fail(other.toString)
     }
   }
 
@@ -222,7 +222,7 @@ class EnsureUpdatedTest extends FunSuite {
 
     UpdateOperation.from(givenTable, actualTable) match {
       case UpdateOperation.UpdateTable(_, _, _) => assert(cond = true)
-      case other                                => fail(other.toString)
+      case other => fail(other.toString)
     }
   }
 
@@ -287,7 +287,7 @@ class EnsureUpdatedTest extends FunSuite {
 
     UpdateOperation.from(testView, remote) match {
       case UpdateOperation.RecreateView(_, _, _) => assert(cond = true)
-      case other                                 => fail(other.toString)
+      case other => fail(other.toString)
     }
   }
 

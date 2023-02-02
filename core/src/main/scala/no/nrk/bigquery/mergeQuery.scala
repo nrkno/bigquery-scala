@@ -16,7 +16,7 @@ object mergeQuery {
       val partitionField: Option[Ident] =
         target.wholeTable.partitionType match {
           case BQPartitionType.DatePartitioned(field) => Some(field)
-          case _                                      => None
+          case _ => None
         }
 
       List(
@@ -47,13 +47,13 @@ object mergeQuery {
            |MERGE ${target.wholeTable.unpartitioned} AS T
            |USING $source AS S
            |ON ${primaryKeys.toList
-            .map(keyEqualsFragment(allFields))
-            .mkFragment("\n AND ")}
+        .map(keyEqualsFragment(allFields))
+        .mkFragment("\n AND ")}
            |WHEN MATCHED THEN UPDATE SET
            |${allFieldNames
-            .filterNot(isPrimaryKey)
-            .map(nonKey => bqfr"    T.$nonKey = S.$nonKey")
-            .mkFragment(",\n")}
+        .filterNot(isPrimaryKey)
+        .map(nonKey => bqfr"    T.$nonKey = S.$nonKey")
+        .mkFragment(",\n")}
            |WHEN NOT MATCHED THEN
            |  INSERT (
            |${allFieldNames.map(field => bqfr"    $field").mkFragment(",\n")}

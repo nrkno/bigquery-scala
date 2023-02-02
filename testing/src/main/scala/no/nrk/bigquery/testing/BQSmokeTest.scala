@@ -18,9 +18,8 @@ import no.nrk.bigquery.implicits._
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]])
-    extends CatsEffectSuite
-    with GeneratedTest { self =>
+abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends CatsEffectSuite with GeneratedTest {
+  self =>
 
   override def testType: String = "big-query"
 
@@ -229,8 +228,7 @@ private object BQSmokeTest {
                 .map(job =>
                   BQSchema.fromSchema(
                     job.getStatistics[QueryStatistics]().getSchema
-                  )
-                )
+                  ))
                 .guaranteeCase {
                   case Outcome.Errored(_) if checkType != CheckType.Failing =>
                     IO(println(s"failed query: ${staticFrag.asStringWithUDFs}"))
@@ -254,9 +252,7 @@ private object BQSmokeTest {
               IO(println(s"failed query: ${frag.asStringWithUDFs}"))
             case _ => IO.unit
           }
-          .map(job =>
-            BQSchema.fromSchema(job.getStatistics[QueryStatistics]().getSchema)
-          )
+          .map(job => BQSchema.fromSchema(job.getStatistics[QueryStatistics]().getSchema))
           .map(checkType.checkSchema)
 
         log *> compareAsIs *> runCheck
@@ -328,8 +324,8 @@ private object BQSmokeTest {
       case BQSqlFrag.Combined(frags) =>
         val allDataRefs = frags.forall {
           case BQSqlFrag.PartitionRef(_) => true
-          case BQSqlFrag.FillRef(_)      => true
-          case _                         => false
+          case BQSqlFrag.FillRef(_) => true
+          case _ => false
         }
 
         val (newQueries, ctess) = frags.toList.map(recurse).separate
@@ -346,7 +342,7 @@ private object BQSmokeTest {
       case p @ BQSqlFrag.PartitionRef(pid) =>
         val schemaOpt: Option[BQSchema] =
           pid.wholeTable match {
-            case BQTableRef(_, _)   => None
+            case BQTableRef(_, _) => None
             case x: BQTableDef[Any] => Some(x.schema)
           }
 
@@ -390,13 +386,13 @@ private object BQSmokeTest {
 
     def valueForType(field: BQField): BQSqlFrag = {
       val base = field.tpe match {
-        case StandardSQLTypeName.JSON  => BQSqlFrag("""JSON '{"foo": "bar"}'""")
-        case StandardSQLTypeName.BOOL  => true.bqShow
+        case StandardSQLTypeName.JSON => BQSqlFrag("""JSON '{"foo": "bar"}'""")
+        case StandardSQLTypeName.BOOL => true.bqShow
         case StandardSQLTypeName.INT64 => counter.next().bqShow
-        case StandardSQLTypeName.FLOAT64    => (counter.next() + 0.5).bqShow
-        case StandardSQLTypeName.NUMERIC    => counter.next().bqShow
+        case StandardSQLTypeName.FLOAT64 => (counter.next() + 0.5).bqShow
+        case StandardSQLTypeName.NUMERIC => counter.next().bqShow
         case StandardSQLTypeName.BIGNUMERIC => counter.next().bqShow
-        case StandardSQLTypeName.STRING     => StringValue(field.name).bqShow
+        case StandardSQLTypeName.STRING => StringValue(field.name).bqShow
         case StandardSQLTypeName.BYTES =>
           BQSqlFrag(
             "(select HLL_COUNT.INIT(x) from unnest(['a']) x)"

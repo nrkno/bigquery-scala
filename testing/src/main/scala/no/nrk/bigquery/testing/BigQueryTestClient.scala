@@ -10,11 +10,7 @@ import fs2.Stream
 import no.nrk.bigquery.metrics.MetricsOps
 import org.apache.avro
 import org.apache.avro.file.{DataFileReader, DataFileWriter}
-import org.apache.avro.generic.{
-  GenericDatumReader,
-  GenericDatumWriter,
-  GenericRecord
-}
+import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
 import org.typelevel.log4cats.LoggerFactory
 import org.typelevel.log4cats.slf4j._
 
@@ -79,8 +75,7 @@ object BigQueryTestClient {
           val hashedRowsPath =
             queryCachePath.resolve(s"${jobName.value}__$hash.avro")
 
-          def runAndStore
-              : Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] =
+          def runAndStore: Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] =
             for {
               tuple <- super
                 .synchronousQueryExecute(
@@ -117,8 +112,7 @@ object BigQueryTestClient {
             }
           } yield res
         }
-      }
-    )
+      })
 
   def serializeSchema(path: Path, schema: avro.Schema): IO[Unit] =
     IO.blocking {

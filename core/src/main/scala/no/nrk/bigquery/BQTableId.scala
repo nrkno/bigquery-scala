@@ -35,9 +35,7 @@ object BQDataset {
     BQDataset(project, dataset, None)
 
   implicit val encoder: Encoder[BQDataset] =
-    Encoder.forProduct3("project", "dataset", "location")(dataset =>
-      (dataset.project, dataset.id, dataset.location)
-    )
+    Encoder.forProduct3("project", "dataset", "location")(dataset => (dataset.project, dataset.id, dataset.location))
   implicit val decoder: Decoder[BQDataset] =
     Decoder.forProduct3(
       "project",
@@ -72,9 +70,7 @@ object BQTableId {
     Show.show(_.asFragment.asString)
 
   implicit val tableIdEncoder: Encoder[BQTableId] =
-    Encoder.forProduct2("dataset", "table")(table =>
-      (table.dataset, table.tableName)
-    )
+    Encoder.forProduct2("dataset", "table")(table => (table.dataset, table.tableName))
   implicit val tableIdDecoder: Decoder[BQTableId] =
     Decoder.forProduct2(
       "dataset",

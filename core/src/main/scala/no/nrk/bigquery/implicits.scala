@@ -10,14 +10,12 @@ object implicits {
   // suppress not used warnings
   private[bigquery] def assertIsUsed(a: Any*): Unit = (a, ())._2
 
-  /** This is the main entry point for writing BigQuery SQL statements. They are
-    * prefixed `bq` to coexist with doobie.
+  /** This is the main entry point for writing BigQuery SQL statements. They are prefixed `bq` to coexist with doobie.
     *
-    * Note that you can configure intellij to inject SQL language support for
-    * these: File | Settings | Languages & Frameworks | Scala | Misc
+    * Note that you can configure intellij to inject SQL language support for these: File | Settings | Languages &
+    * Frameworks | Scala | Misc
     */
-  final implicit class BQShowInterpolator(private val sc: StringContext)
-      extends AnyVal {
+  final implicit class BQShowInterpolator(private val sc: StringContext) extends AnyVal {
     def bqsql(args: BQSqlFrag.Magnet*): BQSqlFrag = {
       // intersperse args into the interpolated string in `sc.parts`
       val builder = List.newBuilder[BQSqlFrag]
@@ -31,17 +29,16 @@ object implicits {
       }
 
       builder.result() match {
-        case Nil        => BQSqlFrag.Empty
+        case Nil => BQSqlFrag.Empty
         case one :: Nil => one
-        case many       => BQSqlFrag.Combined(many)
+        case many => BQSqlFrag.Combined(many)
       }
     }
 
     def bqfr(args: BQSqlFrag.Magnet*): BQSqlFrag = bqsql(args: _*)
   }
 
-  /** A way to flatten a list of fragments. The `S` just means it works for any
-    * collection data structure
+  /** A way to flatten a list of fragments. The `S` just means it works for any collection data structure
     */
   implicit class MakeFragmentSyntax[S[a] <: Iterable[a], A](
       private val values: S[A]
@@ -102,9 +99,7 @@ object implicits {
   implicit val orderingTableId: Ordering[TableId] = Ordering.by(formatTableId)
 
   implicit val tableIdEncoder: Encoder[TableId] =
-    Encoder.forProduct3("project", "dataset", "table")(table =>
-      (table.getProject, table.getDataset, table.getTable)
-    )
+    Encoder.forProduct3("project", "dataset", "table")(table => (table.getProject, table.getDataset, table.getTable))
   implicit val tableIdDecoder: Decoder[TableId] =
     Decoder.forProduct3[TableId, String, String, String](
       "project",

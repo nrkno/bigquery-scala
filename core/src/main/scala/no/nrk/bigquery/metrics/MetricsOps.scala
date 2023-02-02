@@ -60,8 +60,7 @@ object TerminationType {
   /** Signals cancelation */
   case object Canceled extends TerminationType
 
-  /** Signals an abnormal termination due to an error processing the request,
-    * either at the server or client side
+  /** Signals an abnormal termination due to an error processing the request, either at the server or client side
     */
   case class Error(rootCause: Throwable) extends TerminationType
 

@@ -28,8 +28,7 @@ object BQTableLike {
       case x: BQTableDef[p] => BQTableDef.encodes[p](x)
     }
 
-  implicit class ExtensionMethods(private val table: BQTableLike[Any])
-      extends AnyVal {
+  implicit class ExtensionMethods(private val table: BQTableLike[Any]) extends AnyVal {
     def loadGenericPartitions[F[_]: Concurrent](
         client: BigQueryClient[F],
         startDate: StartDate[Any],
@@ -79,21 +78,16 @@ object BQTableLike {
   *
   * Given such a reference you can basically do two things:
   *
-  * 1) Look up all partitions through `allPartitions`. This works with any
-  * `BQPartitionedTable`. 2) Construct a legal [[BQPartitionId]] for it with
-  * `assertPartition`.
+  * 1) Look up all partitions through `allPartitions`. This works with any `BQPartitionedTable`. 2) Construct a legal
+  * [[BQPartitionId]] for it with `assertPartition`.
   *
-  * The design of this tri-structure was a bit problematic, especially regarding
-  * variance.
+  * The design of this tri-structure was a bit problematic, especially regarding variance.
   *
-  * This iteration of the design uses covariant type parameters throughout, with
-  * the caveat that when you combine (say) a non-partitioned and a
-  * date-partitioned table into a list (or otherwise lose precise types), you
-  * also lose the ability to construct legal [[BQPartitionId]] s with
-  * `assertPartition`
+  * This iteration of the design uses covariant type parameters throughout, with the caveat that when you combine (say)
+  * a non-partitioned and a date-partitioned table into a list (or otherwise lose precise types), you also lose the
+  * ability to construct legal [[BQPartitionId]] s with `assertPartition`
   */
-case class BQTableRef[+P](tableId: BQTableId, partitionType: BQPartitionType[P])
-    extends BQTableLike[P] {
+case class BQTableRef[+P](tableId: BQTableId, partitionType: BQPartitionType[P]) extends BQTableLike[P] {
   override def unpartitioned: BQTableRef[Unit] =
     withTableType(BQPartitionType.ignoredPartitioning(partitionType))
 
@@ -152,11 +146,9 @@ object BQTableDef {
     }
 
   /** @param schema
-    *   note that BQ will only allow backward compatible schema changes, you
-    *   cannot remove fields for instance
+    *   note that BQ will only allow backward compatible schema changes, you cannot remove fields for instance
     * @param partitionType
-    *   it's very unlikely that this can be changed, but at least we'll fail if
-    *   you try
+    *   it's very unlikely that this can be changed, but at least we'll fail if you try
     * @param description
     *   table description
     */
@@ -199,15 +191,13 @@ object BQTableDef {
       View(tableId, tpe, query, schema, description, labels)
   }
 
-  /** Note that none of these fields can be changed after the MV has been
-    * created.
+  /** Note that none of these fields can be changed after the MV has been created.
     *
     * Need to change anything? Create a new one with a (bumped) version suffix
     *
     * @param schema
-    *   *NOT* used for creating the MV because it's not possible yet. However,
-    *   we use it to test that `query` conforms, we can use it for docs and so
-    *   on.
+    *   *NOT* used for creating the MV because it's not possible yet. However, we use it to test that `query` conforms,
+    *   we can use it for docs and so on.
     */
   case class MaterializedView[+P](
       tableId: BQTableId,

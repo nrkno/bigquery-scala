@@ -85,8 +85,7 @@ object UpdateOperation {
                 remoteTableDef: StandardTableDefinition
               ) =>
             BQPartitionType.from(remoteTableDef) match {
-              case Right(remotePartitionType)
-                  if remotePartitionType == localTableDef.partitionType =>
+              case Right(remotePartitionType) if remotePartitionType == localTableDef.partitionType =>
                 val remoteAsTableDef = BQTableDef.Table(
                   tableId = BQTableId.unsafeFromGoogle(
                     localTableDef.tableId.dataset,
@@ -101,8 +100,7 @@ object UpdateOperation {
                   labels = TableLabels.fromTableInfo(existingRemoteTable)
                 )
 
-                val illegalSchemaExtension
-                    : Option[UpdateOperation.IllegalSchemaExtension] =
+                val illegalSchemaExtension: Option[UpdateOperation.IllegalSchemaExtension] =
                   conforms(
                     actualSchema = remoteAsTableDef.schema,
                     givenSchema = localTableDef.schema
@@ -203,8 +201,7 @@ object UpdateOperation {
                 remoteMVDef: MaterializedViewDefinition
               ) =>
             BQPartitionType.from(remoteMVDef) match {
-              case Right(remotePartitionType)
-                  if remotePartitionType == localTableDef.partitionType =>
+              case Right(remotePartitionType) if remotePartitionType == localTableDef.partitionType =>
                 val remoteAsTableDef = BQTableDef.MaterializedView(
                   tableId = BQTableId.unsafeFromGoogle(
                     localTableDef.tableId.dataset,
@@ -218,8 +215,7 @@ object UpdateOperation {
                   description = Option(existingRemoteTable.getDescription),
                   // note: we decided to not sync labels to BQ for MVs.
                   // this is because we have to recompute the whole thing on any label change.
-                  labels =
-                    localTableDef.labels // TableLabels.fromTableInfo(existingRemoteTable)
+                  labels = localTableDef.labels // TableLabels.fromTableInfo(existingRemoteTable)
                 )
 
                 def outline(field: BQField): BQField =
@@ -231,9 +227,7 @@ object UpdateOperation {
 
                 // materialized views are given a schema, but we cant affect it in any way.
                 val patchedLocalMVDef =
-                  localTableDef.copy(schema =
-                    BQSchema(localTableDef.schema.fields.map(outline))
-                  )
+                  localTableDef.copy(schema = BQSchema(localTableDef.schema.fields.map(outline)))
 
                 if (patchedLocalMVDef == remoteAsTableDef)
                   UpdateOperation.Noop(existingRemoteTable, localTableDef)
@@ -389,7 +383,7 @@ class EnsureUpdated[F[_]](
           created <- bqClient.create(table)
           updated <- maybePatchedTable match {
             case Some(patchedTable) => bqClient.update(patchedTable)
-            case None               => Applicative[F].pure(created)
+            case None => Applicative[F].pure(created)
           }
         } yield updated
 
