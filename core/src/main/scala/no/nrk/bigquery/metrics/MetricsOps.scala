@@ -21,7 +21,9 @@ trait MetricsOps[F[_]] {
 }
 
 object MetricsOps {
-  def NoopMetricsOps[F[_]](implicit F: Applicative[F]): Resource[F, MetricsOps[F]] =
+  def NoopMetricsOps[F[_]](implicit
+      F: Applicative[F]
+  ): Resource[F, MetricsOps[F]] =
     Resource.pure(new MetricsOps[F] {
       override def increaseActiveJobs(jobName: BQJobName): F[Unit] =
         F.unit
