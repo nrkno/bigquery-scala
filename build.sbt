@@ -34,20 +34,15 @@ ThisBuild / githubWorkflowBuild := {
   val list = (ThisBuild / githubWorkflowBuild).value
   list.collect {
     case step: WorkflowStep.Sbt if step.name.contains("Test") =>
-      step.copy(env =
-        Map(
-          "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}",
-          "ASSERT_CURRENT_GENERATED_FILES" -> "1"
-        )
-      )
-    case step: WorkflowStep.Sbt
-        if step.name.contains("Check binary compatibility") =>
-      step.copy(env =
-        Map(
-          "MYGET_USERNAME" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_ID }}",
-          "MYGET_PASSWORD" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_SECRET }}"
-        )
-      )
+      step.copy(env = Map(
+        "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}",
+        "ASSERT_CURRENT_GENERATED_FILES" -> "1"
+      ))
+    case step: WorkflowStep.Sbt if step.name.contains("Check binary compatibility") =>
+      step.copy(env = Map(
+        "MYGET_USERNAME" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_ID }}",
+        "MYGET_PASSWORD" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_SECRET }}"
+      ))
     case s => s
   }
 }
@@ -63,12 +58,12 @@ ThisBuild / tlVersionIntroduced := Map(
 )
 
 val commonSettings = Seq(
-  resolvers += "MyGet - datahub" at s"https://nrk.myget.org/F/datahub/maven/",
+  resolvers += "MyGet - datahub".at(s"https://nrk.myget.org/F/datahub/maven/"),
   Compile / headerSources := Nil,
   Test / headerSources := Nil,
   publishTo := {
     val MyGet = "https://nrk.myget.org/F/datahub/maven/"
-    if (isSnapshot.value) None else Some("releases" at MyGet)
+    if (isSnapshot.value) None else Some("releases".at(MyGet))
   },
   credentials ++= {
     (sys.env.get("MYGET_USERNAME"), sys.env.get("MYGET_PASSWORD")) match {

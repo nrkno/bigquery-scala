@@ -98,7 +98,7 @@ object BQPoll {
   ): FiniteDuration = {
     val durationNanos = BigInt(duration.toNanos)
     val resultNanos = durationNanos * BigInt(multiplier)
-    val safeResultNanos = resultNanos min LongMax
+    val safeResultNanos = resultNanos.min(LongMax)
     FiniteDuration(safeResultNanos.toLong, TimeUnit.NANOSECONDS)
   }
 
@@ -116,7 +116,7 @@ object BQPoll {
         val details: List[BigQueryError] =
           Option(s.getExecutionErrors) match {
             case Some(values) => values.asScala.toList
-            case None         => Nil
+            case None => Nil
           }
 
         if (primary.isEmpty && details.isEmpty) None
@@ -127,10 +127,10 @@ object BQPoll {
       maybeStatus match {
         case Some(status) =>
           status.getState match {
-            case JobStatus.State.DONE    => BQPoll.Success(pulledJob)
+            case JobStatus.State.DONE => BQPoll.Success(pulledJob)
             case JobStatus.State.PENDING => BQPoll.Pending
             case JobStatus.State.RUNNING => BQPoll.Running
-            case _                       => BQPoll.Unknown
+            case _ => BQPoll.Unknown
           }
         case None => BQPoll.Unknown
       }

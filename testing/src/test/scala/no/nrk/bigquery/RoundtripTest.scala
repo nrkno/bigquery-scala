@@ -7,8 +7,7 @@ import no.nrk.bigquery.testing.BigQueryTestClient
 
 import java.time.{Instant, LocalDate, LocalTime}
 
-/** By writing roundtrip test we test instances for both `BQShow` and `BQRead`
-  * at the same time.
+/** By writing roundtrip test we test instances for both `BQShow` and `BQRead` at the same time.
   *
   * I didn't think too long about adding too many cases, feel free to add more
   */

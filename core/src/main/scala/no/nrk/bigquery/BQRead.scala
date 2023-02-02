@@ -68,13 +68,9 @@ object BQRead extends BQReadCompat {
         val b = cb.newBuilder
         value match {
           case coll: scala.Array[_] =>
-            coll.foreach(elem =>
-              b += BQRead[A].read(transportSchema.getElementType, elem)
-            )
+            coll.foreach(elem => b += BQRead[A].read(transportSchema.getElementType, elem))
           case coll: java.util.Collection[_] =>
-            coll.forEach(elem =>
-              b += BQRead[A].read(transportSchema.getElementType, elem)
-            )
+            coll.forEach(elem => b += BQRead[A].read(transportSchema.getElementType, elem))
           case other =>
             sys.error(
               s"Unexpected: ${other.getClass.getSimpleName} $other . Schema from BQ: $transportSchema"
@@ -93,13 +89,9 @@ object BQRead extends BQReadCompat {
         val b = Array.newBuilder[A]
         value match {
           case coll: scala.Array[_] =>
-            coll.foreach(elem =>
-              b += BQRead[A].read(transportSchema.getElementType, elem)
-            )
+            coll.foreach(elem => b += BQRead[A].read(transportSchema.getElementType, elem))
           case coll: java.util.Collection[_] =>
-            coll.forEach(elem =>
-              b += BQRead[A].read(transportSchema.getElementType, elem)
-            )
+            coll.forEach(elem => b += BQRead[A].read(transportSchema.getElementType, elem))
           case other =>
             sys.error(
               s"Unexpected: ${other.getClass.getSimpleName} $other . Schema from BQ: $transportSchema"
@@ -117,7 +109,7 @@ object BQRead extends BQReadCompat {
       override def read(transportSchema: avro.Schema, value: Any): String =
         value match {
           case str: String => str
-          case utf: Utf8   => utf.toString
+          case utf: Utf8 => utf.toString
           case other =>
             sys.error(
               s"Unexpected: ${other.getClass.getSimpleName} $other . Schema from BQ: $transportSchema"
@@ -126,9 +118,7 @@ object BQRead extends BQReadCompat {
     }
 
   implicit val convertsJson: BQRead[Json] =
-    convertsString.map(str =>
-      io.circe.parser.decode[Json](str).fold(throw _, json => json)
-    )
+    convertsString.map(str => io.circe.parser.decode[Json](str).fold(throw _, json => json))
 
   implicit val convertsLong: BQRead[Long] =
     new BQRead[Long] {

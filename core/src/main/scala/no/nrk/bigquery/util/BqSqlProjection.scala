@@ -53,7 +53,7 @@ object BqSqlProjection {
                   selected.forceField.maybeSelector
                 } match {
                   case List(one) => Some(one)
-                  case _         => None
+                  case _ => None
                 }
               case _ => None
             }
@@ -64,8 +64,8 @@ object BqSqlProjection {
                 bqsql"""|$indent(SELECT ARRAY_AGG( # start array ${field.ident}
                         |${uniqueSelector.fragment}
                         |$indent) FROM UNNEST(${newPrefix.reverse.mkFragment(
-                         "."
-                       )}) ${arrayElement.ident})""".stripMargin
+                    "."
+                  )}) ${arrayElement.ident})""".stripMargin
               val typedArraySelector = TypedFragment(
                 arraySelector,
                 uniqueSelector.tpe
@@ -83,9 +83,9 @@ object BqSqlProjection {
                     bqsql"""|$indent(SELECT ARRAY_AGG( # start array ${field.ident}
                             |${elemSelector.fragment}
                             |$indent) FROM UNNEST(${newPrefix.reverse
-                             .mkFragment(
-                               "."
-                             )}) ${arrayElement.ident})""".stripMargin
+                        .mkFragment(
+                          "."
+                        )}) ${arrayElement.ident})""".stripMargin
                   val typedArraySelector = TypedFragment(
                     arraySelector,
                     elemSelector.tpe
@@ -111,9 +111,7 @@ object BqSqlProjection {
 
                   // cosmetic: add alias only if needed
                   val selectedAliasedSubField =
-                    if (
-                      subField.tpe == StandardSQLTypeName.STRUCT || subField.tpe == StandardSQLTypeName.ARRAY || subField.mode == Field.Mode.REPEATED
-                    )
+                    if (subField.tpe == StandardSQLTypeName.STRUCT || subField.tpe == StandardSQLTypeName.ARRAY || subField.mode == Field.Mode.REPEATED)
                       selectedSubField.forceField.withAlias(
                         Some(subField.ident)
                       )
@@ -152,16 +150,16 @@ object BqSqlProjection {
 
           // delay execution of this so implementation of Flatten can unpack it
           def mkField(obj: SelectedObject): SelectedField = {
-            val selectedFields: List[SelectedField] = obj.selecteds.map {
-              case (_, selected) => selected.forceField
+            val selectedFields: List[SelectedField] = obj.selecteds.map { case (_, selected) =>
+              selected.forceField
             }
 
             selectedFields.flatMap(_.aliasedSelector) match {
               case Nil => Selected.Dropped
               case nonEmpty =>
                 if (selectedFields.exists(_.wasRewritten)) {
-                  val droppedComment = obj.selecteds.collect {
-                    case (name, Selected.Dropped) => name
+                  val droppedComment = obj.selecteds.collect { case (name, Selected.Dropped) =>
+                    name
                   } match {
                     case Nil => BQSqlFrag.Empty
                     case nonEmpty =>
@@ -172,9 +170,7 @@ object BqSqlProjection {
                            |${nonEmpty.mkFragment(",\n")}
                            |$indent)""".stripMargin
 
-                  val tpe = field.copy(subFields =
-                    selectedFields.flatMap(_.maybeSelector).map(_.tpe)
-                  )
+                  val tpe = field.copy(subFields = selectedFields.flatMap(_.maybeSelector).map(_.tpe))
                   val typedFragment = TypedFragment(frag, tpe)
 
                   SelectedField(
@@ -209,14 +205,11 @@ object BqSqlProjection {
     }
 
     /** @param maybeSelector
-      *   an sql fragments which selects the given field from the source
-      *   structure
+      *   an sql fragments which selects the given field from the source structure
       * @param maybeAlias
-      *   optionally alias name. sometimes this is needed for renames, or when
-      *   un-/repacking structs and arrays
+      *   optionally alias name. sometimes this is needed for renames, or when un-/repacking structs and arrays
       * @param wasRewritten
-      *   if we havent changed anything inside this field, we're free to choose
-      *   a shorter syntax upstream
+      *   if we havent changed anything inside this field, we're free to choose a shorter syntax upstream
       */
     case class SelectedField(
         maybeSelector: Option[TypedFragment],
@@ -231,10 +224,7 @@ object BqSqlProjection {
       def renamed(outFieldName: Ident): SelectedField =
         copy(
           maybeSelector = maybeSelector.map(typedFragment =>
-            typedFragment.copy(tpe =
-              typedFragment.tpe.copy(name = outFieldName.value)
-            )
-          ),
+            typedFragment.copy(tpe = typedFragment.tpe.copy(name = outFieldName.value))),
           maybeAlias = Some(outFieldName),
           wasRewritten = true
         )
@@ -243,7 +233,7 @@ object BqSqlProjection {
         maybeSelector.map { case TypedFragment(frag, _) =>
           maybeAlias match {
             case Some(value) => bqfr"$frag $value"
-            case None        => frag
+            case None => frag
           }
         }
     }

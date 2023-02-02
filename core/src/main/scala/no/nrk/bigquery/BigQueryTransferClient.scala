@@ -8,13 +8,8 @@ import com.google.auth.oauth2.ServiceAccountCredentials
 import com.google.cloud.bigquery.DatasetId
 import com.google.cloud.bigquery.datatransfer.v1._
 import com.google.protobuf.{Struct, Value}
-import no.nrk.bigquery.BigQueryTransferClient.{
-  TransferConfigFailed,
-  TransferFailed,
-  TransferStatus,
-  TransferSucceeded
-}
-import org.typelevel.log4cats.slf4j.{loggerFactoryforSync, Slf4jFactory}
+import no.nrk.bigquery.BigQueryTransferClient.{TransferConfigFailed, TransferFailed, TransferStatus, TransferSucceeded}
+import org.typelevel.log4cats.slf4j.{Slf4jFactory, loggerFactoryforSync}
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.jdk.CollectionConverters._
@@ -30,9 +25,7 @@ class BigQueryTransferClient(transferClient: DataTransferServiceClient) {
         s"projects/${transferConfigName.getProject}/locations/${transferConfigName.getLocation}"
       )
     ).map(
-      _.iterateAll().asScala.find(config =>
-        config.getDisplayName == transferConfigName.getTransferConfig
-      )
+      _.iterateAll().asScala.find(config => config.getDisplayName == transferConfigName.getTransferConfig)
     )
 
   def buildTransferConfig(
@@ -89,15 +82,13 @@ class BigQueryTransferClient(transferClient: DataTransferServiceClient) {
       activeRun = runResponse.getRunsList.asScala.headOption
       transferStatus <- activeRun.traverse(activeRun =>
         pollDatasetTransfer(activeRun, 15.seconds)(retry =
-          IO.blocking(transferClient.getTransferRun(activeRun.getName))
-        ).attempt.map {
-          case Left(err)       => TransferFailed(activeRun, err)
+          IO.blocking(transferClient.getTransferRun(activeRun.getName))).attempt.map {
+          case Left(err) => TransferFailed(activeRun, err)
           case Right(transfer) => transfer
-        }
-      )
+        })
     } yield transferStatus match {
       case Some(transfer) => transfer
-      case None           => TransferConfigFailed(transferConfig)
+      case None => TransferConfigFailed(transferConfig)
     }
 
   private def pollDatasetTransfer(
@@ -157,10 +148,8 @@ class BigQueryTransferClient(transferClient: DataTransferServiceClient) {
 object BigQueryTransferClient {
   sealed trait TransferStatus
   case class TransferSucceeded(transferRun: TransferRun) extends TransferStatus
-  case class TransferFailed(transferRun: TransferRun, error: Throwable)
-      extends TransferStatus
-  case class TransferConfigFailed(transferConfig: TransferConfig)
-      extends TransferStatus
+  case class TransferFailed(transferRun: TransferRun, error: Throwable) extends TransferStatus
+  case class TransferConfigFailed(transferConfig: TransferConfig) extends TransferStatus
 
   def resource(
       credentials: ServiceAccountCredentials

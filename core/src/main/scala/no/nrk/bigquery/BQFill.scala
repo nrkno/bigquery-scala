@@ -2,8 +2,7 @@ package no.nrk.bigquery
 
 import java.time.LocalDate
 
-/** A data type which describes the job responsible for the fills. It's opaque
-  * to the BQ code
+/** A data type which describes the job responsible for the fills. It's opaque to the BQ code
   */
 trait JobKeyBQ
 

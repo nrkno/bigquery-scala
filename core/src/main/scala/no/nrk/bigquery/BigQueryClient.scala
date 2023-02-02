@@ -71,8 +71,7 @@ class BigQueryClient[F[_]](
 
   /** Synchronous query to BQ.
     *
-    * Must be called with the type of the row. The type must have a [[BQRead]]
-    * instance.
+    * Must be called with the type of the row. The type must have a [[BQRead]] instance.
     *
     * Example:
     * {{{
@@ -132,8 +131,7 @@ class BigQueryClient[F[_]](
           Option(
             bigQuery.create(JobInfo.of(jobId, queryRequest), jobOptions: _*)
           )
-        )
-      ).flatMap {
+        )).flatMap {
         case Some(job) => F.pure(job)
         case None =>
           F.raiseError(
@@ -165,17 +163,16 @@ class BigQueryClient[F[_]](
 
       for {
         session <- Resource.eval(F.blocking(reader.createReadSession(request)))
-        serverStreams <- 0.until(session.getStreamsCount).toList.parTraverse {
-          streamN =>
-            Resource.make(
-              F.blocking(
-                reader.readRowsCallable.call(
-                  ReadRowsRequest.newBuilder
-                    .setReadStream(session.getStreams(streamN).getName)
-                    .build
-                )
+        serverStreams <- 0.until(session.getStreamsCount).toList.parTraverse { streamN =>
+          Resource.make(
+            F.blocking(
+              reader.readRowsCallable.call(
+                ReadRowsRequest.newBuilder
+                  .setReadStream(session.getStreams(streamN).getName)
+                  .build
               )
-            )(serverStream => F.blocking(serverStream.cancel()))
+            )
+          )(serverStream => F.blocking(serverStream.cancel()))
         }
       } yield (session, serverStreams)
     }
@@ -314,12 +311,10 @@ class BigQueryClient[F[_]](
       expirationDuration: Option[FiniteDuration]
   ): F[BQTableDef.Table[Param]] = {
     // a copy of `table` with new coordinates
-    val tempTableDef = table.copy(tableId =
-      BQTableId(
-        tmpDataset,
-        table.tableId.tableName + UUID.randomUUID().toString
-      )
-    )
+    val tempTableDef = table.copy(tableId = BQTableId(
+      tmpDataset,
+      table.tableId.tableName + UUID.randomUUID().toString
+    ))
     val tempTableBqDef = UpdateOperation.createNew(tempTableDef).table
     val expirationTime =
       Instant.now.plusMillis(expirationDuration.getOrElse(1.hour).toMillis)
@@ -381,8 +376,7 @@ class BigQueryClient[F[_]](
     Nil
   )
 
-  /** Submit any SQL statement to BQ, perfect for BQ to BQ insertions or data
-    * mutation
+  /** Submit any SQL statement to BQ, perfect for BQ to BQ insertions or data mutation
     */
   def submitQuery[P](
       jobName: BQJobName,
@@ -396,9 +390,7 @@ class BigQueryClient[F[_]](
     submitJob(jobName, locationId) { jobId =>
       val jobConfiguration = {
         val b = QueryJobConfiguration.newBuilder(query.asStringWithUDFs)
-        destination.foreach(partitionId =>
-          b.setDestinationTable(partitionId.asTableId.underlying)
-        )
+        destination.foreach(partitionId => b.setDestinationTable(partitionId.asTableId.underlying))
         writeDisposition.foreach(b.setWriteDisposition)
         timePartitioning.foreach(b.setTimePartitioning)
         b.build()
@@ -417,8 +409,7 @@ class BigQueryClient[F[_]](
         )
     }
 
-  /** Submit a job to BQ, wait for it to finish, log results, track as
-    * dependency
+  /** Submit a job to BQ, wait for it to finish, log results, track as dependency
     */
   def submitJob(jobName: BQJobName, location: Option[LocationId])(
       runJob: JobId => F[Option[Job]]
@@ -438,7 +429,7 @@ class BigQueryClient[F[_]](
               )
               .flatMap {
                 case BQPoll.Failed(error) => F.raiseError[Job](error)
-                case BQPoll.Success(job)  => F.pure(job)
+                case BQPoll.Success(job) => F.pure(job)
               }
               .guaranteeCase {
                 case Outcome.Errored(e) =>
@@ -505,34 +496,33 @@ class BigQueryClient[F[_]](
       dataset: BQDataset,
       datasetOptions: BigQuery.TableListOption*
   ): F[Vector[BQTableRef[Any]]] =
-    F.blocking(bigQuery.listTables(dataset.id, datasetOptions: _*)).flatMap {
-      tables =>
-        tables
-          .iterateAll()
-          .asScala
-          .toVector
-          .parTraverseFilter { table =>
-            val tableId = BQTableId.unsafeFromGoogle(dataset, table.getTableId)
-            table.getDefinition[TableDefinition] match {
-              case definition: StandardTableDefinition =>
-                BQPartitionType.from(definition) match {
-                  case Right(partitionType) =>
-                    F.pure(Some(BQTableRef(tableId, partitionType)))
-                  case Left(msg) =>
-                    logger
-                      .warn(
-                        show"Ignoring $tableId because couldn't understand partitioning: $msg"
-                      )
-                      .as(None)
-                }
-              case notTable =>
-                logger
-                  .warn(
-                    show"Ignoring $tableId because we only consider tables, not ${notTable.getType.name}"
-                  )
-                  .as(None)
-            }
+    F.blocking(bigQuery.listTables(dataset.id, datasetOptions: _*)).flatMap { tables =>
+      tables
+        .iterateAll()
+        .asScala
+        .toVector
+        .parTraverseFilter { table =>
+          val tableId = BQTableId.unsafeFromGoogle(dataset, table.getTableId)
+          table.getDefinition[TableDefinition] match {
+            case definition: StandardTableDefinition =>
+              BQPartitionType.from(definition) match {
+                case Right(partitionType) =>
+                  F.pure(Some(BQTableRef(tableId, partitionType)))
+                case Left(msg) =>
+                  logger
+                    .warn(
+                      show"Ignoring $tableId because couldn't understand partitioning: $msg"
+                    )
+                    .as(None)
+              }
+            case notTable =>
+              logger
+                .warn(
+                  show"Ignoring $tableId because we only consider tables, not ${notTable.getType.name}"
+                )
+                .as(None)
           }
+        }
     }
 }
 
@@ -585,8 +575,7 @@ object BigQueryClient {
 
   def fromCredentials[F[_]](
       credentials: Credentials,
-      configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] =
-        None
+      configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] = None
   )(implicit F: Async[F]): F[BigQuery] =
     F.blocking {
       val conf = configure.getOrElse(defaultConfigure(_))
@@ -599,8 +588,7 @@ object BigQueryClient {
   def resource[F[_]: Async: LoggerFactory](
       credentials: Credentials,
       metricsOps: MetricsOps[F],
-      configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] =
-        None
+      configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] = None
   ): Resource[F, BigQueryClient[F]] =
     for {
       bq <- Resource.eval(

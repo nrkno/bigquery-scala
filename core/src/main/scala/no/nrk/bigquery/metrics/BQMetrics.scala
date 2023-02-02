@@ -44,13 +44,9 @@ object BQMetrics {
       start: Long
   )(implicit F: Clock[F], C: Concurrent[F]): Resource[F, Option[Job]] =
     (for {
-      _ <- Resource.make(ops.increaseActiveJobs(jobName))(_ =>
-        ops.decreaseActiveJobs(jobName)
-      )
+      _ <- Resource.make(ops.increaseActiveJobs(jobName))(_ => ops.decreaseActiveJobs(jobName))
       _ <- Resource.onFinalize(
-        F.monotonic.flatMap(now =>
-          ops.recordTotalTime(now.toNanos - start, jobName)
-        )
+        F.monotonic.flatMap(now => ops.recordTotalTime(now.toNanos - start, jobName))
       )
       jobResult <- Resource.eval(job)
       _ <- Resource.eval(
@@ -74,8 +70,7 @@ object BQMetrics {
                   now.toNanos - start,
                   TerminationType.Canceled,
                   jobName
-                )
-            )
+                ))
           )
       }
 

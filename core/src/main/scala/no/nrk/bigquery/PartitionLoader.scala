@@ -286,13 +286,13 @@ private[bigquery] object PartitionLoader {
       BQQuery {
         bqfr"""|SELECT table_id, creation_time, last_modified_time, row_count, size_bytes
                |FROM [${BQSqlFrag(
-                table.tableId.dataset.project.value
-              )}:${BQSqlFrag(
-                table.tableId.dataset.id
-              )}.__TABLES__]
+            table.tableId.dataset.project.value
+          )}:${BQSqlFrag(
+            table.tableId.dataset.id
+          )}.__TABLES__]
                |WHERE REGEXP_MATCH(table_id, r"${BQSqlFrag(
-                table.tableId.tableName
-              )}_[0-9]+")
+            table.tableId.tableName
+          )}_[0-9]+")
                |AND $inRange
                |ORDER BY 1 DESC""".stripMargin
       }(BQRead.derived)

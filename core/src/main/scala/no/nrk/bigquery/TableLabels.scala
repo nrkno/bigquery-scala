@@ -1,7 +1,7 @@
 package no.nrk.bigquery
 
 import cats.syntax.show._
-import com.google.cloud.bigquery.{TableInfo}
+import com.google.cloud.bigquery.TableInfo
 import io.circe.{Decoder, Encoder}
 
 import scala.collection.immutable.SortedMap
@@ -49,11 +49,10 @@ case class TableLabels(values: SortedMap[String, String]) {
   def ++(other: TableLabels): TableLabels =
     withAll(other.values)
 
-  /** This method is needed for the case where we delete a label. It is deleted
-    * by setting it to `null`.
+  /** This method is needed for the case where we delete a label. It is deleted by setting it to `null`.
     *
-    * As such, we need to know the labels of a table in production before we
-    * compute the new set of labels to use when updating
+    * As such, we need to know the labels of a table in production before we compute the new set of labels to use when
+    * updating
     */
   def forUpdate(
       maybeExistingTable: Option[BQTableDef[Any]]
@@ -89,6 +88,6 @@ object TableLabels {
   def fromTableInfo(tableInfo: TableInfo): TableLabels =
     Option(tableInfo.getLabels) match {
       case Some(values) => Empty.withAll(values.asScala)
-      case None         => Empty
+      case None => Empty
     }
 }
