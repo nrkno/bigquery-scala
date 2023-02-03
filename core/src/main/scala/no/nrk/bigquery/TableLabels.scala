@@ -2,7 +2,6 @@ package no.nrk.bigquery
 
 import cats.syntax.show._
 import com.google.cloud.bigquery.TableInfo
-import io.circe.{Decoder, Encoder}
 
 import scala.collection.immutable.SortedMap
 import scala.jdk.CollectionConverters._
@@ -78,12 +77,6 @@ object TableLabels {
   /* nicer syntax for creating instances */
   def apply(values: (String, String)*): TableLabels =
     Empty.withAll(values)
-
-  implicit val encoder: Encoder[TableLabels] =
-    Encoder[Map[String, String]].contramap(_.values)
-
-  implicit val decoder: Decoder[TableLabels] =
-    Decoder[Map[String, String]].map(Empty.withAll)
 
   def fromTableInfo(tableInfo: TableInfo): TableLabels =
     Option(tableInfo.getLabels) match {

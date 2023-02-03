@@ -1,7 +1,6 @@
 package no.nrk.bigquery
 
 import no.nrk.bigquery.implicits._
-import io.circe.{Encoder, Json}
 import no.nrk.bigquery.BQSqlFrag.asSubQuery
 
 /* The result of building a BigQuery sql. The `Frag` part of the name was chosen because it can be a fragment and not a complete query */
@@ -137,8 +136,6 @@ object BQSqlFrag {
     implicit def hasNotInstance1[T](t: T): Magnet = ???
     implicit def hasNotInstance2[T](t: T): Magnet = ???
   }
-
-  implicit val encodes: Encoder[BQSqlFrag] = frag => Json.fromString(frag.asString)
 
   /** Encapsulate the horribleness that is specifying more than one partition in an efficient manner.
     *

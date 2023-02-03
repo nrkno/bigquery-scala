@@ -1,9 +1,6 @@
 package no.nrk.bigquery
 
 import com.google.cloud.bigquery.{Field, Schema, StandardSQLTypeName}
-import io.circe.{Decoder, Encoder}
-
-import scala.util.Try
 
 /** This is the schema of a BQ type, where fields don't have names until they are placed inside a struct.
   *
@@ -102,18 +99,4 @@ object BQType {
       case other =>
         s"${other.tpe.name}"
     }
-
-  implicit lazy val encodesLegacySQLTypeName: Encoder[StandardSQLTypeName] =
-    Encoder.encodeString.contramap(_.name)
-  implicit lazy val encodesFieldMode: Encoder[Field.Mode] =
-    Encoder.encodeString.contramap(_.name)
-  implicit lazy val encodes: Encoder[BQType] =
-    io.circe.generic.semiauto.deriveEncoder
-
-  implicit lazy val decodesStandardSQLTypeName: Decoder[StandardSQLTypeName] =
-    Decoder.decodeString.emapTry(str => Try(StandardSQLTypeName.valueOf(str)))
-  implicit lazy val decodesFieldMode: Decoder[Field.Mode] =
-    Decoder.decodeString.emapTry(str => Try(Field.Mode.valueOf(str)))
-  implicit lazy val decodes: Decoder[BQType] =
-    io.circe.generic.semiauto.deriveDecoder
 }

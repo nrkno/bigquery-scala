@@ -6,7 +6,6 @@ import com.google.cloud.bigquery.{
   StandardTableDefinition,
   TimePartitioning
 }
-import io.circe.{Encoder, Json}
 
 import java.time.{LocalDate, YearMonth}
 
@@ -29,7 +28,6 @@ sealed trait BQPartitionType[+Param] {
 }
 
 object BQPartitionType {
-  implicit def encodes[Param]: Encoder[BQPartitionType[Param]] = pt => Json.fromString(pt.toString)
 
   final case class DatePartitioned(field: Ident) extends BQPartitionType[LocalDate] {
     override def timePartitioning: Option[TimePartitioning] =
