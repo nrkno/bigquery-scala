@@ -1,7 +1,6 @@
 package no.nrk.bigquery.metrics
 
 import cats.Applicative
-import cats.effect.kernel.Resource
 import com.google.cloud.bigquery.JobStatistics
 import no.nrk.bigquery.BQJobName
 
@@ -21,32 +20,29 @@ trait MetricsOps[F[_]] {
 }
 
 object MetricsOps {
-  def NoopMetricsOps[F[_]](implicit
-      F: Applicative[F]
-  ): Resource[F, MetricsOps[F]] =
-    Resource.pure(new MetricsOps[F] {
-      override def increaseActiveJobs(jobName: BQJobName): F[Unit] =
-        F.unit
+  def noop[F[_]](implicit F: Applicative[F]): MetricsOps[F] = new MetricsOps[F] {
+    override def increaseActiveJobs(jobName: BQJobName): F[Unit] =
+      F.unit
 
-      override def decreaseActiveJobs(jobName: BQJobName): F[Unit] =
-        F.unit
+    override def decreaseActiveJobs(jobName: BQJobName): F[Unit] =
+      F.unit
 
-      override def recordTotalTime(
-          elapsed: Long,
-          jobName: BQJobName
-      ): F[Unit] = F.unit
+    override def recordTotalTime(
+        elapsed: Long,
+        jobName: BQJobName
+    ): F[Unit] = F.unit
 
-      override def recordAbnormalTermination(
-          elapsed: Long,
-          terminationType: TerminationType,
-          jobName: BQJobName
-      ): F[Unit] = F.unit
+    override def recordAbnormalTermination(
+        elapsed: Long,
+        terminationType: TerminationType,
+        jobName: BQJobName
+    ): F[Unit] = F.unit
 
-      override def recordTotalBytesBilled(
-          job: Option[JobStatistics],
-          jobName: BQJobName
-      ): F[Unit] = F.unit
-    })
+    override def recordTotalBytesBilled(
+        job: Option[JobStatistics],
+        jobName: BQJobName
+    ): F[Unit] = F.unit
+  }
 }
 
 /** Describes the type of abnormal termination */

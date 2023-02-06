@@ -3,9 +3,6 @@ package no.nrk.bigquery
 import cats.effect.Concurrent
 import cats.syntax.all._
 
-import io.circe._
-import io.circe.syntax._
-
 /** @tparam P
   *   partition specifier. typically [[java.time.LocalDate]] or [[scala.Unit]]
   */
@@ -17,17 +14,6 @@ sealed trait BQTableLike[+P] {
 }
 
 object BQTableLike {
-  implicit def encodes[P]: Encoder[BQTableLike[P]] =
-    Encoder.instance[BQTableLike[P]] {
-      case x: BQTableRef[_] =>
-        Json.obj(
-          "tableId" := x.tableId,
-          "partitionType" := x.partitionType,
-          "type" := "BQTableRef"
-        )
-      case x: BQTableDef[p] => BQTableDef.encodes[p](x)
-    }
-
   implicit class ExtensionMethods(private val table: BQTableLike[Any]) extends AnyVal {
     def loadGenericPartitions[F[_]: Concurrent](
         client: BigQueryClient[F],
@@ -107,43 +93,6 @@ sealed trait BQTableDef[+P] extends BQTableLike[P] {
 }
 
 object BQTableDef {
-  implicit def encodes[P]: Encoder[BQTableDef[P]] =
-    Encoder.instance[BQTableDef[P]] {
-      case x: BQTableDef.Table[_] =>
-        Json.obj(
-          "tableId" := x.tableId,
-          "schema" := x.schema,
-          "partitionType" := x.partitionType,
-          "description" := x.description,
-          "clustering" := x.clustering,
-          "labels" := x.labels,
-          "type" := "Table"
-        )
-
-      case x: BQTableDef.View[_] =>
-        Json.obj(
-          "tableId" := x.tableId,
-          "partitionType" := x.partitionType,
-          "query" := x.query,
-          "schema" := x.schema,
-          "description" := x.description,
-          "labels" := x.labels,
-          "type" := "View"
-        )
-
-      case x: BQTableDef.MaterializedView[_] =>
-        Json.obj(
-          "tableId" := x.tableId,
-          "partitionType" := x.partitionType,
-          "query" := x.query,
-          "schema" := x.schema,
-          "enableRefresh" := x.enableRefresh,
-          "refreshIntervalMs" := x.refreshIntervalMs,
-          "description" := x.description,
-          "labels" := x.labels,
-          "type" := "MaterializedView"
-        )
-    }
 
   /** @param schema
     *   note that BQ will only allow backward compatible schema changes, you cannot remove fields for instance

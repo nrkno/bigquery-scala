@@ -2,7 +2,6 @@ package no.nrk.bigquery
 
 import cats.Show
 import com.google.cloud.bigquery.{Option => _, _}
-import io.circe.{Decoder, Encoder}
 
 import scala.annotation.nowarn
 
@@ -97,14 +96,5 @@ object implicits {
 
   @nowarn
   implicit val orderingTableId: Ordering[TableId] = Ordering.by(formatTableId)
-
-  implicit val tableIdEncoder: Encoder[TableId] =
-    Encoder.forProduct3("project", "dataset", "table")(table => (table.getProject, table.getDataset, table.getTable))
-  implicit val tableIdDecoder: Decoder[TableId] =
-    Decoder.forProduct3[TableId, String, String, String](
-      "project",
-      "dataset",
-      "table"
-    )(TableId.of)
 
 }

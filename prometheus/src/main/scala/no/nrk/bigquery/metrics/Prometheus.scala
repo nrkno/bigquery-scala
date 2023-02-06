@@ -1,19 +1,18 @@
+package no.nrk.bigquery
+package metrics
+
 import cats.data.NonEmptyList
 import cats.effect.{Resource, Sync}
 import cats.syntax.apply._
 import com.google.cloud.bigquery.JobStatistics
 import com.google.cloud.bigquery.JobStatistics.QueryStatistics
 import io.prometheus.client._
-import no.nrk.bigquery.BQJobName
-import no.nrk.bigquery.metrics.{MetricsOps, TerminationType}
 
 object Prometheus {
   def collectorRegistry[F[_]](implicit
       F: Sync[F]
   ): Resource[F, CollectorRegistry] =
-    Resource.make(F.delay(new CollectorRegistry()))(cr =>
-      F.blocking(cr.clear())
-    )
+    Resource.make(F.delay(new CollectorRegistry()))(cr => F.blocking(cr.clear()))
 
   /** Creates a [[MetricsOps]] that supports Prometheus metrics
     *
@@ -23,12 +22,30 @@ object Prometheus {
     *   a prefix that will be added to all metrics
     */
   object DefaultMetricsOps {
+
+    def apply[F[_]: Sync](
+        registry: CollectorRegistry
+    ): Resource[F, MetricsOps[F]] =
+      apply(registry, "com_google_bigquery")
+
     def apply[F[_]: Sync](
         registry: CollectorRegistry,
-        prefix: String = "com_google_bigquery",
+        prefix: String
+    ): Resource[F, MetricsOps[F]] =
+      apply(registry, prefix, job => Some(job.value))
+
+    def apply[F[_]: Sync](
+        registry: CollectorRegistry,
+        prefix: String,
+        classifierF: BQJobName => Option[String]
+    ): Resource[F, MetricsOps[F]] =
+      apply(registry, prefix, classifierF, DefaultHistogramBuckets)
+
+    def apply[F[_]: Sync](
+        registry: CollectorRegistry,
+        prefix: String,
         classifierF: BQJobName => Option[String],
-        responseDurationSecondsHistogramBuckets: NonEmptyList[Double] =
-          DefaultHistogramBuckets
+        responseDurationSecondsHistogramBuckets: NonEmptyList[Double]
     ): Resource[F, MetricsOps[F]] =
       for {
         metrics <- createMetricsCollection(
@@ -84,7 +101,7 @@ object Prometheus {
               recordAbnormal(elapsed, jobName, e)
             case TerminationType.Error(e) => recordError(elapsed, jobName, e)
             case TerminationType.Canceled => recordCanceled(elapsed, jobName)
-            case TerminationType.Timeout  => recordTimeout(elapsed, jobName)
+            case TerminationType.Timeout => recordTimeout(elapsed, jobName)
           }
 
         private def recordCanceled(
@@ -160,8 +177,7 @@ object Prometheus {
                     label(classifierF(jobName))
                   )
                   .inc(totalBytesBilled.toDouble)
-              }
-            )
+              })
             .getOrElse(F.unit)
 
         private def label(value: Option[String]): String = value.getOrElse("")
@@ -237,9 +253,7 @@ object Prometheus {
       collector: C,
       registry: CollectorRegistry
   )(implicit F: Sync[F]): Resource[F, C] =
-    Resource.make(F.blocking(collector.register[C](registry)))(c =>
-      F.blocking(registry.unregister(c))
-    )
+    Resource.make(F.blocking(collector.register[C](registry)))(c => F.blocking(registry.unregister(c)))
 
   // https://github.com/prometheus/client_java/blob/parent-0.6.0/simpleclient/src/main/java/io/prometheus/client/Histogram.java#L73
   private val DefaultHistogramBuckets: NonEmptyList[Double] =
@@ -266,8 +280,8 @@ private object AbnormalTermination {
   def report(t: AbnormalTermination): String =
     t match {
       case Abnormal => "abnormal"
-      case Timeout  => "timeout"
-      case Error    => "error"
+      case Timeout => "timeout"
+      case Error => "error"
       case Canceled => "cancel"
     }
 }

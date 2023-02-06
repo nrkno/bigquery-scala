@@ -1,7 +1,6 @@
 package no.nrk.bigquery
 
 import cats.Show
-import io.circe.{Encoder, Json}
 
 /** an identifier in an sql statement, typically a column name or anything which shouldnt be quoted
   */
@@ -24,6 +23,5 @@ object Ident {
 
   implicit val showIdent: Show[Ident] =
     x => x.value
-  implicit val encoderIdent: Encoder[Ident] =
-    x => Json.fromString(x.value)
+
 }

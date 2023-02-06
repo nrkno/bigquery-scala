@@ -1,9 +1,6 @@
 package no.nrk.bigquery
 
 import com.google.cloud.bigquery.{Field, FieldList, PolicyTags, StandardSQLTypeName}
-import io.circe.{Decoder, Encoder}
-
-import no.nrk.bigquery.implicits._
 import scala.jdk.CollectionConverters._
 
 /** This is isomorphic to `Field` (can translate back and forth without data lass)
@@ -45,24 +42,6 @@ case class BQField(
 }
 
 object BQField {
-  implicit lazy val encodes: Encoder[BQField] = {
-    implicit val encodesStandardSQLTypeName: Encoder[StandardSQLTypeName] =
-      Encoder[String].contramap(_.name())
-    implicit val encodesFieldMode: Encoder[Field.Mode] =
-      Encoder[String].contramap(_.name())
-    assertIsUsed(encodesStandardSQLTypeName, encodesFieldMode)
-    io.circe.generic.semiauto.deriveEncoder
-  }
-
-  implicit lazy val decodes: Decoder[BQField] = {
-    implicit val decodesStandardSQLTypeName: Decoder[StandardSQLTypeName] =
-      Decoder[String].map(StandardSQLTypeName.valueOf)
-    implicit val decodesFieldMode: Decoder[Field.Mode] =
-      Decoder[String].map(Field.Mode.valueOf)
-    assertIsUsed(decodesStandardSQLTypeName, decodesFieldMode)
-    io.circe.generic.semiauto.deriveDecoder
-  }
-
   // convenience constructor for structs
   def struct(
       name: String,

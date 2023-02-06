@@ -1,8 +1,6 @@
 package no.nrk.bigquery
 
 import com.google.cloud.bigquery.Schema
-import io.circe.{Decoder, Encoder}
-
 import scala.jdk.CollectionConverters._
 
 case class BQSchema(fields: List[BQField]) {
@@ -24,10 +22,6 @@ case class BQSchema(fields: List[BQField]) {
 }
 
 object BQSchema {
-  implicit val decodes: Decoder[BQSchema] = Decoder.forProduct1("fields")(apply)
-  implicit val encodes: Encoder[BQSchema] =
-    Encoder.forProduct1("fields")(_.fields)
-
   def of(fields: BQField*) = new BQSchema(fields.toList)
 
   def fromSchema(schema: Schema): BQSchema =

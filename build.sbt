@@ -1,5 +1,5 @@
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
-ThisBuild / tlBaseVersion := "0.3" // your current series x.y
+ThisBuild / tlBaseVersion := "0.4" // your current series x.y
 
 ThisBuild / organization := "no.nrk.bigquery"
 ThisBuild / organizationName := "NRK"
@@ -85,7 +85,7 @@ val commonSettings = Seq(
 )
 
 lazy val root = tlCrossRootProject
-  .aggregate(core, testing)
+  .aggregate(core, testing, prometheus)
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val core = crossProject(JVMPlatform)
