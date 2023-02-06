@@ -85,7 +85,7 @@ val commonSettings = Seq(
 )
 
 lazy val root = tlCrossRootProject
-  .aggregate(core, testing)
+  .aggregate(core, testing, prometheus)
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val core = crossProject(JVMPlatform)
