@@ -49,8 +49,7 @@ object BigQueryTestClient {
             IO.blocking(GoogleCredentials.getApplicationDefault)
           )
       )
-      noopMetrics <- MetricsOps.NoopMetricsOps[IO]
-      underlying <- BigQueryClient.resource(credentials, noopMetrics)
+      underlying <- BigQueryClient.resource(credentials, MetricsOps.noop[IO])
     } yield underlying
 
   private val logger = LoggerFactory.getLogger[IO]
