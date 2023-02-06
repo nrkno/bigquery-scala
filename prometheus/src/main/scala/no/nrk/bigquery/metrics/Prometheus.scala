@@ -1,11 +1,12 @@
+package no.nrk.bigquery
+package metrics
+
 import cats.data.NonEmptyList
 import cats.effect.{Resource, Sync}
 import cats.syntax.apply._
 import com.google.cloud.bigquery.JobStatistics
 import com.google.cloud.bigquery.JobStatistics.QueryStatistics
 import io.prometheus.client._
-import no.nrk.bigquery.BQJobName
-import no.nrk.bigquery.metrics.{MetricsOps, TerminationType}
 
 object Prometheus {
   def collectorRegistry[F[_]](implicit
