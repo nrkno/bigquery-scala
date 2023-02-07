@@ -162,7 +162,8 @@ lazy val testing = crossProject(JVMPlatform)
       ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest#CachedQuery.this"),
       ProblemFilters.exclude[MissingTypesProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest$CachedQuery$"),
       ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest#CachedQuery.apply"),
-      ProblemFilters.exclude[MissingClassProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest$udf$minusresults$")
+      ProblemFilters.exclude[MissingClassProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest$udf$minusresults$"),
+      ProblemFilters.exclude[MissingFieldProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest.udf-results")
     )
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
