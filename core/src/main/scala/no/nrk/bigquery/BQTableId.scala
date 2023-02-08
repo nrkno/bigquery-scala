@@ -26,6 +26,9 @@ final case class BQTableId(dataset: BQDataset, tableName: String) {
   def underlying: TableId =
     TableId.of(dataset.project.value, dataset.id, tableName)
 
+  def withLocation(locationId: Option[LocationId]) = withDataset(dataset.copy(location = locationId))
+  def withDataset(ds: BQDataset) = copy(dataset = ds)
+
   def asString: String = s"${dataset.project.value}.${dataset.id}.${tableName}"
   def asFragment: BQSqlFrag = BQSqlFrag.backticks(asString)
 }
@@ -37,7 +40,7 @@ object BQTableId {
   def unsafeFromGoogle(dataset: BQDataset, tableId: TableId): BQTableId = {
     require(
       tableId.getProject == dataset.project.value && dataset.id == tableId.getDataset,
-      s"Expected google table Id to be the same datasetId and project as provided dataset[$dataset]"
+      s"Expected google table Id($tableId) to be the same datasetId and project as provided dataset[$dataset]"
     )
     BQTableId(dataset, tableId.getTable)
   }
