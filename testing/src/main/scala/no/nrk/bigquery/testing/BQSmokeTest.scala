@@ -215,7 +215,7 @@ private object BQSmokeTest {
           )
         )
 
-        val cachedQuery = CachedQuery(staticFrag, BigQueryTestClient.basedir)
+        val cachedQuery = CachedQuery(staticFrag, static.basedir)
         val runCheck: IO[Unit] = cachedQuery.read
           .flatMap {
             case Some(schema) => IO.pure(schema)
