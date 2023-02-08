@@ -496,7 +496,7 @@ class BigQueryClient[F[_]](
       dataset: BQDataset,
       datasetOptions: BigQuery.TableListOption*
   ): F[Vector[BQTableRef[Any]]] =
-    F.blocking(bigQuery.listTables(dataset.id, datasetOptions: _*)).flatMap { tables =>
+    F.blocking(bigQuery.listTables(dataset.underlying, datasetOptions: _*)).flatMap { tables =>
       tables
         .iterateAll()
         .asScala
