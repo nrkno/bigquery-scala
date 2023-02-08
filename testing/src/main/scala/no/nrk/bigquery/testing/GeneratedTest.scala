@@ -15,7 +15,14 @@ trait GeneratedTest {
   def assertCurrentGeneratedFiles: Boolean =
     sys.env.contains("ASSERT_CURRENT_GENERATED_FILES")
 
-  def basedir: Path = GeneratedTest.basedirFromClass(getClass)
+  def basedir: Path = {
+    var f = new File(
+      getClass.getProtectionDomain.getCodeSource.getLocation.getFile
+    ).getParentFile
+    while (!new File(f.getParentFile, "build.sbt").exists())
+      f = f.getParentFile
+    f.getParentFile.toPath
+  }
 
   def generatedDir = basedir.resolve("generated")
 
@@ -38,15 +45,4 @@ trait GeneratedTest {
       Files.write(testFile, value.getBytes(StandardCharsets.UTF_8))
       assert(true)
     }
-}
-
-object GeneratedTest {
-  def basedirFromClass(clz: Class[_]): Path = {
-    var f = new File(
-      clz.getProtectionDomain.getCodeSource.getLocation.getFile
-    ).getParentFile
-    while (!new File(f.getParentFile, "build.sbt").exists())
-      f = f.getParentFile
-    f.getParentFile.toPath
-  }
 }

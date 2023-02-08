@@ -1,5 +1,3 @@
-import com.typesafe.tools.mima.core._
-
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
 ThisBuild / tlBaseVersion := "0.4" // your current series x.y
 
@@ -154,16 +152,6 @@ lazy val testing = crossProject(JVMPlatform)
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
-    ),
-    mimaBinaryIssueFilters ++= Seq(
-      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest.bqEvaluateCall"),
-      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest.bqEvaluateCall"),
-      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest#CachedQuery.copy"),
-      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest#CachedQuery.this"),
-      ProblemFilters.exclude[MissingTypesProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest$CachedQuery$"),
-      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest#CachedQuery.apply"),
-      ProblemFilters.exclude[MissingClassProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest$udf$minusresults$"),
-      ProblemFilters.exclude[MissingFieldProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest.udf-results")
     )
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
