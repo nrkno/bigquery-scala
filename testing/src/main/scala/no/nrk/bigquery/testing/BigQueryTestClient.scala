@@ -26,7 +26,7 @@ object BigQueryTestClient {
       .get(sys.env.getOrElse("BIGQUERY_HOME", Properties.userHome))
       .resolve(".bigquery")
   val queryCachePath = {
-    val dir = basedir.resolve(".bigquery").resolve("query-cache")
+    val dir = basedir.resolve("query-cache")
     Files.createDirectories(dir)
     dir
   }
