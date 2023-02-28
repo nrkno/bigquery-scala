@@ -121,7 +121,7 @@ lazy val core = crossProject(JVMPlatform)
       } else {
         // scala2
         Seq(
-          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.2",
+          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.3",
           "org.scala-lang" % "scala-reflect" % scalaVersion.value
         )
       }
