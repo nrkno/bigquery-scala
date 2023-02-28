@@ -98,7 +98,7 @@ lazy val core = crossProject(JVMPlatform)
     Test / headerSources := Nil,
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "2.9.0",
-      "org.typelevel" %% "cats-effect" % "3.4.6",
+      "org.typelevel" %% "cats-effect" % "3.4.8",
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       "com.google.cloud" % "google-cloud-bigquery" % "2.23.0",
