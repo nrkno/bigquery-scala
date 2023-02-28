@@ -98,30 +98,30 @@ lazy val core = crossProject(JVMPlatform)
     Test / headerSources := Nil,
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "2.9.0",
-      "org.typelevel" %% "cats-effect" % "3.4.6",
+      "org.typelevel" %% "cats-effect" % "3.4.8",
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
-      "com.google.cloud" % "google-cloud-bigquery" % "2.21.0",
+      "com.google.cloud" % "google-cloud-bigquery" % "2.23.0",
       "com.google.cloud" % "google-cloud-bigquerystorage" % "2.29.0",
-      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.10.0",
+      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.11.0",
       "org.apache.avro" % "avro" % "1.11.1",
       "com.lihaoyi" %% "sourcecode" % "0.3.0",
       "org.typelevel" %% "log4cats-slf4j" % "2.5.0",
       "io.circe" %% "circe-generic" % "0.14.4",
       "io.circe" %% "circe-parser" % "0.14.4",
-      "co.fs2" %% "fs2-core" % "3.4.0",
-      "co.fs2" %% "fs2-io" % "3.4.0",
+      "co.fs2" %% "fs2-core" % "3.6.1",
+      "co.fs2" %% "fs2-io" % "3.6.1",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.9.0"
     ),
     libraryDependencies ++= {
       if (scalaVersion.value.startsWith("3")) {
         Seq(
-          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.1.2"
+          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.1.5"
         )
       } else {
         // scala2
         Seq(
-          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.2",
+          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.3",
           "org.scala-lang" % "scala-reflect" % scalaVersion.value
         )
       }
