@@ -107,8 +107,8 @@ lazy val core = crossProject(JVMPlatform)
       "org.apache.avro" % "avro" % "1.11.1",
       "com.lihaoyi" %% "sourcecode" % "0.3.0",
       "org.typelevel" %% "log4cats-slf4j" % "2.5.0",
-      "io.circe" %% "circe-generic" % "0.14.2",
-      "io.circe" %% "circe-parser" % "0.14.2",
+      "io.circe" %% "circe-generic" % "0.14.5",
+      "io.circe" %% "circe-parser" % "0.14.5",
       "co.fs2" %% "fs2-core" % "3.6.1",
       "co.fs2" %% "fs2-io" % "3.6.1",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.9.0"
