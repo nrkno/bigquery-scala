@@ -38,7 +38,7 @@ object StreamUtils {
         maybeTotal.fold("")(total => s"of $total")
       ).mkString(" ")
 
-      logger.debug(msg).as((acc + chunk.size, chunk))
+      logger.info(msg).as((acc + chunk.size, chunk))
     }.map(_._2)
 
   def log[F[_]: Functor, T](

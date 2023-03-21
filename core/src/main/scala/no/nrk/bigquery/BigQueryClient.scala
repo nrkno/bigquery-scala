@@ -58,7 +58,7 @@ class BigQueryClient[F[_]](
       legacySql: Boolean,
       jobOptions: Seq[JobOption]
   ): Stream[F, A] =
-    synchronousQuery(jobName, query, legacySql, jobOptions, logStream = false)
+    synchronousQuery(jobName, query, legacySql, jobOptions, logStream = true)
 
   def synchronousQuery[A](
       jobName: BQJobName,
