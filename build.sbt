@@ -85,6 +85,7 @@ val commonSettings = Seq(
 )
 
 lazy val root = tlCrossRootProject
+  .settings(name := "bigquery-scala")
   .aggregate(core, testing, prometheus)
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
