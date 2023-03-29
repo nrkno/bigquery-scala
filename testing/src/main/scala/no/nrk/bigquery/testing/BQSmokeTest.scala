@@ -48,21 +48,33 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
 
   override def munitFixtures = List(bqClient)
 
+  @deprecated("use bqTypeCheckTest", "0.4.6")
   protected def bqCheckTest[A](
+      testName: String
+  )(query: BQQuery[A])(implicit loc: Location): Unit =
+    bqTypeCheckTest[A](testName)(query)
+
+  protected def bqTypeCheckTest[A](
       testName: String
   )(query: BQQuery[A])(implicit loc: Location): Unit =
     test(s"bqCheck: $testName".tag(TestTags.Generated)) {
       bqCheckFragment(
         testName,
         query.sql,
-        CheckType.Type(query.bqRead.bqType),
+        CheckType.TypeOnly(query.bqRead.bqType),
         assertStableTables,
         Queries,
         StaticQueries
       )(bqClient())
     }
 
+  @deprecated("use bqTypeChecksTest", "0.4.6")
   protected def bqChecksTest[A](
+      testName: String
+  )(queries: List[BQQuery[A]])(implicit loc: Location): Unit =
+    bqTypeChecksTest[A](testName)(queries)
+
+  protected def bqTypeChecksTest[A](
       testName: String
   )(queries: List[BQQuery[A]])(implicit loc: Location): Unit =
     test(s"bqChecks: $testName".tag(TestTags.Generated)) {
@@ -72,7 +84,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
       bqCheckFragment(
         testName,
         combinedSql,
-        CheckType.Type(queries.head.bqRead.bqType),
+        CheckType.TypeOnly(queries.head.bqRead.bqType),
         assertStableTables,
         Queries,
         StaticQueries
@@ -87,6 +99,20 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
         testName,
         frag,
         CheckType.Untyped,
+        assertStableTables,
+        Queries,
+        StaticQueries
+      )(bqClient())
+    }
+
+  protected def bqTypeWithNameCheckTest[A](
+      testName: String
+  )(query: BQQuery[A])(implicit loc: Location): Unit =
+    test(s"bqCheck: $testName".tag(TestTags.Generated)) {
+      bqCheckFragment(
+        testName,
+        query.sql,
+        CheckType.TypeAndName(query.bqRead.bqType),
         assertStableTables,
         Queries,
         StaticQueries
@@ -268,8 +294,15 @@ object BQSmokeTest {
               fail(s"Failed because ${reasons.mkString(", ")}")
             case None => assert(true)
           }
-        case CheckType.Type(expectedType) =>
+        case CheckType.TypeOnly(expectedType) =>
           conforms.onlyTypes(actualSchema, expectedType) match {
+            case Some(reasons) =>
+              fail(s"Failed because ${reasons.mkString(", ")}")
+            case None => assert(true)
+          }
+
+        case CheckType.TypeAndName(expectedType) =>
+          conforms.types(actualSchema, expectedType) match {
             case Some(reasons) =>
               fail(s"Failed because ${reasons.mkString(", ")}")
             case None => assert(true)
@@ -281,7 +314,8 @@ object BQSmokeTest {
 
   object CheckType {
     case class Schema(value: BQSchema) extends CheckType
-    case class Type(value: BQType) extends CheckType
+    case class TypeOnly(value: BQType) extends CheckType
+    case class TypeAndName(value: BQType) extends CheckType
     case object Untyped extends CheckType
     case object Failing extends CheckType
   }
@@ -377,6 +411,7 @@ object BQSmokeTest {
   def exampleRow(schema: BQSchema): BQSqlFrag = {
     object counter {
       var value = 0L
+
       def next(): Long = {
         val ret = value
         value += 1

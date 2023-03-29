@@ -38,6 +38,31 @@ object conforms {
     )
   }
 
+  def types(
+      actualSchema: BQSchema,
+      givenType: BQType
+  ): Option[List[String]] = {
+
+    def asField(name: String, bqType: BQType): BQField =
+      BQField(
+        name,
+        bqType.tpe,
+        bqType.mode,
+        None,
+        bqType.subFields.map { case (subName, tpe) => asField(subName, tpe) },
+        Nil
+      )
+
+    // the _ can cause issues when we only have one type!
+    val givenSchema = asField("_", givenType) match {
+      case BQField(_, StandardSQLTypeName.STRUCT, _, _, subFields, Nil) =>
+        BQSchema(subFields)
+      case other => BQSchema.of(other)
+    }
+
+    apply(actualSchema, givenSchema)
+  }
+
   /* this is a stronger comparison than `onlyTypes`, because it takes into column names as well */
   def apply(
       actualSchema: BQSchema,
