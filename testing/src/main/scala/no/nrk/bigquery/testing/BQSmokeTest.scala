@@ -188,7 +188,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
     }
 }
 
-private object BQSmokeTest {
+object BQSmokeTest {
   private val logger = Slf4jFactory.getLogger[IO]
 
   def bqCheckFragment(
