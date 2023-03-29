@@ -195,6 +195,21 @@ object BQRead extends BQReadCompat {
         }
     }
 
+  implicit val convertsLocalDateTime: BQRead[LocalDateTime] =
+    new BQRead[LocalDateTime] {
+      override val bqType: BQType =
+        BQType(Field.Mode.REQUIRED, StandardSQLTypeName.DATETIME, Nil)
+
+      override def read(transportSchema: avro.Schema, value: Any): LocalDateTime =
+        value match {
+          case string: java.lang.String => LocalDateTime.parse(string)
+          case other =>
+            sys.error(
+              s"Unexpected: ${other.getClass.getSimpleName} $other . Schema from BQ: $transportSchema"
+            )
+        }
+    }
+
   implicit val convertsInstant: BQRead[Instant] =
     new BQRead[Instant] {
       final val microsInSec = 1000 * 1000
