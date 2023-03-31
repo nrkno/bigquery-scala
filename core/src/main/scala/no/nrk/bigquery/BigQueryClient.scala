@@ -309,23 +309,31 @@ class BigQueryClient[F[_]](
       table: BQTableDef.Table[Param],
       tmpDataset: BQDataset,
       expirationDuration: Option[FiniteDuration]
-  ): F[BQTableDef.Table[Param]] = {
-    // a copy of `table` with new coordinates
-    val tempTableDef = table.copy(tableId = BQTableId(
-      tmpDataset,
-      table.tableId.tableName + UUID.randomUUID().toString
-    ))
-    val tempTableBqDef = UpdateOperation.createNew(tempTableDef).table
-    val expirationTime =
-      Instant.now.plusMillis(expirationDuration.getOrElse(1.hour).toMillis)
+  ): F[BQTableDef.Table[Param]] = F
+    .delay {
+      // a copy of `table` with new coordinates
+      table.copy(tableId = BQTableId(
+        tmpDataset,
+        table.tableId.tableName + UUID.randomUUID().toString
+      ))
+    }
+    .flatMap(tmp =>
+      F.blocking {
+        val tempTableBqDef = UpdateOperation.createNew(tmp).table
+        val expirationTime =
+          Instant.now.plusMillis(expirationDuration.getOrElse(1.hour).toMillis)
 
-    val tempTableBqDefWithExpiry = tempTableBqDef.toBuilder
-      .setExpirationTime(expirationTime.toEpochMilli)
-      .build()
+        val tempTableBqDefWithExpiry = tempTableBqDef.toBuilder
+          .setExpirationTime(expirationTime.toEpochMilli)
+          .build()
 
-    F.blocking(bigQuery.create(tempTableBqDefWithExpiry))
-      .map(_ => tempTableDef)
-  }
+        bigQuery.create(tempTableBqDefWithExpiry)
+      }.as(tmp))
+
+  def createTempTableResource[Param](
+      table: BQTableDef.Table[Param],
+      tmpDataset: BQDataset): Resource[F, BQTableDef.Table[Param]] =
+    Resource.make(createTempTable(table, tmpDataset))(tmp => delete(tmp.tableId).attempt.void)
 
   def submitQuery[P](jobName: BQJobName, query: BQSqlFrag): F[Job] =
     submitQuery(jobName, query, None)
