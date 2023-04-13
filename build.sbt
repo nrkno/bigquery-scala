@@ -1,3 +1,5 @@
+import com.typesafe.tools.mima.core._
+
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
 ThisBuild / tlBaseVersion := "0.4" // your current series x.y
 
@@ -126,7 +128,13 @@ lazy val core = crossProject(JVMPlatform)
           "org.scala-lang" % "scala-reflect" % scalaVersion.value
         )
       }
-    }
+    },
+    mimaBinaryIssueFilters ++= Seq(
+      ProblemFilters.exclude[IncompatibleResultTypeProblem]("no.nrk.bigquery.UDF.body"),
+      ProblemFilters.exclude[IncompatibleMethTypeProblem]("no.nrk.bigquery.UDF.copy"),
+      ProblemFilters.exclude[IncompatibleResultTypeProblem]("no.nrk.bigquery.UDF.copy$default*"),
+      ProblemFilters.exclude[IncompatibleMethTypeProblem]("no.nrk.bigquery.UDF.this")
+    )
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
