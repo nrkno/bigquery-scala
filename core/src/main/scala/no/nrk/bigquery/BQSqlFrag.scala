@@ -2,6 +2,7 @@ package no.nrk.bigquery
 
 import no.nrk.bigquery.implicits._
 import no.nrk.bigquery.BQSqlFrag.asSubQuery
+import no.nrk.bigquery.UDF.Body
 
 /* The result of building a BigQuery sql. The `Frag` part of the name was chosen because it can be a fragment and not a complete query */
 sealed trait BQSqlFrag {
@@ -70,7 +71,10 @@ sealed trait BQSqlFrag {
     this match {
       case BQSqlFrag.Frag(_) => Nil
       case BQSqlFrag.Call(udf, args) =>
-        (udf.body.allReferencedAsPartitions ++ args.flatMap(
+        ((udf.body match {
+          case Body.Sql(body) => body.allReferencedAsPartitions
+          case _: Body.Js => Nil
+        }) ++ args.flatMap(
           _.allReferencedAsPartitions
         )).distinct
       case BQSqlFrag.Combined(values) =>
@@ -86,7 +90,10 @@ sealed trait BQSqlFrag {
     this match {
       case BQSqlFrag.Frag(_) => Nil
       case BQSqlFrag.Call(udf, args) =>
-        (udf.body.allReferencedUDFs ++ args.flatMap(
+        ((udf.body match {
+          case Body.Sql(body) => body.allReferencedUDFs
+          case _: Body.Js => Nil
+        }) ++ args.flatMap(
           _.allReferencedUDFs
         ) ++ List(udf)).distinct
       case BQSqlFrag.Combined(values) =>

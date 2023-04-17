@@ -10,6 +10,7 @@ import io.circe.parser.decode
 import io.circe.syntax._
 import munit.Assertions.fail
 import munit.{CatsEffectSuite, Location}
+import no.nrk.bigquery.UDF.Body
 import no.nrk.bigquery._
 import no.nrk.bigquery.testing.BQSmokeTest.{CheckType, bqCheckFragment}
 import org.typelevel.log4cats.slf4j._
@@ -314,12 +315,17 @@ object BQSmokeTest {
         (x, Nil)
 
       case BQSqlFrag.Call(udf, args) =>
-        val (newUdfBody, ctesFromUDF) = recurse(udf.body)
         val (newArgs, ctes) = args.toList.map(recurse).separate
-        (
-          BQSqlFrag.Call(udf.copy(body = newUdfBody), newArgs),
-          ctesFromUDF ++ ctes.flatten
-        )
+        udf.body match {
+          case Body.Sql(body) =>
+            val (newUdfBody, ctesFromUDF) = recurse(body)
+            (
+              BQSqlFrag.Call(udf.copy(body = UDF.Body.Sql(newUdfBody)), newArgs),
+              ctesFromUDF ++ ctes.flatten
+            )
+          case _: Body.Js =>
+            (BQSqlFrag.Call(udf, newArgs), ctes.flatten)
+        }
 
       case BQSqlFrag.Combined(frags) =>
         val allDataRefs = frags.forall {
