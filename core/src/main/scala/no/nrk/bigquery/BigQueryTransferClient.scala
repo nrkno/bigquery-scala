@@ -20,7 +20,7 @@ class BigQueryTransferClient(transferClient: DataTransferServiceClient) {
   def getTransferConfig(
       transferConfigName: TransferConfigName
   ): IO[Option[TransferConfig]] =
-    IO.blocking(
+    IO.interruptible(
       transferClient.listTransferConfigs(
         s"projects/${transferConfigName.getProject}/locations/${transferConfigName.getLocation}"
       )
@@ -64,7 +64,7 @@ class BigQueryTransferClient(transferClient: DataTransferServiceClient) {
       .setParent(projectName.toString)
       .setTransferConfig(transferConfig)
       .build
-    IO.blocking(transferClient.createTransferConfig(transferRequest))
+    IO.interruptible(transferClient.createTransferConfig(transferRequest))
   }
 
   def startDatasetTransfer(transferConfig: TransferConfig): IO[TransferStatus] =
@@ -76,13 +76,13 @@ class BigQueryTransferClient(transferClient: DataTransferServiceClient) {
         .setParent(transferConfig.getName)
         .setRequestedRunTime(transferConfig.getUpdateTime)
         .build()
-      runResponse <- IO.blocking(
+      runResponse <- IO.interruptible(
         transferClient.startManualTransferRuns(startRequest)
       )
       activeRun = runResponse.getRunsList.asScala.headOption
       transferStatus <- activeRun.traverse(activeRun =>
         pollDatasetTransfer(activeRun, 15.seconds)(retry =
-          IO.blocking(transferClient.getTransferRun(activeRun.getName))).attempt.map {
+          IO.interruptible(transferClient.getTransferRun(activeRun.getName))).attempt.map {
           case Left(err) => TransferFailed(activeRun, err)
           case Right(transfer) => transfer
         })
