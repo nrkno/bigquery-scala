@@ -166,7 +166,9 @@ lazy val testing = crossProject(JVMPlatform)
     mimaBinaryIssueFilters ++= Seq(
       ProblemFilters.exclude[MissingFieldProblem]("no.nrk.bigquery.testing.BQSmokeTest#CheckType.Type"),
       ProblemFilters.exclude[MissingClassProblem]("no.nrk.bigquery.testing.BQSmokeTest$CheckType$Type"),
-      ProblemFilters.exclude[MissingClassProblem]("no.nrk.bigquery.testing.BQSmokeTest$CheckType$Type$")
+      ProblemFilters.exclude[MissingClassProblem]("no.nrk.bigquery.testing.BQSmokeTest$CheckType$Type$"),
+      ProblemFilters.exclude[AbstractClassProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest.this")
     )
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)

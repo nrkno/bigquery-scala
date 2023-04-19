@@ -1,7 +1,7 @@
 package no.nrk.bigquery
 package testing
 
-import cats.effect.IO
+import cats.effect.{IO, Resource}
 import cats.effect.kernel.Outcome
 import io.circe.Json
 import io.circe.parser.decode
@@ -13,11 +13,12 @@ import org.typelevel.log4cats.slf4j._
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-class BQUdfSmokeTest extends CatsEffectSuite {
+abstract class BQUdfSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends CatsEffectSuite {
   val bqClient: Fixture[BigQueryClient[IO]] = ResourceSuiteLocalFixture(
     "bqClient",
-    BigQueryTestClient.testClient
+    testClient
   )
+
   override def munitFixtures = List(bqClient)
 
   /** Evaluates the call against BQ but caches it. This is only meant to be used with pure UDFs, not those which reads
