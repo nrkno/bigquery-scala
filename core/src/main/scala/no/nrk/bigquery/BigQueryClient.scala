@@ -291,11 +291,11 @@ class BigQueryClient[F[_]](
               else identity
             )
             .prefetch
-            .evalMap(chunk => F.blocking(writer.write(chunk.toByteBuffer)))
+            .evalMap(chunk => F.interruptible(writer.write(chunk.toByteBuffer)))
             .compile
             .drain
         }
-        .flatMap(_ => F.blocking(Option(bigQuery.getJob(jobId))))
+        .flatMap(_ => F.interruptible(Option(bigQuery.getJob(jobId))))
 
     }.map(jobOpt => jobOpt.map(_.getStatistics[LoadStatistics]))
 
@@ -318,7 +318,7 @@ class BigQueryClient[F[_]](
       ))
     }
     .flatMap(tmp =>
-      F.blocking {
+      F.interruptible {
         val tempTableBqDef = UpdateOperation.createNew(tmp).table
         val expirationTime =
           Instant.now.plusMillis(expirationDuration.getOrElse(1.hour).toMillis)
@@ -404,7 +404,7 @@ class BigQueryClient[F[_]](
         b.build()
       }
 
-      F.blocking(
+      F.interruptible(
         Option(
           bigQuery.create(JobInfo.of(jobId, jobConfiguration), jobOptions: _*)
         )
@@ -433,7 +433,7 @@ class BigQueryClient[F[_]](
                 maxDuration = 20.minutes,
                 maxErrorsTolerated = 10
               )(
-                retry = F.blocking(bigQuery.getJob(runningJob.getJobId))
+                retry = F.interruptible(bigQuery.getJob(runningJob.getJobId))
               )
               .flatMap {
                 case BQPoll.Failed(error) => F.raiseError[Job](error)
@@ -463,7 +463,7 @@ class BigQueryClient[F[_]](
       tableId: BQTableId,
       tableOptions: TableOption*
   ): F[Option[Table]] =
-    F.blocking(
+    F.interruptible(
       Option(bigQuery.getTable(tableId.underlying, tableOptions: _*))
         .filter(_.exists())
     )
@@ -488,7 +488,7 @@ class BigQueryClient[F[_]](
           .setDryRun(true)
           .build()
       )
-      F.blocking(bigQuery.create(jobInfo))
+      F.interruptible(bigQuery.create(jobInfo))
     }
 
   def create(table: TableInfo): F[Table] =
@@ -504,7 +504,7 @@ class BigQueryClient[F[_]](
       dataset: BQDataset,
       datasetOptions: BigQuery.TableListOption*
   ): F[Vector[BQTableRef[Any]]] =
-    F.blocking(bigQuery.listTables(dataset.underlying, datasetOptions: _*)).flatMap { tables =>
+    F.interruptible(bigQuery.listTables(dataset.underlying, datasetOptions: _*)).flatMap { tables =>
       tables
         .iterateAll()
         .asScala
