@@ -64,8 +64,11 @@ sealed trait BQSqlFrag {
         }
     }
 
-  final lazy val asStringWithUDFs: String =
-    allReferencedUDFs.map(_.definition.asString).mkString("\n\n") + asString
+  final lazy val asStringWithUDFs: String = {
+    val udfs = allReferencedUDFs.map(_.definition.asString)
+    val udfsAsString = udfs.mkString("\n\n") + (if (udfs.nonEmpty) "\n\n" else "")
+    udfsAsString + asString
+  }
 
   final def allReferencedAsPartitions: Seq[BQPartitionId[Any]] =
     this match {
