@@ -380,20 +380,12 @@ object BQSmokeTest {
         (newQuery, ctess.reduce(_ ++ _))
 
       case p @ BQSqlFrag.PartitionRef(pid) =>
-        val schemaOpt: Option[BQSchema] =
-          pid.wholeTable match {
-            case BQTableRef(_, _) => None
-            case x: BQTableDef[Any] => Some(x.schema)
-          }
-
-        schemaOpt match {
-          case Some(schema) =>
+        pid.wholeTable match {
+          case BQTableLike.HasSchema(schema) =>
             val cteName = tempTable(pid)
-            (
-              cteName.bqShow,
-              List(CTE(cteName, bqfr"(select as value ${exampleRow(schema)})"))
-            )
-          case None =>
+            val cte = CTE(cteName, bqfr"(select as value ${exampleRow(schema)})")
+            (cteName.bqShow, cte :: Nil)
+          case _ =>
             (p, Nil)
         }
 

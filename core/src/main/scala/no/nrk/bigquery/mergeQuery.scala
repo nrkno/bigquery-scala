@@ -2,6 +2,7 @@ package no.nrk.bigquery
 
 import no.nrk.bigquery.implicits._
 import com.google.cloud.bigquery.Field
+import no.nrk.bigquery.BQTableLike.HasSchema
 
 import scala.annotation.tailrec
 
@@ -29,10 +30,8 @@ object mergeQuery {
     val allFields: List[BQField] =
       (source.wholeTable, target.wholeTable) match {
         // compare schema without comments, since those may be dynamic and it doesnt matter anyway
-        case (from: BQTableDef[Any], into: BQTableDef[Any])
-            if BQType
-              .fromBQSchema(from.schema) == BQType.fromBQSchema(into.schema) =>
-          from.schema.fields
+        case (HasSchema(from), HasSchema(into)) if BQType.fromBQSchema(from) == BQType.fromBQSchema(into) =>
+          from.fields
         case (from, into) =>
           sys.error(s"Cannot merge $from into $into")
       }

@@ -134,7 +134,9 @@ lazy val core = crossProject(JVMPlatform)
       ProblemFilters.exclude[IncompatibleMethTypeProblem]("no.nrk.bigquery.UDF.copy"),
       ProblemFilters.exclude[IncompatibleResultTypeProblem]("no.nrk.bigquery.UDF.copy$default*"),
       ProblemFilters.exclude[IncompatibleMethTypeProblem]("no.nrk.bigquery.UDF.this"),
-      ProblemFilters.exclude[IncompatibleResultTypeProblem]("no.nrk.bigquery.UDF._*")
+      ProblemFilters.exclude[IncompatibleResultTypeProblem]("no.nrk.bigquery.UDF._*"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.BQTableRef.copy"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.BQTableRef.this")
     )
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)

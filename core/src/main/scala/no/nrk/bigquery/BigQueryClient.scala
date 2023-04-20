@@ -515,7 +515,7 @@ class BigQueryClient[F[_]](
             case definition: StandardTableDefinition =>
               BQPartitionType.from(definition) match {
                 case Right(partitionType) =>
-                  F.pure(Some(BQTableRef(tableId, partitionType)))
+                  F.pure(Some(BQTableRef(tableId, partitionType, Some(BQSchema.fromSchema(definition.getSchema)))))
                 case Left(msg) =>
                   logger
                     .warn(

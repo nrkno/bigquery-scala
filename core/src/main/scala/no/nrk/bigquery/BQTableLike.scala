@@ -58,6 +58,14 @@ object BQTableLike {
     ): F[(BQPartitionId[Unit], PartitionMetadata)] =
       PartitionLoader.unpartitioned(table, client).widen
   }
+
+  object HasSchema {
+    def unapply(t: BQTableLike[Any]): Option[BQSchema] =
+      t match {
+        case BQTableRef(_, _, schema) => schema
+        case tableDef: BQTableDef[Any] => Some(tableDef.schema)
+      }
+  }
 }
 
 /** A reference to a table we know is partitioned in one of several ways.
@@ -73,12 +81,24 @@ object BQTableLike {
   * a non-partitioned and a date-partitioned table into a list (or otherwise lose precise types), you also lose the
   * ability to construct legal [[BQPartitionId]] s with `assertPartition`
   */
-case class BQTableRef[+P](tableId: BQTableId, partitionType: BQPartitionType[P]) extends BQTableLike[P] {
+case class BQTableRef[+P](
+    tableId: BQTableId,
+    partitionType: BQPartitionType[P],
+    schema: Option[BQSchema]
+) extends BQTableLike[P] {
   override def unpartitioned: BQTableRef[Unit] =
     withTableType(BQPartitionType.ignoredPartitioning(partitionType))
 
   override def withTableType[PP](tpe: BQPartitionType[PP]): BQTableRef[PP] =
-    BQTableRef(tableId, tpe)
+    BQTableRef(tableId, tpe, schema)
+}
+
+object BQTableRef {
+  def apply[P](
+      tableId: BQTableId,
+      partitionType: BQPartitionType[P]
+  ): BQTableRef[P] =
+    BQTableRef(tableId, partitionType, None)
 }
 
 /** Our version of a description of what a BQ table/view should look like.
