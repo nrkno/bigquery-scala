@@ -162,6 +162,11 @@ lazy val testing = crossProject(JVMPlatform)
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
+    ),
+    mimaBinaryIssueFilters ++= Seq(
+      ProblemFilters.exclude[MissingFieldProblem]("no.nrk.bigquery.testing.BQSmokeTest#CheckType.Type"),
+      ProblemFilters.exclude[MissingClassProblem]("no.nrk.bigquery.testing.BQSmokeTest$CheckType$Type"),
+      ProblemFilters.exclude[MissingClassProblem]("no.nrk.bigquery.testing.BQSmokeTest$CheckType$Type$")
     )
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
