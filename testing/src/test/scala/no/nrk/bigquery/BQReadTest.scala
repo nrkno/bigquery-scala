@@ -13,7 +13,7 @@ class BQReadTest extends BQSmokeTest(BigQueryTestClient.testClient) {
     implicit val bqRead: BQRead[TestCase] = BQRead.derived
   }
 
-  bqCheckTest("nested structure") {
+  bqTypeCheckTest("nested structure") {
     BQQuery[TestCase](
       bqsql"""SELECT * FROM UNNEST(ARRAY<STRUCT<num STRING, nesteds ARRAY<STRUCT<a STRING, b INT64>>>>[("a", [("b", 10), ("c", 11)])])"""
     )
