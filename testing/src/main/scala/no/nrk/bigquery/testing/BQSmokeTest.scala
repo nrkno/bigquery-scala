@@ -8,8 +8,8 @@ import com.google.cloud.bigquery.JobStatistics.QueryStatistics
 import com.google.cloud.bigquery.{BigQueryException, Field, StandardSQLTypeName}
 import io.circe.parser.decode
 import io.circe.syntax._
-import munit.Assertions.fail
-import munit.{CatsEffectSuite, Location}
+import munit.Assertions.{clues, fail}
+import munit.{CatsEffectSuite, Clues, Location}
 import no.nrk.bigquery.UDF.Body
 import no.nrk.bigquery._
 import no.nrk.bigquery.testing.BQSmokeTest.{CheckType, bqCheckFragment}
@@ -292,25 +292,59 @@ object BQSmokeTest {
         case CheckType.Schema(expectedSchema) =>
           conforms(actualSchema, expectedSchema) match {
             case Some(reasons) =>
-              fail(s"Failed because ${reasons.mkString(", ")}")
+              fail(s"Failed because ${reasons.mkString(", ")}", TypeClue(expectedSchema, actualSchema))
             case None => assert(true)
           }
         case CheckType.TypeOnly(expectedType) =>
           conforms.onlyTypes(actualSchema, expectedType) match {
             case Some(reasons) =>
-              fail(s"Failed because ${reasons.mkString(", ")}")
+              fail(s"Failed because ${reasons.mkString(", ")}", TypeClue(expectedType, actualSchema))
             case None => assert(true)
           }
 
         case CheckType.TypeAndName(expectedType) =>
           conforms.types(actualSchema, expectedType) match {
             case Some(reasons) =>
-              fail(s"Failed because ${reasons.mkString(", ")}")
+              fail(s"Failed because ${reasons.mkString(", ")}", TypeClue(expectedType, actualSchema))
             case None => assert(true)
           }
         case CheckType.Untyped | CheckType.Failing =>
           assert(true)
       }
+  }
+
+  private case class TypeClue(fields: List[TypeClue.Field])
+
+  private object TypeClue {
+
+    case class Field(
+        name: String,
+        tpe: StandardSQLTypeName,
+        subFields: List[Field]
+    )
+
+    def apply(expectedSchema: BQSchema, actualSchema: BQSchema): Clues = {
+      val actualFields = TypeClue.from(actualSchema)
+      val expectedFields = TypeClue.from(expectedSchema)
+      clues(expectedFields, actualFields)
+    }
+    def apply(expectedType: BQType, actualSchema: BQSchema): Clues = {
+      val actualFields = TypeClue.from(actualSchema)
+      val expectedFields = TypeClue.from(expectedType)
+      clues(expectedFields, actualFields)
+    }
+
+    private def from(s: BQSchema): TypeClue = {
+      def toField(f: BQField): Field = Field(f.name, f.tpe, f.subFields.map(toField))
+      TypeClue(s.fields.map(toField))
+    }
+
+    private def from(t: BQType): TypeClue = {
+      def toField(tup: (String, BQType)): Field = Field(tup._1, tup._2.tpe, tup._2.subFields.map(toField))
+      if (t.subFields.isEmpty) TypeClue(toField(("_", t)) :: Nil)
+      else TypeClue(t.subFields.map(toField))
+    }
+
   }
 
   object CheckType {
