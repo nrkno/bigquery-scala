@@ -192,7 +192,7 @@ class EnsureUpdatedTest extends FunSuite {
 
     UpdateOperation.from(givenTable, actualTable) match {
       case UpdateOperation.IllegalSchemaExtension(_, _, reason) =>
-        assertEquals(reason, "Expected field b, got field c")
+        assertEquals(reason, "Expected field `b`, got field `c`")
       case other => fail(other.toString)
     }
   }
@@ -251,7 +251,7 @@ class EnsureUpdatedTest extends FunSuite {
 
     UpdateOperation.from(givenTable, actualTable) match {
       case UpdateOperation.IllegalSchemaExtension(_, _, reason) =>
-        assertEquals(reason, "Expected field b.b, got field b.c")
+        assertEquals(reason, "Expected field `b.b`, got field `b.c`")
       case other => fail(other.toString)
     }
   }
@@ -379,7 +379,7 @@ class EnsureUpdatedTest extends FunSuite {
       case UpdateOperation.IllegalSchemaExtension(_, _, reason) =>
         assertEquals(
           reason,
-          "Expected field c, got field b, Expected field b, got field c"
+          "Expected field `c`, got field `b`, Expected field `b`, got field `c`"
         )
       case other => fail(other.toString)
     }
