@@ -80,7 +80,7 @@ object conforms {
 
         // if we're inside structs, render the full path
         def render(f: BQField) =
-          s"field ${(f :: path).reverse.map(_.name).mkString(".")}"
+          s"field `${(f :: path).reverse.map(_.name).mkString(".")}`"
 
         givenFieldOpt match {
           case Some(givenField) if givenField.name != actualField.name =>
