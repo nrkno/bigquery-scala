@@ -5,6 +5,7 @@ ThisBuild / tlBaseVersion := "0.4" // your current series x.y
 
 ThisBuild / organization := "no.nrk.bigquery"
 ThisBuild / organizationName := "NRK"
+ThisBuild / organizationHomepage := Some(new URL("https://nrk.no"))
 ThisBuild / startYear := Some(2020)
 ThisBuild / licenses := Seq(License.Apache2)
 ThisBuild / developers := List(
@@ -88,7 +89,7 @@ val commonSettings = Seq(
 
 lazy val root = tlCrossRootProject
   .settings(name := "bigquery-scala")
-  .aggregate(core, testing, prometheus)
+  .aggregate(core, testing, prometheus, docs)
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val core = crossProject(JVMPlatform)
@@ -166,9 +167,23 @@ lazy val testing = crossProject(JVMPlatform)
     mimaBinaryIssueFilters ++= Seq(
       ProblemFilters.exclude[MissingFieldProblem]("no.nrk.bigquery.testing.BQSmokeTest#CheckType.Type"),
       ProblemFilters.exclude[MissingClassProblem]("no.nrk.bigquery.testing.BQSmokeTest$CheckType$Type"),
-      ProblemFilters.exclude[MissingClassProblem]("no.nrk.bigquery.testing.BQSmokeTest$CheckType$Type$")
+      ProblemFilters.exclude[MissingClassProblem]("no.nrk.bigquery.testing.BQSmokeTest$CheckType$Type$"),
+      ProblemFilters.exclude[AbstractClassProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest.this")
     )
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
-//lazy val docs = project.in(file("site")).enablePlugins(TypelevelSitePlugin)
+lazy val docs = project
+  .in(file("site"))
+  //  .enablePlugins(TypelevelSitePlugin)
+  .enablePlugins(MdocPlugin, NoPublishPlugin)
+  .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
+  .dependsOn(core.jvm, testing.jvm)
+  .settings(
+    compile := {
+      val result = (Compile / compile).value
+      mdoc.toTask("").value
+      result
+    }
+  )

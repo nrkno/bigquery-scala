@@ -39,8 +39,12 @@ object UDF {
   object Param {
     def apply(name: String, tpe: BQType): Param =
       Param(Ident(name), Some(tpe))
+
     def untyped(name: String): Param =
       Param(Ident(name), None)
+
+    def fromField(field: BQField): Param =
+      Param(Ident(field.name), Some(BQType.fromField(field)))
   }
 
   sealed trait Body {
