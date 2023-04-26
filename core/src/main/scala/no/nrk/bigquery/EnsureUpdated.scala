@@ -278,7 +278,7 @@ object UpdateOperation {
         Some(
           Clustering
             .newBuilder()
-            .setFields(nonEmpty.map(_.value).asJava)
+            .setFields(nonEmpty.map(_.show).asJava)
             .build()
         )
     }

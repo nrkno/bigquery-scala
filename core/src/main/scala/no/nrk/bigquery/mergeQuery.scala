@@ -89,6 +89,6 @@ object mergeQuery {
           }
       }
 
-    go(allFields, ident.value.split("\\.").toList)
+    go(allFields, ident.segments.toList)
   }
 }

@@ -1,6 +1,7 @@
 package no.nrk.bigquery
 package testing
 
+import cats.syntax.all._
 import cats.effect.{IO, Resource}
 import cats.effect.kernel.Outcome
 import io.circe.Json
@@ -31,7 +32,7 @@ abstract class BQUdfSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) exte
       call: BQSqlFrag.Call,
       expected: Json
   )(implicit loc: Location): Unit = {
-    val longerTestName = s"${call.udf.name.value} - $testName"
+    val longerTestName = show"${call.udf.name} - $testName"
 
     test(s"bqCheck UDF: $longerTestName") {
       BQUdfSmokeTest

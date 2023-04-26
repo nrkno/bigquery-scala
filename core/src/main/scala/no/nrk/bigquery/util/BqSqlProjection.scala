@@ -1,5 +1,6 @@
 package no.nrk.bigquery.util
 
+import cats.syntax.all._
 import no.nrk.bigquery._
 import no.nrk.bigquery.implicits._
 import com.google.cloud.bigquery.{Field, StandardSQLTypeName}
@@ -133,8 +134,9 @@ object BqSqlProjection {
                       maybePrefix match {
                         case Some(prefix) =>
                           obj.selecteds.map { case (name, selected) =>
+                            // todo: verify what the expected behavior here should be!
                             val newName =
-                              Ident(prefix.value + name.value.capitalize)
+                              Ident(prefix.show + name.show.capitalize)
                             (newName, selected.forceField.renamed(newName))
                           }
                         case None => obj.selecteds
@@ -224,7 +226,7 @@ object BqSqlProjection {
       def renamed(outFieldName: Ident): SelectedField =
         copy(
           maybeSelector = maybeSelector.map(typedFragment =>
-            typedFragment.copy(tpe = typedFragment.tpe.copy(name = outFieldName.value))),
+            typedFragment.copy(tpe = typedFragment.tpe.copy(name = outFieldName.show))),
           maybeAlias = Some(outFieldName),
           wasRewritten = true
         )

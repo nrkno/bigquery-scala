@@ -1,5 +1,6 @@
 package no.nrk.bigquery
 
+import cats.syntax.all._
 import com.google.cloud.bigquery.{
   MaterializedViewDefinition,
   RangePartitioning,
@@ -34,7 +35,7 @@ object BQPartitionType {
       Some(
         TimePartitioning
           .newBuilder(TimePartitioning.Type.DAY)
-          .setField(field.value)
+          .setField(field.show)
           .build()
       )
 
@@ -46,7 +47,7 @@ object BQPartitionType {
       Some(
         TimePartitioning
           .newBuilder(TimePartitioning.Type.MONTH)
-          .setField(field.value)
+          .setField(field.show)
           .build()
       )
 

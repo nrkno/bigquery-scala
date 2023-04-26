@@ -1,5 +1,6 @@
 package no.nrk.bigquery
 
+import cats.syntax.all._
 import no.nrk.bigquery.implicits._
 import no.nrk.bigquery.BQSqlFrag.asSubQuery
 import no.nrk.bigquery.UDF.Body
@@ -117,7 +118,7 @@ object BQSqlFrag {
   case class Call(udf: UDF, args: Seq[BQSqlFrag]) extends BQSqlFrag {
     require(
       udf.params.length == args.length,
-      s"UDF ${udf.name.value}: Expected ${udf.params.length} arguments, got ${args.length}"
+      show"UDF ${udf.name}: Expected ${udf.params.length} arguments, got ${args.length}"
     )
   }
   case class Combined(values: Seq[BQSqlFrag]) extends BQSqlFrag

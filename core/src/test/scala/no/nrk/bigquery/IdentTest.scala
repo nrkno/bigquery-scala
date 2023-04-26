@@ -1,5 +1,6 @@
 package no.nrk.bigquery
 
+import cats.data.NonEmptyList
 import munit.FunSuite
 
 /** Examples from: https://cloud.google.com/bigquery/docs/reference/standard-sql/lexical#identifier_examples
@@ -15,7 +16,8 @@ class IdentTest extends FunSuite {
       "`GROUP`.dataField", // Valid.`GROUP` and dataField are valid identifiers
       "a.b.c",
       "foo",
-      "`!`"
+      "`!`",
+      "`g1`.`g2`"
     ).map(input => Ident.fromString(input)).collect { case Left(err) => err }
 
     assert(invalid.isEmpty, clue(invalid))
@@ -30,7 +32,9 @@ class IdentTest extends FunSuite {
       "5s",
       "!s",
       "!",
-      "``"
+      "``",
+      "`a.b`",
+      "`a*`"
     ).map(input => Ident.fromString(input)).collect { case Right(err) => err }
 
     assert(valid.isEmpty, clue(valid))
@@ -39,7 +43,7 @@ class IdentTest extends FunSuite {
   test("literal usage") {
     import syntax._
     val i: Ident = ident"foo.bar"
-    assertEquals(i, Ident("foo.bar"))
+    assertEquals(i, Ident(NonEmptyList.of("foo", "bar")))
   }
 
 }

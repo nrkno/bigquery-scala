@@ -7,9 +7,9 @@ import no.nrk.bigquery.implicits.assertIsUsed
 
 package object testing {
   def tempTable(partitionId: BQPartitionId[Any]): Ident =
-    Ident(partitionId.show.filter(c => c.isLetterOrDigit || c == '_'))
+    Ident.unsafeFromString(partitionId.show.filter(c => c.isLetterOrDigit || c == '_'))
 
-  implicit val encoderIdent: Encoder[Ident] = Encoder.encodeString.contramap(_.value)
+  implicit val encoderIdent: Encoder[Ident] = Encoder.encodeString.contramap(_.show)
 
   implicit lazy val encodeField: Encoder[BQField] = {
     implicit val encodesStandardSQLTypeName: Encoder[StandardSQLTypeName] =
