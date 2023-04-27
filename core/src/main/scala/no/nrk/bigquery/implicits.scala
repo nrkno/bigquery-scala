@@ -41,11 +41,11 @@ object implicits {
       private val values: S[A]
   ) extends AnyVal {
     def mkFragment(sep: String)(implicit T: BQShow[A]): BQSqlFrag =
-      mkFragment(Ident(sep).bqShow)
+      mkFragment(BQSqlFrag(sep))
     def mkFragment(start: String, sep: String, end: String)(implicit
         T: BQShow[A]
     ): BQSqlFrag =
-      mkFragment(Ident(start).bqShow, Ident(sep).bqShow, Ident(end).bqShow)
+      mkFragment(BQSqlFrag(start), BQSqlFrag(sep), BQSqlFrag(end))
     def mkFragment(sep: BQSqlFrag)(implicit T: BQShow[A]): BQSqlFrag =
       mkFragment(BQSqlFrag.Empty, sep, BQSqlFrag.Empty)
     def mkFragment(start: BQSqlFrag, sep: BQSqlFrag, end: BQSqlFrag)(implicit
