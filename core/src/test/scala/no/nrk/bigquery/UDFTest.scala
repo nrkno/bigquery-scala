@@ -2,13 +2,14 @@ package no.nrk.bigquery
 
 import munit.FunSuite
 import no.nrk.bigquery.implicits.BQShowInterpolator
+import no.nrk.bigquery.syntax._
 
 class UDFTest extends FunSuite {
 
   test("render temporary SQL UDF") {
     assertEquals(
       UDF(
-        Ident("foo"),
+        ident"foo",
         Seq(UDF.Param("n", BQType.FLOAT64)),
         UDF.Body.Sql(bqfr"""(n + 1)"""),
         Some(BQType.FLOAT64)
@@ -20,7 +21,7 @@ class UDFTest extends FunSuite {
   test("render temporary javascript UDF") {
     assertEquals(
       UDF(
-        Ident("foo"),
+        ident"foo",
         Seq(UDF.Param("n", BQType.FLOAT64)),
         UDF.Body.Js("return n + 1", None),
         Some(BQType.FLOAT64)
@@ -34,7 +35,7 @@ class UDFTest extends FunSuite {
   test("render temporary javascript UDF with library path") {
     assertEquals(
       UDF(
-        Ident("foo"),
+        ident"foo",
         Seq(UDF.Param("n", BQType.FLOAT64)),
         UDF.Body.Js("return n + 1", Some("bucket/foo.js")),
         Some(BQType.FLOAT64)

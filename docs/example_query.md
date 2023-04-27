@@ -110,6 +110,7 @@ import cats.data.NonEmptyList
 import Schemas.{UserEventSchema, UserSchema}
 import no.nrk.bigquery._
 import no.nrk.bigquery.implicits._
+import no.nrk.bigquery.syntax._
 
 object CombineQueries {
 
@@ -124,10 +125,10 @@ object CombineQueries {
   private val middleNameFilter = bqfr"user.names.middleName is not null"
 
   private object Idents {
-    val userId: Ident = Ident("event.userId")
-    val activity: Ident = Ident("event.activity")
-    val activityType: Ident = Ident("event.activity.type")
-    val activityValue: Ident = Ident("event.activity.value")
+    val userId: Ident = ident"event.userId"
+    val activity: Ident = ident"event.activity"
+    val activityType: Ident = ident"event.activity.type"
+    val activityValue: Ident = ident"event.activity.value"
   }
 
   def queryForUserId(userId: String): BQSqlFrag =
@@ -159,7 +160,7 @@ import java.time.LocalDate
 
 class UserEventQueryTest extends BQSmokeTest(BigQueryTestClient.testClient) {
 
-  bqCheckTest("user-events-query") {
+  bqTypeCheckTest("user-events-query") {
     UserEventQuery.daily(LocalDate.now())
   }
 }

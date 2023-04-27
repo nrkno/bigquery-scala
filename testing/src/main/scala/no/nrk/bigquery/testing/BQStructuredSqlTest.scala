@@ -3,6 +3,7 @@ package no.nrk.bigquery.testing
 import munit.{FunSuite, Location}
 import no.nrk.bigquery._
 import no.nrk.bigquery.implicits._
+import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.testing.BQStructuredSql.{Segment, SegmentList}
 
 class BQStructuredSqlTest extends FunSuite {
@@ -93,7 +94,7 @@ class BQStructuredSqlTest extends FunSuite {
       BQStructuredSql.parse(bqfr"with a as (select ')') select * from a")
     val expected = BQStructuredSql(
       Nil,
-      List(CTE(Ident("a"), BQSqlFrag("(select ')')"))),
+      List(CTE(ident"a", BQSqlFrag("(select ')')"))),
       BQSqlFrag(" select * from a"),
       "select"
     )
@@ -108,8 +109,8 @@ class BQStructuredSqlTest extends FunSuite {
       BQStructuredSql(
         Nil,
         List(
-          CTE(Ident("a"), BQSqlFrag("(select 1)")),
-          CTE(Ident("b"), BQSqlFrag("(select 2)"))
+          CTE(ident"a", BQSqlFrag("(select 1)")),
+          CTE(ident"b", BQSqlFrag("(select 2)"))
         ),
         BQSqlFrag(" select * from a, b"),
         "select"
@@ -124,8 +125,8 @@ class BQStructuredSqlTest extends FunSuite {
     val expected = BQStructuredSql(
       Nil,
       List(
-        CTE(Ident("a"), BQSqlFrag("(--foo\nselect 1)")),
-        CTE(Ident("b"), BQSqlFrag("(select 2)"))
+        CTE(ident"a", BQSqlFrag("(--foo\nselect 1)")),
+        CTE(ident"b", BQSqlFrag("(select 2)"))
       ),
       BQSqlFrag("/*foo*/ select * from a, b--foo"),
       "select"

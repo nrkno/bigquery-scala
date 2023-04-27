@@ -13,11 +13,12 @@ BigQuery supports UDF written in SQL and JavaScript.
 ```scala mdoc
 import no.nrk.bigquery._
 import no.nrk.bigquery.implicits._
+import no.nrk.bigquery.syntax._
 
 object MySQLUdfs {
 
   val addOneUdf = UDF(
-    Ident("addOneSqlUdf"),
+    ident"addOneSqlUdf",
     Seq(UDF.Param("n", BQType.FLOAT64)),
     UDF.Body.Sql(bqfr"""(n + 1)"""),
     Some(BQType.FLOAT64)
@@ -29,13 +30,14 @@ object MySQLUdfs {
 **JavaScript**
 ```scala mdoc
 import no.nrk.bigquery._
+import no.nrk.bigquery.syntax._
 
 object MyJsUdfs {
 
   // optional library in google cloud storage
   val jsLibraryGcsPath = None
   val addOneUdf = UDF(
-    Ident("addOneJsUdf"),
+    ident"addOneJsUdf",
     Seq(UDF.Param("n", BQType.FLOAT64)),
     UDF.Body.Js("return n + 1", jsLibraryGcsPath),
     Some(BQType.FLOAT64)
@@ -51,9 +53,10 @@ temporary function if it's referenced in a query.
 
 ```scala mdoc
 import no.nrk.bigquery._
+import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.implicits._
 
-val n = Ident("n")
+val n = ident"n"
 val myQuery: BQSqlFrag =
   bqfr"""|select
          |  ${MySQLUdfs.addOneUdf(n)} as sql,
