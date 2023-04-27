@@ -1,8 +1,7 @@
 package no.nrk.bigquery
 
-import cats.{Applicative, MonadThrow}
+import cats.{Applicative, MonadThrow, Show}
 import cats.syntax.all._
-import no.nrk.bigquery.implicits._
 import com.google.cloud.bigquery.{Option => _, _}
 import org.typelevel.log4cats.LoggerFactory
 
@@ -364,6 +363,12 @@ class EnsureUpdated[F[_]](
     bqClient: BigQueryClient[F]
 )(implicit F: MonadThrow[F], lf: LoggerFactory[F]) {
   private val logger = lf.getLogger
+
+  private def bqFormatTableId(tableId: TableId): BQSqlFrag = BQSqlFrag(
+    s"`${tableId.getProject}.${tableId.getDataset}.${tableId.getTable}`"
+  )
+
+  private implicit val showTableId: Show[TableId] = Show.show(tid => s"`${bqFormatTableId(tid)}`")
 
   def check(template: BQTableDef[Any]): F[UpdateOperation] =
     bqClient.getTable(template.tableId).map { maybeExisting =>

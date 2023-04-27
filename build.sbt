@@ -1,7 +1,7 @@
 import com.typesafe.tools.mima.core._
 
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
-ThisBuild / tlBaseVersion := "0.4" // your current series x.y
+ThisBuild / tlBaseVersion := "0.5" // your current series x.y
 
 ThisBuild / organization := "no.nrk.bigquery"
 ThisBuild / organizationName := "NRK"
@@ -130,13 +130,7 @@ lazy val core = crossProject(JVMPlatform)
         )
       }
     },
-    mimaBinaryIssueFilters ++= Seq(
-      ProblemFilters.exclude[IncompatibleResultTypeProblem]("no.nrk.bigquery.UDF.body"),
-      ProblemFilters.exclude[IncompatibleMethTypeProblem]("no.nrk.bigquery.UDF.copy"),
-      ProblemFilters.exclude[IncompatibleResultTypeProblem]("no.nrk.bigquery.UDF.copy$default*"),
-      ProblemFilters.exclude[IncompatibleMethTypeProblem]("no.nrk.bigquery.UDF.this"),
-      ProblemFilters.exclude[IncompatibleResultTypeProblem]("no.nrk.bigquery.UDF._*")
-    )
+    mimaBinaryIssueFilters ++= Nil
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
@@ -164,13 +158,7 @@ lazy val testing = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
-    mimaBinaryIssueFilters ++= Seq(
-      ProblemFilters.exclude[MissingFieldProblem]("no.nrk.bigquery.testing.BQSmokeTest#CheckType.Type"),
-      ProblemFilters.exclude[MissingClassProblem]("no.nrk.bigquery.testing.BQSmokeTest$CheckType$Type"),
-      ProblemFilters.exclude[MissingClassProblem]("no.nrk.bigquery.testing.BQSmokeTest$CheckType$Type$"),
-      ProblemFilters.exclude[AbstractClassProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest"),
-      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.testing.BQUdfSmokeTest.this")
-    )
+    mimaBinaryIssueFilters ++= Nil
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
