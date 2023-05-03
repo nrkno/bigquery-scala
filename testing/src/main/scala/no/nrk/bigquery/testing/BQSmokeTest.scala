@@ -14,7 +14,7 @@ import no.nrk.bigquery.UDF.Body
 import no.nrk.bigquery._
 import no.nrk.bigquery.testing.BQSmokeTest.{CheckType, bqCheckFragment}
 import org.typelevel.log4cats.slf4j._
-import no.nrk.bigquery.implicits._
+import no.nrk.bigquery.syntax._
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}

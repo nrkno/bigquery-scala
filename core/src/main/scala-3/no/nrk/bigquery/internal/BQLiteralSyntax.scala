@@ -1,4 +1,4 @@
-package no.nrk.bigquery.syntax
+package no.nrk.bigquery.internal
 
 import no.nrk.bigquery.Ident
 import org.typelevel.literally.Literally

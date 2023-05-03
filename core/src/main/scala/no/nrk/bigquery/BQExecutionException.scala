@@ -1,6 +1,6 @@
 package no.nrk.bigquery
 
-import no.nrk.bigquery.implicits._
+import no.nrk.bigquery.syntax._
 import cats.syntax.show._
 import com.google.cloud.bigquery.{BigQueryError, JobId}
 

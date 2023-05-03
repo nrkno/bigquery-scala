@@ -1,6 +1,6 @@
 package no.nrk.bigquery
 
-import implicits._
+import no.nrk.bigquery.syntax._
 import munit.FunSuite
 import no.nrk.bigquery.BQPartitionType.DatePartitioned
 

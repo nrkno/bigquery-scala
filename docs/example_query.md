@@ -59,9 +59,9 @@ we do not need to do any escaping or formatting of the values.
 
 ```scala mdoc
 import no.nrk.bigquery._
-import Schemas._
-import no.nrk.bigquery.implicits._
+import no.nrk.bigquery.syntax._
 import java.time.LocalDate
+import Schemas._
 
 object UserEventQuery {
 
@@ -107,10 +107,9 @@ have different filters.
 
 ```scala mdoc
 import cats.data.NonEmptyList
-import Schemas.{UserEventSchema, UserSchema}
 import no.nrk.bigquery._
-import no.nrk.bigquery.implicits._
 import no.nrk.bigquery.syntax._
+import Schemas.{UserEventSchema, UserSchema}
 
 object CombineQueries {
 

@@ -12,7 +12,6 @@ BigQuery supports UDF written in SQL and JavaScript.
 **SQL**
 ```scala mdoc
 import no.nrk.bigquery._
-import no.nrk.bigquery.implicits._
 import no.nrk.bigquery.syntax._
 
 object MySQLUdfs {
@@ -54,7 +53,6 @@ temporary function if it's referenced in a query.
 ```scala mdoc
 import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
-import no.nrk.bigquery.implicits._
 
 val n = ident"n"
 val myQuery: BQSqlFrag =
