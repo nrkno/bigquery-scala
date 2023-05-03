@@ -11,8 +11,8 @@ import no.nrk.bigquery.metrics.MetricsOps
 import org.apache.avro
 import org.apache.avro.file.{DataFileReader, DataFileWriter}
 import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
-import org.typelevel.log4cats.LoggerFactory
-import org.typelevel.log4cats.slf4j._
+import org.typelevel.log4cats.SelfAwareStructuredLogger
+import org.typelevel.log4cats.slf4j.Slf4jFactory
 
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
@@ -21,6 +21,9 @@ import scala.jdk.CollectionConverters._
 import scala.util.Properties
 
 object BigQueryTestClient {
+  private implicit val loggerFactory: Slf4jFactory[IO] = Slf4jFactory.create[IO]
+  private val logger: SelfAwareStructuredLogger[IO] = loggerFactory.getLogger
+
   val basedir =
     Paths
       .get(sys.env.getOrElse("BIGQUERY_HOME", Properties.userHome))
@@ -51,8 +54,6 @@ object BigQueryTestClient {
       )
       underlying <- BigQueryClient.resource(credentials, MetricsOps.noop[IO])
     } yield underlying
-
-  private val logger = LoggerFactory.getLogger[IO]
 
   def cachingClient(
       cacheFrom: Resource[IO, BigQueryClient[IO]]

@@ -43,7 +43,7 @@ abstract class BQUdfSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) exte
 }
 
 object BQUdfSmokeTest {
-  private val logger = Slf4jFactory.getLogger[IO]
+  private val logger = Slf4jFactory.create[IO].getLogger
 
   object `udf-results` extends GeneratedTest {
     override def testType: String = "udf-results"

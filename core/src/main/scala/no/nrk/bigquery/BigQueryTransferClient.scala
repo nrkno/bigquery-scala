@@ -9,13 +9,13 @@ import com.google.cloud.bigquery.DatasetId
 import com.google.cloud.bigquery.datatransfer.v1._
 import com.google.protobuf.{Struct, Value}
 import no.nrk.bigquery.BigQueryTransferClient.{TransferConfigFailed, TransferFailed, TransferStatus, TransferSucceeded}
-import org.typelevel.log4cats.slf4j.{Slf4jFactory, loggerFactoryforSync}
+import org.typelevel.log4cats.slf4j.Slf4jFactory
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.jdk.CollectionConverters._
 
 class BigQueryTransferClient(transferClient: DataTransferServiceClient) {
-  protected lazy val logger = Slf4jFactory.getLogger[IO]
+  protected lazy val logger = Slf4jFactory.create[IO].getLogger
 
   def getTransferConfig(
       transferConfigName: TransferConfigName
