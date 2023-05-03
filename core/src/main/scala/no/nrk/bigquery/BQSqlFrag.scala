@@ -4,6 +4,8 @@ import no.nrk.bigquery.implicits._
 import no.nrk.bigquery.BQSqlFrag.asSubQuery
 import no.nrk.bigquery.UDF.Body
 
+import scala.annotation.tailrec
+
 /* The result of building a BigQuery sql. The `Frag` part of the name was chosen because it can be a fragment and not a complete query */
 sealed trait BQSqlFrag {
   final def stripMargin: BQSqlFrag =
@@ -70,41 +72,41 @@ sealed trait BQSqlFrag {
     udfsAsString + asString
   }
 
-  final def allReferencedAsPartitions: Seq[BQPartitionId[Any]] =
-    this match {
-      case BQSqlFrag.Frag(_) => Nil
-      case BQSqlFrag.Call(udf, args) =>
-        ((udf.body match {
-          case Body.Sql(body) => body.allReferencedAsPartitions
-          case _: Body.Js => Nil
-        }) ++ args.flatMap(
-          _.allReferencedAsPartitions
-        )).distinct
-      case BQSqlFrag.Combined(values) =>
-        values.flatMap(_.allReferencedAsPartitions).distinct
-      case BQSqlFrag.PartitionRef(ref) => List(ref)
-      case BQSqlFrag.FillRef(fill) => List(fill.destination)
-      case BQSqlFrag.FilledTableRef(fill) =>
-        List(fill.tableDef.unpartitioned.assertPartition)
-    }
+  def collect[T](pf: PartialFunction[BQSqlFrag, T]): List[T] = {
+    def children(f: BQSqlFrag): List[BQSqlFrag] =
+      f match {
+        case BQSqlFrag.Frag(_) => Nil
+        case BQSqlFrag.Call(udf, args) =>
+          (udf.body match {
+            case Body.Sql(body) => body :: Nil
+            case _: Body.Js => Nil
+          }) ++ args.toList
+        case BQSqlFrag.Combined(values) => values.toList
+        case BQSqlFrag.PartitionRef(_) => Nil
+        case BQSqlFrag.FillRef(fill) => fill.query :: Nil
+        case BQSqlFrag.FilledTableRef(_) => Nil
+      }
 
-  // this does not descend into referenced fills.
+    val pfLifted = pf.lift
+
+    @tailrec
+    def run(frags: List[BQSqlFrag], xs: List[T]): List[T] =
+      frags match {
+        case Nil => xs.reverse
+        case head :: tail => run(children(head) ::: tail, pfLifted(head).toList ::: xs)
+      }
+    run(this :: Nil, Nil)
+  }
+
+  final def allReferencedAsPartitions: Seq[BQPartitionId[Any]] =
+    this.collect {
+      case BQSqlFrag.PartitionRef(ref) => ref
+      case BQSqlFrag.FillRef(fill) => fill.destination
+      case BQSqlFrag.FilledTableRef(fill) => fill.tableDef.unpartitioned.assertPartition
+    }.distinct
+
   final def allReferencedUDFs: Seq[UDF] =
-    this match {
-      case BQSqlFrag.Frag(_) => Nil
-      case BQSqlFrag.Call(udf, args) =>
-        ((udf.body match {
-          case Body.Sql(body) => body.allReferencedUDFs
-          case _: Body.Js => Nil
-        }) ++ args.flatMap(
-          _.allReferencedUDFs
-        ) ++ List(udf)).distinct
-      case BQSqlFrag.Combined(values) =>
-        values.flatMap(_.allReferencedUDFs).distinct
-      case BQSqlFrag.PartitionRef(_) => Nil
-      case BQSqlFrag.FillRef(_) => Nil
-      case BQSqlFrag.FilledTableRef(_) => Nil
-    }
+    this.collect { case BQSqlFrag.Call(udf, _) => udf }.distinct
 
   override def toString: String = asString
 }
