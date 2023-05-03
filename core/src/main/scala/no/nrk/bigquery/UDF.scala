@@ -2,34 +2,112 @@ package no.nrk.bigquery
 
 import cats.data.NonEmptyList
 import cats.syntax.all._
+import cats.Show
+import no.nrk.bigquery.UDF._
+import no.nrk.bigquery.UDF.UDFId._
 import no.nrk.bigquery.syntax._
 
-case class UDF(
-    name: Ident,
-    params: List[UDF.Param],
-    body: UDF.Body,
-    returnType: Option[BQType]
-) {
-  lazy val definition: BQSqlFrag = {
-    val returning = returnType match {
-      case Some(returnType) => bqfr" RETURNS $returnType"
-      case None => BQSqlFrag.Empty
-    }
-    bqfr"CREATE TEMP FUNCTION $name${params.map(_.definition).mkFragment("(", ", ", ")")}$returning${body.languageFragment} AS ${body.bodyFragment};"
-  }
-
+sealed trait UDF[+A <: UDFId] {
+  def name: A
+  def params: List[UDF.Param]
+  def returnType: Option[BQType]
   def apply(args: BQSqlFrag.Magnet*): BQSqlFrag.Call =
     BQSqlFrag.Call(this, args.toList.map(_.frag))
 }
-
 object UDF {
+
+  case class Temporary(
+      name: TemporaryId,
+      params: List[UDF.Param],
+      body: UDF.Body,
+      returnType: Option[BQType]
+  ) extends UDF[UDFId.TemporaryId] {
+    lazy val definition: BQSqlFrag = {
+      val returning = returnType match {
+        case Some(returnType) => bqfr" RETURNS $returnType"
+        case None => BQSqlFrag.Empty
+      }
+      bqfr"CREATE TEMP FUNCTION ${name}${params.map(_.definition).mkFragment("(", ", ", ")")}$returning${body.languageFragment} AS ${body.bodyFragment};"
+    }
+  }
+
+  case class Persistent(
+      name: PersistentId,
+      params: List[UDF.Param],
+      body: UDF.Body,
+      returnType: Option[BQType]
+  ) extends UDF[UDFId.PersistentId] {
+    def convertToTemporary: Temporary =
+      Temporary(TemporaryId(name.name), params, body, returnType)
+  }
+
+  case class Reference(
+      name: UDFId,
+      params: List[UDF.Param],
+      returnType: Option[BQType]
+  ) extends UDF[UDFId]
+
+  @deprecated("use UDF.temporary constructor", "0.5")
   def apply(
       name: Ident,
       params: Seq[UDF.Param],
       body: BQSqlFrag,
       returnType: Option[BQType]
-  ): UDF =
-    UDF(name, params.toList, UDF.Body.Sql(body), returnType)
+  ): Temporary =
+    Temporary(UDFId.TemporaryId(name), params.toList, UDF.Body.Sql(body), returnType)
+
+  def temporary(
+      name: Ident,
+      params: List[UDF.Param],
+      body: UDF.Body,
+      returnType: Option[BQType]
+  ): Temporary =
+    Temporary(UDFId.TemporaryId(name), params, body, returnType)
+
+  def persistent(
+      name: Ident,
+      dataset: BQDataset,
+      params: List[UDF.Param],
+      body: UDF.Body,
+      returnType: Option[BQType]
+  ): Persistent =
+    Persistent(UDFId.PersistentId(dataset, name), params, body, returnType)
+
+  def reference(
+      name: Ident,
+      dataset: BQDataset,
+      params: List[UDF.Param],
+      returnType: Option[BQType]
+  ): Reference =
+    Reference(UDFId.PersistentId(dataset, name), params, returnType)
+
+  sealed trait UDFId {
+    def asString: String
+    def asFragment: BQSqlFrag
+  }
+
+  object UDFId {
+    case class TemporaryId(name: Ident) extends UDFId {
+      override def asString: String = name.value
+      override def asFragment: BQSqlFrag = name.bqShow
+    }
+
+    object TemporaryId {
+      implicit val bqShows: BQShow[TemporaryId] = _.asFragment
+    }
+
+    case class PersistentId(dataset: BQDataset, name: Ident) extends UDFId {
+      override def asString: String = show"${dataset.project.value}.${dataset.id}.$name"
+      override def asFragment: BQSqlFrag = BQSqlFrag.backticks(asString)
+    }
+
+    object PersistentId {
+      implicit val bqShow: BQShow[PersistentId] = _.asFragment
+    }
+
+    implicit val bqShow: BQShow[UDFId] = _.asFragment
+    implicit val show: Show[UDFId] = _.asString
+  }
 
   case class Param(name: Ident, maybeType: Option[BQType]) {
     def definition: BQSqlFrag =

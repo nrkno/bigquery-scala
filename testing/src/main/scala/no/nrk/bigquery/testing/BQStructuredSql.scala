@@ -1,6 +1,7 @@
 package no.nrk.bigquery.testing
 
 import com.google.cloud.bigquery.UserDefinedFunction
+import no.nrk.bigquery.UDF.Temporary
 import no.nrk.bigquery._
 
 import scala.collection.mutable
@@ -58,7 +59,8 @@ object BQStructuredSql {
     val querySegmentList = split.last
 
     val functions: List[UserDefinedFunction] = {
-      val fs1 = fullQuery.allReferencedUDFs.map(udf => UserDefinedFunction.inline(udf.definition.asString))
+      val fs1 = fullQuery.allReferencedUDFs
+        .collect { case udf: Temporary => UserDefinedFunction.inline(udf.definition.asString) }
       val fs2 = functionSegmentLists.map(segmentList => UserDefinedFunction.inline(segmentList.asString + ";"))
       fs1.toList ++ fs2
     }

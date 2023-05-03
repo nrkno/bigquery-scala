@@ -1,26 +1,27 @@
 package no.nrk.bigquery
 
-import no.nrk.bigquery.syntax._
+import cats.syntax.all._
 import munit.FunSuite
 import no.nrk.bigquery.BQPartitionType.DatePartitioned
+import no.nrk.bigquery.syntax._
 
 import java.time.LocalDate
 
 class BQSqlFragTest extends FunSuite {
   private val udfToString =
-    UDF(
-      Ident("udf_toString"),
+    UDF.temporary(
+      ident"udf_toString",
       UDF.Param("i", BQType.INT64) :: Nil,
       UDF.Body.Sql(bqfr"(string(i))"),
       Some(BQType.STRING))
   private val udfAddOne =
-    UDF(Ident("udf_add1"), UDF.Param("i", BQType.INT64) :: Nil, UDF.Body.Sql(bqfr"(i + 1)"), Some(BQType.INT64))
+    UDF.temporary(ident"udf_add1", UDF.Param("i", BQType.INT64) :: Nil, UDF.Body.Sql(bqfr"(i + 1)"), Some(BQType.INT64))
 
   test("collect nested UDFs") {
     val udfIdents = bqfr"select ${udfToString(udfAddOne(bqfr"1"))}"
       .collect { case BQSqlFrag.Call(udf, _) => udf }
       .map(_.name)
-      .sortBy(_.value)
+      .sortBy(_.show)
 
     assertEquals(udfIdents, udfAddOne.name :: udfToString.name :: Nil)
   }
