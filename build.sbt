@@ -79,10 +79,15 @@ val commonSettings = Seq(
   },
   scalacOptions -= "-source:3.0-migration",
   scalacOptions ++= {
+    val compilerWarnings =
+      List(
+        "cat=other-match-analysis:e", // error on exhaustive match
+        "cat=other:e" // compare values like 1 == "str"
+      ).mkString("-Wconf:", ",", ",any:wv")
     if (scalaVersion.value.startsWith("3")) {
-      Seq("-source:3.2-migration")
+      Seq("-source:3.2-migration", compilerWarnings)
     } else {
-      Seq("-feature", "-language:implicitConversions")
+      Seq("-feature", "-language:implicitConversions", compilerWarnings)
     }
   }
 )
