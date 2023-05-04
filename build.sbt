@@ -82,7 +82,7 @@ val commonSettings = Seq(
     if (scalaVersion.value.startsWith("3")) {
       Seq("-source:3.2-migration")
     } else {
-      Seq()
+      Seq("-feature", "-language:implicitConversions")
     }
   }
 )

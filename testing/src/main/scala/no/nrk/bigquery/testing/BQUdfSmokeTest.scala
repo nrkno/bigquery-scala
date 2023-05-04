@@ -7,7 +7,7 @@ import io.circe.Json
 import io.circe.parser.decode
 import io.circe.syntax._
 import munit.{CatsEffectSuite, Location}
-import no.nrk.bigquery.implicits._
+import no.nrk.bigquery.syntax._
 import org.typelevel.log4cats.slf4j._
 
 import java.nio.charset.StandardCharsets
@@ -43,7 +43,7 @@ abstract class BQUdfSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) exte
 }
 
 object BQUdfSmokeTest {
-  private val logger = Slf4jFactory.getLogger[IO]
+  private val logger = Slf4jFactory.create[IO].getLogger
 
   object `udf-results` extends GeneratedTest {
     override def testType: String = "udf-results"

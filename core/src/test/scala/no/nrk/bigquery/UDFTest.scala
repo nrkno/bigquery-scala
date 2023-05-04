@@ -1,7 +1,6 @@
 package no.nrk.bigquery
 
 import munit.FunSuite
-import no.nrk.bigquery.implicits.BQShowInterpolator
 import no.nrk.bigquery.syntax._
 
 class UDFTest extends FunSuite {

@@ -2,10 +2,11 @@ package no.nrk.bigquery
 
 import cats.effect.Concurrent
 import cats.syntax.all._
-import no.nrk.bigquery.implicits._
+import no.nrk.bigquery.syntax._
 import fs2.Stream
 
 import java.time.{Instant, LocalDate, YearMonth}
+import scala.annotation.nowarn
 
 private[bigquery] object PartitionLoader {
   def loadGenericPartitions[F[_]: Concurrent](
@@ -373,18 +374,17 @@ private[bigquery] object PartitionLoader {
                |ORDER BY 1 DESC""".stripMargin
       }
 
+    @nowarn
     def withRowCountFromTableData[P: BQRead](
         table: BQTableLike[Unit],
         inRange: BQSqlFrag,
         partitionColumn: Ident
-    ): BQQuery[(P, Long)] = {
-      assertIsUsed(BQRead[P])
+    ): BQQuery[(P, Long)] =
       BQQuery {
         bqsql"""|select $partitionColumn, count(*) from $table
                 |where $inRange
                 |group by $partitionColumn
                 |order by 1""".stripMargin
       }(BQRead.derived)
-    }
   }
 }

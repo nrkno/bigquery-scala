@@ -14,7 +14,8 @@ import no.nrk.bigquery.UDF.Body
 import no.nrk.bigquery._
 import no.nrk.bigquery.testing.BQSmokeTest.{CheckType, bqCheckFragment}
 import org.typelevel.log4cats.slf4j._
-import no.nrk.bigquery.implicits._
+import no.nrk.bigquery.syntax._
+import org.typelevel.log4cats.SelfAwareStructuredLogger
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
@@ -216,7 +217,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
 }
 
 object BQSmokeTest {
-  private val logger = Slf4jFactory.getLogger[IO]
+  private val logger: SelfAwareStructuredLogger[IO] = Slf4jFactory.create[IO].getLogger
 
   def bqCheckFragment(
       testName: String,

@@ -1,6 +1,6 @@
 package no.nrk.bigquery
 
-import no.nrk.bigquery.implicits._
+import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.BQSqlFrag.asSubQuery
 import no.nrk.bigquery.UDF.Body
 

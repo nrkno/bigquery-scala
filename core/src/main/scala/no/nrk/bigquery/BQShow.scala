@@ -1,19 +1,21 @@
 package no.nrk.bigquery
 
-import no.nrk.bigquery.implicits._
+import no.nrk.bigquery.syntax._
 import com.google.cloud.bigquery.{Field, TimePartitioning}
 
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDate, LocalTime, YearMonth}
 
-/* A type class, directly derived from cats.Show, which determines what a type will look like when printed to BigQuery SQL */
+/** A type class, directly derived from cats.Show, which determines what a type will look like when printed to BigQuery
+  * SQL
+  */
 @FunctionalInterface
 trait BQShow[T] { self =>
   def bqShow(t: T): BQSqlFrag
   def contramap[B](f: B => T): BQShow[B] = (t: B) => self.bqShow(f(t))
 }
 
-object BQShow {
+object BQShow extends BQShowInstances {
   def apply[A](implicit instance: BQShow[A]): BQShow[A] = instance
 
   /** The intention, at least at first, is to be explicit what we mean when we interpolate in a string.
@@ -28,6 +30,38 @@ object BQShow {
     */
   def quoted(x: String): BQSqlFrag =
     BQSqlFrag(s"'$x'")
+
+  /** This is the main entry point for writing BigQuery SQL statements. They are prefixed `bq` to coexist with doobie.
+    *
+    * Note that you can configure intellij to inject SQL language support for these: File | Settings | Languages &
+    * Frameworks | Scala | Misc
+    */
+  class BQShowInterpolator(private val sc: StringContext) extends AnyVal {
+    def bqsql(args: BQSqlFrag.Magnet*): BQSqlFrag = {
+      // intersperse args into the interpolated string in `sc.parts`
+      val builder = List.newBuilder[BQSqlFrag]
+      var idx = 0
+      while (idx < sc.parts.length) {
+        builder += BQSqlFrag.Frag(StringContext.processEscapes(sc.parts(idx)))
+        if (idx < args.length) {
+          builder += args(idx).frag
+        }
+        idx += 1
+      }
+
+      builder.result() match {
+        case Nil => BQSqlFrag.Empty
+        case one :: Nil => one
+        case many => BQSqlFrag.Combined(many)
+      }
+    }
+
+    def bqfr(args: BQSqlFrag.Magnet*): BQSqlFrag = bqsql(args: _*)
+  }
+
+}
+
+trait BQShowInstances {
 
   implicit val bqShowStringValue: BQShow[StringValue] =
     x => BQShow.quoted(x.value)

@@ -1,6 +1,7 @@
 package no.nrk.bigquery
 
 import munit.FunSuite
+import no.nrk.bigquery.syntax._
 
 /** Examples from: https://cloud.google.com/bigquery/docs/reference/standard-sql/lexical#identifier_examples
   */
@@ -38,7 +39,6 @@ class IdentTest extends FunSuite {
   }
 
   test("literal usage") {
-    import syntax._
     val i: Ident = ident"foo.bar"
     assertEquals(i, Ident("foo.bar"))
   }

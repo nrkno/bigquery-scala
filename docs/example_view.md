@@ -10,7 +10,7 @@ Here we have to tables, `my-gcp-project.prod.user_log` and `my-gcp-project.prod.
 import com.google.cloud.bigquery.Field.Mode
 import com.google.cloud.bigquery.StandardSQLTypeName
 import no.nrk.bigquery._
-import no.nrk.bigquery.implicits._
+import no.nrk.bigquery.syntax._
 import java.time.LocalDate
 
 object Schemas {
@@ -71,7 +71,7 @@ import no.nrk.bigquery._
 import Schemas._
 import com.google.cloud.bigquery.Field.Mode
 import com.google.cloud.bigquery.StandardSQLTypeName
-import no.nrk.bigquery.implicits._
+import no.nrk.bigquery.syntax._
 
 object UserEventView {
 

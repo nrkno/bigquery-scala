@@ -1,12 +1,16 @@
-package no.nrk.bigquery
+package no.nrk.bigquery.internal
 
+import no.nrk.bigquery.Ident
 import org.typelevel.literally.Literally
 
-object syntax {
+trait BQLiteralSyntax {
+  implicit final def bqLiteralSyntax(sc: StringContext): BQLiteralOps = new BQLiteralOps(sc)
+}
 
-  implicit class BQLiteralMacros(val sc: StringContext) extends AnyVal {
-    def ident(args: Any*): Ident = macro IdentLiteral.make
-  }
+class BQLiteralOps(val ctx: StringContext) extends AnyVal {
+  def ident(args: Any*): Ident = macro BQLiteralOps.IdentLiteral.make
+}
+object BQLiteralOps {
 
   object IdentLiteral extends Literally[Ident] {
 
