@@ -385,15 +385,21 @@ object BQSmokeTest {
 
       case BQSqlFrag.Call(udf, args) =>
         val (newArgs, ctes) = args.toList.map(recurse).separate
-        udf.body match {
-          case Body.Sql(body) =>
+        udf match {
+          case tUdf @ UDF.Temporary(_, _, Body.Sql(body), _) =>
             val (newUdfBody, ctesFromUDF) = recurse(body)
             (
-              BQSqlFrag.Call(udf.copy(body = UDF.Body.Sql(newUdfBody)), newArgs),
+              BQSqlFrag.Call(tUdf.copy(body = UDF.Body.Sql(newUdfBody)), newArgs),
               ctesFromUDF ++ ctes.flatten
             )
-          case _: Body.Js =>
-            (BQSqlFrag.Call(udf, newArgs), ctes.flatten)
+          case pUdf @ UDF.Persistent(_, _, Body.Sql(body), _) =>
+            // todo: verify that this is what we want to do!
+            val (newUdfBody, ctesFromUDF) = recurse(body)
+            (
+              BQSqlFrag.Call(pUdf.copy(body = UDF.Body.Sql(newUdfBody)), newArgs),
+              ctesFromUDF ++ ctes.flatten
+            )
+          case _ => (BQSqlFrag.Call(udf, newArgs), ctes.flatten)
         }
 
       case BQSqlFrag.Combined(frags) =>

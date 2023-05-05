@@ -533,6 +533,22 @@ class BigQueryClient[F[_]](
           }
         }
     }
+
+  def getRoutine(udfId: UDF.UDFId.PersistentId): F[Option[Routine]] =
+    F.interruptible {
+      val routineId = RoutineId.of(udfId.dataset.project.value, udfId.dataset.id, udfId.name.value)
+      Option(bigQuery.getRoutine(routineId)).filter(_.exists())
+    }
+
+  def create(info: RoutineInfo): F[Routine] =
+    F.delay(bigQuery.create(info))
+
+  def update(info: RoutineInfo): F[Routine] =
+    F.delay(bigQuery.update(info))
+
+  def delete(udfId: UDF.UDFId.PersistentId): F[Boolean] =
+    F.delay(bigQuery.delete(RoutineId.of(udfId.dataset.project.value, udfId.dataset.id, udfId.name.value)))
+
 }
 
 object BigQueryClient {

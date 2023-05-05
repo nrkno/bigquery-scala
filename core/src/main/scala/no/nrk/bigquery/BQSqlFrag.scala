@@ -1,8 +1,8 @@
 package no.nrk.bigquery
 
+import cats.syntax.all._
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.BQSqlFrag.asSubQuery
-import no.nrk.bigquery.UDF.Body
 
 import scala.annotation.tailrec
 
@@ -67,7 +67,7 @@ sealed trait BQSqlFrag {
     }
 
   final lazy val asStringWithUDFs: String = {
-    val udfs = allReferencedUDFs.map(_.definition.asString)
+    val udfs = allReferencedUDFs.collect { case udf: UDF.Temporary => udf.definition.asString }
     val udfsAsString = udfs.mkString("\n\n") + (if (udfs.nonEmpty) "\n\n" else "")
     udfsAsString + asString
   }
@@ -77,9 +77,10 @@ sealed trait BQSqlFrag {
       f match {
         case BQSqlFrag.Frag(_) => Nil
         case BQSqlFrag.Call(udf, args) =>
-          (udf.body match {
-            case Body.Sql(body) => body :: Nil
-            case _: Body.Js => Nil
+          (udf match {
+            case UDF.Temporary(_, _, UDF.Body.Sql(body), _) => body :: Nil
+            case UDF.Persistent(_, _, UDF.Body.Sql(body), _) => body :: Nil
+            case _ => Nil
           }) ++ args.toList
         case BQSqlFrag.Combined(values) => values.toList
         case BQSqlFrag.PartitionRef(_) => Nil
@@ -105,7 +106,7 @@ sealed trait BQSqlFrag {
       case BQSqlFrag.FilledTableRef(fill) => fill.tableDef.unpartitioned.assertPartition
     }.distinct
 
-  final def allReferencedUDFs: Seq[UDF] =
+  final def allReferencedUDFs: Seq[UDF[UDF.UDFId]] =
     this.collect { case BQSqlFrag.Call(udf, _) => udf }.distinct
 
   override def toString: String = asString
@@ -116,10 +117,10 @@ object BQSqlFrag {
   def backticks(string: String): BQSqlFrag = Frag("`" + string + "`")
 
   case class Frag(string: String) extends BQSqlFrag
-  case class Call(udf: UDF, args: List[BQSqlFrag]) extends BQSqlFrag {
+  case class Call(udf: UDF[UDF.UDFId], args: List[BQSqlFrag]) extends BQSqlFrag {
     require(
       udf.params.length == args.length,
-      s"UDF ${udf.name.value}: Expected ${udf.params.length} arguments, got ${args.length}"
+      show"UDF ${udf.name}: Expected ${udf.params.length} arguments, got ${args.length}"
     )
   }
   case class Combined(values: Seq[BQSqlFrag]) extends BQSqlFrag
@@ -130,7 +131,7 @@ object BQSqlFrag {
   val Empty: BQSqlFrag = Frag("")
 
   /*
-   * Where `BQSqlFrag` is wanted as a parameter, we can instead ask for a `BQSqlFrag.Magnet`,
+   * Where `BQSqlFrag` is wanted as a parameter, wee can instead ask for a `BQSqlFrag.Magnet`,
    * to enable implicit conversions to trigger. This means the called can provide values of any
    * type, as long as it is convertible to `BQSqlFrag` through a `BQShow` */
   case class Magnet(frag: BQSqlFrag) extends AnyVal

@@ -3,14 +3,23 @@ package no.nrk.bigquery
 import cats.{Applicative, MonadThrow, Show}
 import cats.syntax.all._
 import com.google.cloud.bigquery.{Option => _, _}
-import no.nrk.bigquery.internal.TableUpdateOperation
+import no.nrk.bigquery.internal.{TableUpdateOperation, UdfUpdateOperation}
 import org.typelevel.log4cats.LoggerFactory
 
 sealed trait OperationMeta {
   def identifier: String
 }
-case class TableDefOperationMeta(existingRemoteTable: TableInfo, localTableDef: BQTableDef[Any]) extends OperationMeta {
+case class TableDefOperationMeta(
+    existingRemoteTable: TableInfo,
+    localTableDef: BQTableDef[Any]
+) extends OperationMeta {
   def identifier: String = existingRemoteTable.getTableId.toString
+}
+case class UdfOperationMeta(
+    routine: RoutineInfo,
+    persistentUdf: UDF.Persistent
+) extends OperationMeta {
+  override def identifier: String = persistentUdf.name.asString
 }
 
 sealed trait UpdateOperation
@@ -40,6 +49,16 @@ object UpdateOperation {
       create: CreateTable
   ) extends Success
 
+  case class CreatePersistentUdf(
+      persistentUdf: UDF.Persistent,
+      routine: RoutineInfo
+  ) extends Success
+
+  case class UpdatePersistentUdf(
+      persistentUdf: UDF.Persistent,
+      routine: RoutineInfo
+  ) extends Success
+
   sealed trait Error extends UpdateOperation
 
   case class Illegal(meta: OperationMeta, reason: String) extends Error
@@ -64,6 +83,11 @@ class EnsureUpdated[F[_]](
       TableUpdateOperation.from(template, maybeExisting)
     }
 
+  def check(persistentUdf: UDF.Persistent): F[UpdateOperation] =
+    bqClient.getRoutine(persistentUdf.name).map { maybeExisting =>
+      UdfUpdateOperation.from(persistentUdf, maybeExisting)
+    }
+
   def perform(updateOperation: UpdateOperation): F[Unit] =
     updateOperation match {
       case UpdateOperation.Noop(_) =>
@@ -71,9 +95,7 @@ class EnsureUpdated[F[_]](
 
       case UpdateOperation.CreateTable(to, table, maybePatchedTable) =>
         for {
-          _ <- logger.warn(
-            show"Creating ${table.getTableId} of type ${to.getClass.getSimpleName}"
-          )
+          _ <- logger.warn(show"Creating ${table.getTableId} of type ${to.getClass.getSimpleName}")
           _ <- bqClient.create(table)
           _ <- maybePatchedTable match {
             case Some(patchedTable) => bqClient.update(patchedTable).void
@@ -85,6 +107,18 @@ class EnsureUpdated[F[_]](
         val msg =
           show"Updating ${table.getTableId} of type ${to.getClass.getSimpleName} from ${from.toString}, to ${to.toString}"
         logger.warn(msg) >> bqClient.update(table).void
+
+      case UpdateOperation.CreatePersistentUdf(udf, routine) =>
+        for {
+          _ <- logger.warn(show"Creating ${udf.name} of type PersistentUdf")
+          _ <- bqClient.create(routine)
+        } yield ()
+
+      case UpdateOperation.UpdatePersistentUdf(udf, routine) =>
+        for {
+          _ <- logger.warn(show"Updating ${udf.name} of type PersistentUdf")
+          _ <- bqClient.update(routine)
+        } yield ()
 
       case UpdateOperation.RecreateView(from, to, createNew) =>
         val msg =

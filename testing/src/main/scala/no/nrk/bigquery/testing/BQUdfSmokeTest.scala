@@ -1,6 +1,7 @@
 package no.nrk.bigquery
 package testing
 
+import cats.syntax.all._
 import cats.effect.{IO, Resource}
 import cats.effect.kernel.Outcome
 import io.circe.Json
@@ -8,6 +9,7 @@ import io.circe.parser.decode
 import io.circe.syntax._
 import munit.{CatsEffectSuite, Location}
 import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.UDF._
 import org.typelevel.log4cats.slf4j._
 
 import java.nio.charset.StandardCharsets
@@ -31,7 +33,7 @@ abstract class BQUdfSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) exte
       call: BQSqlFrag.Call,
       expected: Json
   )(implicit loc: Location): Unit = {
-    val longerTestName = s"${call.udf.name.value} - $testName"
+    val longerTestName = show"${call.udf.name} - $testName"
 
     test(s"bqCheck UDF: $longerTestName") {
       BQUdfSmokeTest
@@ -53,7 +55,13 @@ object BQUdfSmokeTest {
       testName: String,
       call: BQSqlFrag.Call
   ): BigQueryClient[IO] => IO[Json] = { bqClient =>
-    val query = bqfr"SELECT TO_JSON_STRING($call)"
+    val temporaryUdfCall =
+      call.copy(udf = call.udf match {
+        case tUdf: Temporary => tUdf
+        case pUdf: Persistent => pUdf.convertToTemporary
+        case ref: Reference => ref
+      })
+    val query = bqfr"SELECT TO_JSON_STRING($temporaryUdfCall)"
     val cachedQuery = CachedQuery(query)
 
     cachedQuery.readRow

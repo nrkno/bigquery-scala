@@ -2,21 +2,21 @@
 
 ## Limitations
 
-The library does not support for creating and deploying global UDFs. **SQL views** does not allow us to create temporary
-functions, something that limits our of use them. This *will* be addressed in a later version. 
+**SQL views** does not allow us to create temporary functions, something that limits our of use them. You will need to use
+persistent UDF in view.
 
 ## Defining UDF
 
 BigQuery supports UDF written in SQL and JavaScript. 
 
-**SQL**
+**SQL (Temporary)**
 ```scala mdoc
 import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
 
-object MySQLUdfs {
+object MyTemporarySQLUdfs {
 
-  val addOneUdf = UDF(
+  val addOneUdf = UDF.temporary(
     ident"addOneSqlUdf",
     UDF.Param("n", BQType.FLOAT64) :: Nil,
     UDF.Body.Sql(bqfr"""(n + 1)"""),
@@ -25,6 +25,26 @@ object MySQLUdfs {
 
 }
 ```
+
+**SQL (Persistent)**
+```scala mdoc
+import no.nrk.bigquery._
+import no.nrk.bigquery.syntax._
+
+object MyPersistentSQLUdfs {
+  val dataset = BQDataset(ProjectId("my-project"), "ds1", None)
+  val addOneUdf = UDF.persistent(
+    ident"addOneSqlUdf",
+    dataset,
+    UDF.Param("n", BQType.FLOAT64) :: Nil,
+    UDF.Body.Sql(bqfr"""(n + 1)"""),
+    Some(BQType.FLOAT64)
+  )
+
+}
+```
+Note: Use `EnsureUpdated` to deploy the persistent UDF to BigQuery.
+
 
 **JavaScript**
 ```scala mdoc
@@ -35,7 +55,7 @@ object MyJsUdfs {
 
   // optional library in google cloud storage
   val jsLibraryGcsPath = List.empty
-  val addOneUdf = UDF(
+  val addOneUdf = UDF.temporary(
     ident"addOneJsUdf",
     UDF.Param("n", BQType.FLOAT64) :: Nil,
     UDF.Body.Js("return n + 1", jsLibraryGcsPath),
@@ -57,8 +77,8 @@ import no.nrk.bigquery.syntax._
 val n = ident"n"
 val myQuery: BQSqlFrag =
   bqfr"""|select
-         |  ${MySQLUdfs.addOneUdf(n)} as sql,
-         |  ${MyJsUdfs.addOneUdf(n)}  as js
+         |  ${MyTemporarySQLUdfs.addOneUdf(n)} as sql,
+         |  ${MyTemporarySQLUdfs.addOneUdf(n)}  as js
          |from unnest([1 ,2, 3]) as $n
          |""".stripMargin
 ```
@@ -71,7 +91,8 @@ import no.nrk.bigquery.testing.{BQUdfSmokeTest, BigQueryTestClient}
 
 class ExampleUdfTest extends BQUdfSmokeTest(BigQueryTestClient.testClient) {
 
-  bqCheckCall("add one to SQL udf", MySQLUdfs.addOneUdf(1), Json.fromInt(2))
+  bqCheckCall("add one to SQL udf", MyTemporarySQLUdfs.addOneUdf(1), Json.fromInt(2))
+  bqCheckCall("add one to SQL udf", MyPersistentSQLUdfs.addOneUdf(1), Json.fromInt(2))
   bqCheckCall("add one to JS udf", MyJsUdfs.addOneUdf(1), Json.fromInt(2))
 
 }

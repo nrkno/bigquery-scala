@@ -47,8 +47,8 @@ object Schemas {
       BQPartitionType.NotPartitioned
     )
 
-    val fullNameUdf: UDF = UDF(
-      Ident("toFullName"),
+    val fullNameUdf: UDF.Temporary = UDF.temporary(
+      ident"toFullName",
       UDF.Param.fromField(namesStruct) :: Nil,
       UDF.Body.Sql(
         bqfr"""(names.firstName || ' ' || coalesce(names.middleName || ' ', '') || names.lastName)""".stripMargin
@@ -103,8 +103,9 @@ object UserEventView {
   )
 
 }
-
 ```
+
+Note: Use `EnsureUpdated` to deploy the view to BiqQuery
 
 ## Testing
 
