@@ -34,7 +34,7 @@ import no.nrk.bigquery.syntax._
 object MyJsUdfs {
 
   // optional library in google cloud storage
-  val jsLibraryGcsPath = None
+  val jsLibraryGcsPath = List.empty
   val addOneUdf = UDF(
     ident"addOneJsUdf",
     UDF.Param("n", BQType.FLOAT64) :: Nil,

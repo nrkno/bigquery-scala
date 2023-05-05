@@ -1,5 +1,7 @@
 package no.nrk.bigquery
 
+import cats.data.NonEmptyList
+import cats.syntax.all._
 import no.nrk.bigquery.syntax._
 
 case class UDF(
@@ -58,7 +60,7 @@ object UDF {
       override def bodyFragment: BQSqlFrag = bqfr"($body)"
 
     }
-    case class Js(javascriptSnippet: String, gsLibraryPath: Option[String]) extends Body {
+    case class Js(javascriptSnippet: String, gsLibraryPath: List[String]) extends Body {
       val languageFragment: BQSqlFrag = BQSqlFrag(" LANGUAGE js")
       override def bodyFragment: BQSqlFrag = {
         val jsBody =
@@ -66,11 +68,13 @@ object UDF {
                  |${BQSqlFrag(javascriptSnippet)}
                  |'''""".stripMargin
 
-        gsLibraryPath
-          .map(BQSqlFrag.apply)
-          .map(path => bqfr"""OPTIONS ( library="gs://$path" )""") match {
+        NonEmptyList.fromList(gsLibraryPath) match {
           case None => jsBody
-          case Some(libraryOption) =>
+          case Some(libs) =>
+            val paths = libs
+              .map(lib => BQSqlFrag(if (!lib.startsWith("gs://")) show""""gs://$lib"""" else show""""$lib""""))
+              .mkFragment("[", ",", "]")
+            val libraryOption = bqfr"""OPTIONS ( library=$paths )"""
             bqfr"""|$jsBody
                    |$libraryOption""".stripMargin
         }
