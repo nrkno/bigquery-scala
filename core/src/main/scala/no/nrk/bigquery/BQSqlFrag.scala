@@ -116,7 +116,7 @@ object BQSqlFrag {
   def backticks(string: String): BQSqlFrag = Frag("`" + string + "`")
 
   case class Frag(string: String) extends BQSqlFrag
-  case class Call(udf: UDF, args: Seq[BQSqlFrag]) extends BQSqlFrag {
+  case class Call(udf: UDF, args: List[BQSqlFrag]) extends BQSqlFrag {
     require(
       udf.params.length == args.length,
       s"UDF ${udf.name.value}: Expected ${udf.params.length} arguments, got ${args.length}"

@@ -498,7 +498,7 @@ object BQSmokeTest {
       }
     }
 
-    def struct(fields: Seq[BQField]): BQSqlFrag =
+    def struct(fields: List[BQField]): BQSqlFrag =
       fields
         .map(field => bqfr"${valueForType(field)} as ${Ident(field.name)}")
         .mkFragment(bqfr"struct(", bqfr", ", bqfr")")

@@ -18,7 +18,7 @@ object MySQLUdfs {
 
   val addOneUdf = UDF(
     ident"addOneSqlUdf",
-    Seq(UDF.Param("n", BQType.FLOAT64)),
+    UDF.Param("n", BQType.FLOAT64) :: Nil,
     UDF.Body.Sql(bqfr"""(n + 1)"""),
     Some(BQType.FLOAT64)
   )
@@ -34,10 +34,10 @@ import no.nrk.bigquery.syntax._
 object MyJsUdfs {
 
   // optional library in google cloud storage
-  val jsLibraryGcsPath = None
+  val jsLibraryGcsPath = List.empty
   val addOneUdf = UDF(
     ident"addOneJsUdf",
-    Seq(UDF.Param("n", BQType.FLOAT64)),
+    UDF.Param("n", BQType.FLOAT64) :: Nil,
     UDF.Body.Js("return n + 1", jsLibraryGcsPath),
     Some(BQType.FLOAT64)
   )

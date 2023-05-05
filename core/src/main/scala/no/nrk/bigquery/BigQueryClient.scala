@@ -17,6 +17,7 @@ import com.google.cloud.http.HttpTransportOptions
 import fs2.{Chunk, Stream}
 import io.circe.Encoder
 import no.nrk.bigquery.syntax.showJob
+import no.nrk.bigquery.internal.TableUpdateOperation
 import no.nrk.bigquery.metrics.{BQMetrics, MetricsOps}
 import no.nrk.bigquery.util.StreamUtils
 import org.apache.avro
@@ -319,7 +320,7 @@ class BigQueryClient[F[_]](
     }
     .flatMap(tmp =>
       F.interruptible {
-        val tempTableBqDef = UpdateOperation.createNew(tmp).table
+        val tempTableBqDef = TableUpdateOperation.createNew(tmp).table
         val expirationTime =
           Instant.now.plusMillis(expirationDuration.getOrElse(1.hour).toMillis)
 

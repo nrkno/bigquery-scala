@@ -9,7 +9,7 @@ class UDFTest extends FunSuite {
     assertEquals(
       UDF(
         ident"foo",
-        Seq(UDF.Param("n", BQType.FLOAT64)),
+        List(UDF.Param("n", BQType.FLOAT64)),
         UDF.Body.Sql(bqfr"""(n + 1)"""),
         Some(BQType.FLOAT64)
       ).definition.asString,
@@ -21,8 +21,8 @@ class UDFTest extends FunSuite {
     assertEquals(
       UDF(
         ident"foo",
-        Seq(UDF.Param("n", BQType.FLOAT64)),
-        UDF.Body.Js("return n + 1", None),
+        List(UDF.Param("n", BQType.FLOAT64)),
+        UDF.Body.Js("return n + 1", List.empty),
         Some(BQType.FLOAT64)
       ).definition.asString,
       """|CREATE TEMP FUNCTION foo(n FLOAT64) RETURNS FLOAT64 LANGUAGE js AS '''
@@ -35,14 +35,14 @@ class UDFTest extends FunSuite {
     assertEquals(
       UDF(
         ident"foo",
-        Seq(UDF.Param("n", BQType.FLOAT64)),
-        UDF.Body.Js("return n + 1", Some("bucket/foo.js")),
+        List(UDF.Param("n", BQType.FLOAT64)),
+        UDF.Body.Js("return n + 1", List("bucket/foo.js")),
         Some(BQType.FLOAT64)
       ).definition.asString,
       """|CREATE TEMP FUNCTION foo(n FLOAT64) RETURNS FLOAT64 LANGUAGE js AS '''
          |return n + 1
          |'''
-         |OPTIONS ( library="gs://bucket/foo.js" );""".stripMargin
+         |OPTIONS ( library=["gs://bucket/foo.js"] );""".stripMargin
     )
   }
 

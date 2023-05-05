@@ -1,10 +1,12 @@
 package no.nrk.bigquery
 
+import cats.data.NonEmptyList
+import cats.syntax.all._
 import no.nrk.bigquery.syntax._
 
 case class UDF(
     name: Ident,
-    params: Seq[UDF.Param],
+    params: List[UDF.Param],
     body: UDF.Body,
     returnType: Option[BQType]
 ) {
@@ -17,7 +19,7 @@ case class UDF(
   }
 
   def apply(args: BQSqlFrag.Magnet*): BQSqlFrag.Call =
-    BQSqlFrag.Call(this, args.map(_.frag))
+    BQSqlFrag.Call(this, args.toList.map(_.frag))
 }
 
 object UDF {
@@ -27,7 +29,7 @@ object UDF {
       body: BQSqlFrag,
       returnType: Option[BQType]
   ): UDF =
-    UDF(name, params, UDF.Body.Sql(body), returnType)
+    UDF(name, params.toList, UDF.Body.Sql(body), returnType)
 
   case class Param(name: Ident, maybeType: Option[BQType]) {
     def definition: BQSqlFrag =
@@ -58,7 +60,7 @@ object UDF {
       override def bodyFragment: BQSqlFrag = bqfr"($body)"
 
     }
-    case class Js(javascriptSnippet: String, gsLibraryPath: Option[String]) extends Body {
+    case class Js(javascriptSnippet: String, gsLibraryPath: List[String]) extends Body {
       val languageFragment: BQSqlFrag = BQSqlFrag(" LANGUAGE js")
       override def bodyFragment: BQSqlFrag = {
         val jsBody =
@@ -66,11 +68,13 @@ object UDF {
                  |${BQSqlFrag(javascriptSnippet)}
                  |'''""".stripMargin
 
-        gsLibraryPath
-          .map(BQSqlFrag.apply)
-          .map(path => bqfr"""OPTIONS ( library="gs://$path" )""") match {
+        NonEmptyList.fromList(gsLibraryPath) match {
           case None => jsBody
-          case Some(libraryOption) =>
+          case Some(libs) =>
+            val paths = libs
+              .map(lib => BQSqlFrag(if (!lib.startsWith("gs://")) show""""gs://$lib"""" else show""""$lib""""))
+              .mkFragment("[", ",", "]")
+            val libraryOption = bqfr"""OPTIONS ( library=$paths )"""
             bqfr"""|$jsBody
                    |$libraryOption""".stripMargin
         }

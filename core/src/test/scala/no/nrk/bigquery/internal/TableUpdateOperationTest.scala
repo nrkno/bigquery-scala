@@ -1,19 +1,20 @@
-package no.nrk.bigquery
+package no.nrk.bigquery.internal
 
 import com.google.cloud.bigquery.Field.Mode
 import com.google.cloud.bigquery.TimePartitioning.Type
 import com.google.cloud.bigquery.{Option => _, _}
 import munit.FunSuite
 import no.nrk.bigquery.syntax._
+import no.nrk.bigquery._
 
-class EnsureUpdatedTest extends FunSuite {
+class TableUpdateOperationTest extends FunSuite {
 
-  val a = BQField("a", StandardSQLTypeName.INT64, Mode.REQUIRED)
-  val b = BQField("b", StandardSQLTypeName.INT64, Mode.REQUIRED)
-  val c = BQField("c", StandardSQLTypeName.INT64, Mode.REQUIRED)
-  val viewId = BQTableId.of(ProjectId("project"), "dataset", "view")
-  val tableId = BQTableId.of(ProjectId("project"), "dataset", "table")
-  val materializedViewId =
+  private val a = BQField("a", StandardSQLTypeName.INT64, Mode.REQUIRED)
+  private val b = BQField("b", StandardSQLTypeName.INT64, Mode.REQUIRED)
+  private val c = BQField("c", StandardSQLTypeName.INT64, Mode.REQUIRED)
+  private val viewId = BQTableId.of(ProjectId("project"), "dataset", "view")
+  private val tableId = BQTableId.of(ProjectId("project"), "dataset", "table")
+  private val materializedViewId =
     BQTableId.of(ProjectId("project"), "dataset", "mat_view")
 
   test("views with schema should trigger update after create") {
@@ -28,8 +29,8 @@ class EnsureUpdatedTest extends FunSuite {
     )
     val remote = None
 
-    UpdateOperation.from(testView, remote) match {
-      case UpdateOperation.Create(_, _, maybePatchedTable) =>
+    TableUpdateOperation.from(testView, remote) match {
+      case UpdateOperation.CreateTable(_, _, maybePatchedTable) =>
         assert(
           maybePatchedTable.nonEmpty,
           "Expected create with patched table when we have schema"
@@ -62,7 +63,7 @@ class EnsureUpdatedTest extends FunSuite {
         .build()
     )
 
-    UpdateOperation.from(testView, remote) match {
+    TableUpdateOperation.from(testView, remote) match {
       case UpdateOperation.RecreateView(from, to, createNew) =>
         assert(
           Option(from.getDescription).isEmpty,
@@ -106,8 +107,8 @@ class EnsureUpdatedTest extends FunSuite {
           .build()
       )
 
-    UpdateOperation.from(testView, remote) match {
-      case UpdateOperation.Noop(_, _) =>
+    TableUpdateOperation.from(testView, remote) match {
+      case UpdateOperation.Noop(_) =>
       case other => fail(other.toString)
     }
   }
@@ -134,7 +135,7 @@ class EnsureUpdatedTest extends FunSuite {
         .build()
     )
 
-    UpdateOperation.from(testTable, remote) match {
+    TableUpdateOperation.from(testTable, remote) match {
       case UpdateOperation.UpdateTable(_, _, updatedTable) =>
         assert(
           updatedTable.getFriendlyName == friendlyName,
@@ -164,7 +165,7 @@ class EnsureUpdatedTest extends FunSuite {
         .build()
     )
 
-    UpdateOperation.from(givenTable, actualTable) match {
+    TableUpdateOperation.from(givenTable, actualTable) match {
       case UpdateOperation.UpdateTable(_, _, _) => assert(cond = true)
       case other => fail(other.toString)
     }
@@ -190,8 +191,8 @@ class EnsureUpdatedTest extends FunSuite {
         .build()
     )
 
-    UpdateOperation.from(givenTable, actualTable) match {
-      case UpdateOperation.IllegalSchemaExtension(_, _, reason) =>
+    TableUpdateOperation.from(givenTable, actualTable) match {
+      case UpdateOperation.IllegalSchemaExtension(_, reason) =>
         assertEquals(reason, "Expected field `b`, got field `c`")
       case other => fail(other.toString)
     }
@@ -220,7 +221,7 @@ class EnsureUpdatedTest extends FunSuite {
         .build()
     )
 
-    UpdateOperation.from(givenTable, actualTable) match {
+    TableUpdateOperation.from(givenTable, actualTable) match {
       case UpdateOperation.UpdateTable(_, _, _) => assert(cond = true)
       case other => fail(other.toString)
     }
@@ -249,8 +250,8 @@ class EnsureUpdatedTest extends FunSuite {
         .build()
     )
 
-    UpdateOperation.from(givenTable, actualTable) match {
-      case UpdateOperation.IllegalSchemaExtension(_, _, reason) =>
+    TableUpdateOperation.from(givenTable, actualTable) match {
+      case UpdateOperation.IllegalSchemaExtension(_, reason) =>
         assertEquals(reason, "Expected field `b.b`, got field `b.c`")
       case other => fail(other.toString)
     }
@@ -285,7 +286,7 @@ class EnsureUpdatedTest extends FunSuite {
         .build()
     )
 
-    UpdateOperation.from(testView, remote) match {
+    TableUpdateOperation.from(testView, remote) match {
       case UpdateOperation.RecreateView(_, _, _) => assert(cond = true)
       case other => fail(other.toString)
     }
@@ -312,8 +313,8 @@ class EnsureUpdatedTest extends FunSuite {
         .build()
     )
 
-    UpdateOperation.from(testTable, remote) match {
-      case UpdateOperation.UnsupportedPartitioning(_, _, msg) =>
+    TableUpdateOperation.from(testTable, remote) match {
+      case UpdateOperation.UnsupportedPartitioning(_, msg) =>
         assertEquals(
           msg,
           "Need to implement support in `BQPartitionType` for Some(TimePartitioning{type=HOUR, expirationMs=null, field=null, requirePartitionFilter=null})"
@@ -345,8 +346,8 @@ class EnsureUpdatedTest extends FunSuite {
         .build()
     )
 
-    UpdateOperation.from(testTable, remote) match {
-      case UpdateOperation.UnsupportedPartitioning(_, _, msg) =>
+    TableUpdateOperation.from(testTable, remote) match {
+      case UpdateOperation.UnsupportedPartitioning(_, msg) =>
         assertEquals(
           msg,
           "Cannot change partitioning from DatePartitioned(Ident(date)) to NotPartitioned"
@@ -375,8 +376,8 @@ class EnsureUpdatedTest extends FunSuite {
         .build()
     )
 
-    UpdateOperation.from(testTable, remote) match {
-      case UpdateOperation.IllegalSchemaExtension(_, _, reason) =>
+    TableUpdateOperation.from(testTable, remote) match {
+      case UpdateOperation.IllegalSchemaExtension(_, reason) =>
         assertEquals(
           reason,
           "Expected field `c`, got field `b`, Expected field `b`, got field `c`"
