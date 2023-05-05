@@ -12,7 +12,7 @@ import java.time.{Instant, LocalDate, LocalTime}
   * I didn't think too long about adding too many cases, feel free to add more
   */
 class RoundtripTest extends CatsEffectSuite {
-  def roundtripQuery[P: BQShow: BQRead](ps: Seq[P]): BQQuery[P] =
+  def roundtripQuery[P: BQShow: BQRead](ps: List[P]): BQQuery[P] =
     BQQuery(bqfr"select * from unnest([${ps.mkFragment(", ")}])")
 
   def roundtrip[P: BQShow: BQRead](expectedValues: P*): IO[Unit] =
@@ -21,7 +21,7 @@ class RoundtripTest extends CatsEffectSuite {
       .use(
         _.synchronousQuery(
           BQJobName.auto,
-          roundtripQuery(expectedValues)
+          roundtripQuery(expectedValues.toList)
         ).compile.toVector
       )
       .map(actualValues => assertEquals(actualValues, expectedValues.toVector))

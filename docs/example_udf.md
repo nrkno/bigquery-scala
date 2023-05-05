@@ -18,7 +18,7 @@ object MySQLUdfs {
 
   val addOneUdf = UDF(
     ident"addOneSqlUdf",
-    Seq(UDF.Param("n", BQType.FLOAT64)),
+    UDF.Param("n", BQType.FLOAT64) :: Nil,
     UDF.Body.Sql(bqfr"""(n + 1)"""),
     Some(BQType.FLOAT64)
   )
@@ -37,7 +37,7 @@ object MyJsUdfs {
   val jsLibraryGcsPath = None
   val addOneUdf = UDF(
     ident"addOneJsUdf",
-    Seq(UDF.Param("n", BQType.FLOAT64)),
+    UDF.Param("n", BQType.FLOAT64) :: Nil,
     UDF.Body.Js("return n + 1", jsLibraryGcsPath),
     Some(BQType.FLOAT64)
   )

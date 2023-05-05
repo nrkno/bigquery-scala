@@ -9,7 +9,7 @@ class UDFTest extends FunSuite {
     assertEquals(
       UDF(
         ident"foo",
-        Seq(UDF.Param("n", BQType.FLOAT64)),
+        List(UDF.Param("n", BQType.FLOAT64)),
         UDF.Body.Sql(bqfr"""(n + 1)"""),
         Some(BQType.FLOAT64)
       ).definition.asString,
@@ -21,7 +21,7 @@ class UDFTest extends FunSuite {
     assertEquals(
       UDF(
         ident"foo",
-        Seq(UDF.Param("n", BQType.FLOAT64)),
+        List(UDF.Param("n", BQType.FLOAT64)),
         UDF.Body.Js("return n + 1", None),
         Some(BQType.FLOAT64)
       ).definition.asString,
@@ -35,7 +35,7 @@ class UDFTest extends FunSuite {
     assertEquals(
       UDF(
         ident"foo",
-        Seq(UDF.Param("n", BQType.FLOAT64)),
+        List(UDF.Param("n", BQType.FLOAT64)),
         UDF.Body.Js("return n + 1", Some("bucket/foo.js")),
         Some(BQType.FLOAT64)
       ).definition.asString,

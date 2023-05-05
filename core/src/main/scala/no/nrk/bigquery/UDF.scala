@@ -4,7 +4,7 @@ import no.nrk.bigquery.syntax._
 
 case class UDF(
     name: Ident,
-    params: Seq[UDF.Param],
+    params: List[UDF.Param],
     body: UDF.Body,
     returnType: Option[BQType]
 ) {
@@ -17,7 +17,7 @@ case class UDF(
   }
 
   def apply(args: BQSqlFrag.Magnet*): BQSqlFrag.Call =
-    BQSqlFrag.Call(this, args.map(_.frag))
+    BQSqlFrag.Call(this, args.toList.map(_.frag))
 }
 
 object UDF {
@@ -27,7 +27,7 @@ object UDF {
       body: BQSqlFrag,
       returnType: Option[BQType]
   ): UDF =
-    UDF(name, params, UDF.Body.Sql(body), returnType)
+    UDF(name, params.toList, UDF.Body.Sql(body), returnType)
 
   case class Param(name: Ident, maybeType: Option[BQType]) {
     def definition: BQSqlFrag =
