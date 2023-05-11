@@ -73,30 +73,43 @@ sealed trait BQSqlFrag {
   }
 
   def collect[T](pf: PartialFunction[BQSqlFrag, T]): List[T] = {
-    def children(f: BQSqlFrag): List[BQSqlFrag] =
-      f match {
+    def childrenFrags(frag: BQSqlFrag): List[BQSqlFrag] =
+      frag match {
         case BQSqlFrag.Frag(_) => Nil
-        case BQSqlFrag.Call(udf, args) =>
-          (udf match {
-            case UDF.Temporary(_, _, UDF.Body.Sql(body), _) => body :: Nil
-            case UDF.Persistent(_, _, UDF.Body.Sql(body), _) => body :: Nil
-            case _ => Nil
-          }) ++ args.toList
+        case BQSqlFrag.Call(_, args) => args
         case BQSqlFrag.Combined(values) => values.toList
         case BQSqlFrag.PartitionRef(_) => Nil
         case BQSqlFrag.FillRef(fill) => fill.query :: Nil
         case BQSqlFrag.FilledTableRef(_) => Nil
       }
 
-    val pfLifted = pf.lift
+    def extractInnerBody(frag: BQSqlFrag): Option[BQSqlFrag] =
+      frag match {
+        case BQSqlFrag.Call(udf, _) =>
+          udf match {
+            case UDF.Temporary(_, _, UDF.Body.Sql(body), _) => Some(body)
+            case _ => None
+          }
+        case _ => None
+      }
 
     @tailrec
-    def run(frags: List[BQSqlFrag], xs: List[T]): List[T] =
+    def innerBodies(frags: List[BQSqlFrag], xs: List[BQSqlFrag]): List[BQSqlFrag] =
+      frags match {
+        case Nil => xs
+        case head :: tail =>
+          val innerBody = extractInnerBody(head).toList
+          innerBodies(innerBody.flatMap(childrenFrags) ::: childrenFrags(head) ::: tail, innerBody ::: xs)
+      }
+
+    @tailrec
+    def run(frags: List[BQSqlFrag], xs: List[T], fn: BQSqlFrag => Option[T]): List[T] =
       frags match {
         case Nil => xs.reverse
-        case head :: tail => run(children(head) ::: tail, pfLifted(head).toList ::: xs)
+        case head :: tail => run(childrenFrags(head) ::: tail, fn(head).toList ::: xs, fn)
       }
-    run(this :: Nil, Nil)
+
+    run(innerBodies(this :: Nil, Nil), Nil, pf.lift) ++ run(this :: Nil, Nil, pf.lift)
   }
 
   final def allReferencedAsPartitions: Seq[BQPartitionId[Any]] =
@@ -106,35 +119,8 @@ sealed trait BQSqlFrag {
       case BQSqlFrag.FilledTableRef(fill) => fill.tableDef.unpartitioned.assertPartition
     }.distinct
 
-  final def allReferencedUDFs: Seq[UDF[UDF.UDFId]] = {
-    def fromBody(body: UDF.Body) =
-      body match {
-        case UDF.Body.Sql(body) => body.allReferencedUDFs
-        case _: UDF.Body.Js => Nil
-      }
-
-    this match {
-      case BQSqlFrag.Frag(_) => Nil
-      case BQSqlFrag.Call(udf @ UDF.Temporary(_, _, body, _), args) =>
-        (fromBody(body) ++ args.flatMap(
-          _.allReferencedUDFs
-        ) ++ List(udf)).distinct
-      case BQSqlFrag.Call(udf @ UDF.Persistent(_, _, body, _), args) =>
-        (fromBody(body) ++ args.flatMap(
-          _.allReferencedUDFs
-        ) ++ List(udf)).distinct
-      case BQSqlFrag.Call(udf: UDF.Reference, args) =>
-        (args.flatMap(
-          _.allReferencedUDFs
-        ) ++ List(udf)).distinct
-
-      case BQSqlFrag.Combined(values) =>
-        values.flatMap(_.allReferencedUDFs).distinct
-      case BQSqlFrag.PartitionRef(_) => Nil
-      case BQSqlFrag.FillRef(_) => Nil
-      case BQSqlFrag.FilledTableRef(_) => Nil
-    }
-  }
+  final def allReferencedUDFs: Seq[UDF[UDF.UDFId]] =
+    this.collect { case BQSqlFrag.Call(udf, _) => udf }.distinct
 
   override def toString: String = asString
 }

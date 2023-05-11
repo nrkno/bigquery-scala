@@ -26,6 +26,30 @@ class BQSqlFragTest extends FunSuite {
     assertEquals(udfIdents, udfAddOne.name :: udfToString.name :: Nil)
   }
 
+  test("collect UDF used in body in other UDFs") {
+    val innerUdf1 = UDF.temporary(
+      Ident("bb"),
+      List(UDF.Param("input", BQType.INT64)),
+      UDF.Body.Sql(bqsql"(input + input)"),
+      Some(BQType.INT64))
+    val innerUdf2 = UDF.temporary(
+      Ident("cc"),
+      List(UDF.Param("input", BQType.INT64)),
+      UDF.Body.Sql(bqsql"(input + input)"),
+      Some(BQType.INT64))
+    val outerUdf = UDF.temporary(
+      Ident("aa"),
+      List(UDF.Param("input", BQType.INT64)),
+      UDF.Body.Sql(bqsql"(${innerUdf1(ident"input")} / ${innerUdf2(bqfr"2")})"),
+      Some(BQType.FLOAT64))
+
+    val udfIdents = bqsql"select ${outerUdf(1)}"
+      .collect { case BQSqlFrag.Call(udf, _) => udf }
+      .map(_.name)
+
+    assertEquals(udfIdents, innerUdf1.name :: innerUdf2.name :: outerUdf.name :: Nil)
+  }
+
   test("collect partitions in order") {
     val date = LocalDate.of(2023, 1, 1)
     def tableId(name: String) = BQTableId(BQDataset(ProjectId("p1"), "d1", None), name)
