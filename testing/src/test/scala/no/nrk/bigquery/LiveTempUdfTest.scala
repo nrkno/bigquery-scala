@@ -5,7 +5,7 @@ import no.nrk.bigquery.testing.{BQSmokeTest, BigQueryTestClient}
 
 class LiveTempUdfTest extends BQSmokeTest(BigQueryTestClient.testClient) {
   val udf1 = UDF.temporary(
-    Ident("double_TMP"),
+    Ident("xxdouble_TMP"),
     List(UDF.Param("input", BQType.INT64)),
     UDF.Body.Sql(bqsql"(input + input)"),
     Some(BQType.INT64))

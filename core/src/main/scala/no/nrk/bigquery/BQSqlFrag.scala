@@ -106,8 +106,35 @@ sealed trait BQSqlFrag {
       case BQSqlFrag.FilledTableRef(fill) => fill.tableDef.unpartitioned.assertPartition
     }.distinct
 
-  final def allReferencedUDFs: Seq[UDF[UDF.UDFId]] =
-    this.collect { case BQSqlFrag.Call(udf, _) => udf }.distinct
+  final def allReferencedUDFs: Seq[UDF[UDF.UDFId]] = {
+    def fromBody(body: UDF.Body) =
+      body match {
+        case UDF.Body.Sql(body) => body.allReferencedUDFs
+        case _: UDF.Body.Js => Nil
+      }
+
+    this match {
+      case BQSqlFrag.Frag(_) => Nil
+      case BQSqlFrag.Call(udf @ UDF.Temporary(_, _, body, _), args) =>
+        (fromBody(body) ++ args.flatMap(
+          _.allReferencedUDFs
+        ) ++ List(udf)).distinct
+      case BQSqlFrag.Call(udf @ UDF.Persistent(_, _, body, _), args) =>
+        (fromBody(body) ++ args.flatMap(
+          _.allReferencedUDFs
+        ) ++ List(udf)).distinct
+      case BQSqlFrag.Call(udf: UDF.Reference, args) =>
+        (args.flatMap(
+          _.allReferencedUDFs
+        ) ++ List(udf)).distinct
+
+      case BQSqlFrag.Combined(values) =>
+        values.flatMap(_.allReferencedUDFs).distinct
+      case BQSqlFrag.PartitionRef(_) => Nil
+      case BQSqlFrag.FillRef(_) => Nil
+      case BQSqlFrag.FilledTableRef(_) => Nil
+    }
+  }
 
   override def toString: String = asString
 }
