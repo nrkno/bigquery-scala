@@ -107,7 +107,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [2.13.10]
         java: [temurin@8]
     runs-on: ${{ matrix.os }}
     steps:
@@ -178,4 +177,4 @@ jobs:
         env:
           MYGET_USERNAME: ${{ secrets.PLATTFORM_MYGET_ENTERPRISE_WRITE_ID }}
           MYGET_PASSWORD: ${{ secrets.PLATTFORM_MYGET_ENTERPRISE_WRITE_SECRET }}
-        run: sbt '++ ${{ matrix.scala }}' +publish
+        run: sbt +publish
