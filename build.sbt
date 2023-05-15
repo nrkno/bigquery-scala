@@ -107,7 +107,7 @@ lazy val core = crossProject(JVMPlatform)
     Test / headerSources := Nil,
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "2.9.0",
-      "org.typelevel" %% "cats-effect" % "3.4.10",
+      "org.typelevel" %% "cats-effect" % "3.5.0",
       "org.typelevel" %% "literally" % "1.1.0",
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
@@ -119,8 +119,8 @@ lazy val core = crossProject(JVMPlatform)
       "org.typelevel" %% "log4cats-slf4j" % "2.6.0",
       "io.circe" %% "circe-generic" % "0.14.5",
       "io.circe" %% "circe-parser" % "0.14.5",
-      "co.fs2" %% "fs2-core" % "3.6.1",
-      "co.fs2" %% "fs2-io" % "3.6.1",
+      "co.fs2" %% "fs2-core" % "3.7.0",
+      "co.fs2" %% "fs2-io" % "3.7.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.10.0"
     ),
     libraryDependencies ++= {
