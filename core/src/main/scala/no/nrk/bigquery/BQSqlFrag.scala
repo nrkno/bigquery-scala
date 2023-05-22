@@ -79,7 +79,7 @@ sealed trait BQSqlFrag {
         case BQSqlFrag.Call(_, args) => args
         case BQSqlFrag.Combined(values) => values.toList
         case BQSqlFrag.PartitionRef(_) => Nil
-        case BQSqlFrag.FillRef(fill) => fill.query :: Nil
+        case BQSqlFrag.FillRef(_) => Nil
         case BQSqlFrag.FilledTableRef(_) => Nil
       }
 

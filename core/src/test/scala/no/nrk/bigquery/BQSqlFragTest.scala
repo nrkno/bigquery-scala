@@ -100,7 +100,7 @@ class BQSqlFragTest extends FunSuite {
       .collect { case BQSqlFrag.Call(udf, _) => udf }
       .map(_.name)
 
-    assertEquals(udfIdents, outerUdf2.name :: Nil)
+    assertEquals(udfIdents, outerUdf1.name :: Nil)
   }
 
   def mkTable(name: String) = {
