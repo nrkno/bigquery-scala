@@ -1,6 +1,8 @@
 package no.nrk.bigquery
 
 import cats.syntax.all._
+import com.google.cloud.bigquery.Field.Mode
+import com.google.cloud.bigquery.StandardSQLTypeName
 import munit.FunSuite
 import no.nrk.bigquery.BQPartitionType.DatePartitioned
 import no.nrk.bigquery.syntax._
@@ -70,4 +72,44 @@ class BQSqlFragTest extends FunSuite {
     assertEquals(tableIds, t2.tableId :: t1.tableId :: t3.tableId :: Nil)
   }
 
+  test("collect UDF used in body in other fragments, but not child BQFill") {
+    case class JobKey(value: String) extends JobKeyBQ
+
+    val outerUdf1 = UDF.temporary(
+      Ident("outer1"),
+      List(UDF.Param("input", BQType.INT64)),
+      UDF.Body.Sql(bqsql"(2.0)"),
+      Some(BQType.FLOAT64))
+
+    val outerUdf2 = UDF.temporary(
+      Ident("outer2"),
+      List(UDF.Param("input", BQType.INT64)),
+      UDF.Body.Sql(bqsql"(1.0)"),
+      Some(BQType.FLOAT64))
+
+    val fill2 = BQFill(JobKey("hello2"), mkTable("bree"), bqsql"select ${outerUdf2(1)}", LocalDate.of(2023, 1, 1))
+
+    val fill1 = BQFill(
+      JobKey("hello"),
+      mkTable("baz"),
+      bqsql"select ${outerUdf1(1)} from $fill2",
+      LocalDate.of(2023, 1, 1)
+    )
+
+    val udfIdents = fill1.query
+      .collect { case BQSqlFrag.Call(udf, _) => udf }
+      .map(_.name)
+
+    assertEquals(udfIdents, outerUdf1.name :: Nil)
+  }
+
+  def mkTable(name: String) = {
+    val partitionField = BQField("partitionDate", StandardSQLTypeName.DATE, Mode.REQUIRED)
+
+    BQTableDef.Table(
+      BQTableId.of(ProjectId("foo"), "bar", name),
+      BQSchema.of(partitionField, BQField("num", StandardSQLTypeName.FLOAT64, Mode.REQUIRED)),
+      BQPartitionType.DatePartitioned(partitionField.ident)
+    )
+  }
 }
