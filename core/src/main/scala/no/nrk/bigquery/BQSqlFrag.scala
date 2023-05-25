@@ -138,8 +138,9 @@ object BQSqlFrag {
   }
   case class Combined(values: Seq[BQSqlFrag]) extends BQSqlFrag
   case class PartitionRef(ref: BQPartitionId[Any]) extends BQSqlFrag
-  case class FillRef(fill: BQFill) extends BQSqlFrag
-  case class FilledTableRef(filledTable: BQFilledTable) extends BQSqlFrag
+
+  case class FillRef(fill: BQFill[Any]) extends BQSqlFrag
+  case class FilledTableRef(filledTable: BQFilledTable[Any]) extends BQSqlFrag
 
   val Empty: BQSqlFrag = Frag("")
 
