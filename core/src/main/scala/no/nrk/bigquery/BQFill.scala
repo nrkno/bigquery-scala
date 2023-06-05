@@ -6,21 +6,21 @@ import java.time.LocalDate
   */
 trait JobKeyBQ
 
-case class BQFill(
+case class BQFill[+P](
     jobKey: JobKeyBQ,
-    tableDef: BQTableDef.Table[LocalDate],
+    tableDef: BQTableDef.Table[P],
     query: BQSqlFrag,
-    executionDate: LocalDate
-) {
-  val destination: BQPartitionId[LocalDate] =
-    tableDef.assertPartition(executionDate)
+    partitionValue: P
+)(implicit P: TableOps[P]) {
+  val destination: BQPartitionId[P] =
+    tableDef.assertPartition(partitionValue)
+
+  @deprecated("use partitionValue", "0.6.x")
+  def executionDate: P = partitionValue
 }
 
-case class BQFilledTable(
+case class BQFilledTable[+P](
     jobKey: JobKeyBQ,
-    tableDef: BQTableDef.Table[LocalDate],
+    tableDef: BQTableDef.Table[P],
     query: LocalDate => BQSqlFrag
-) {
-  def withDate(executionDate: LocalDate): BQFill =
-    BQFill(jobKey, tableDef, query(executionDate), executionDate)
-}
+)

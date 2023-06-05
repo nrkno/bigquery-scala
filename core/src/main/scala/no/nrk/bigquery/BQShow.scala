@@ -72,9 +72,8 @@ trait BQShowInstances {
 
   implicit def bqShowsBQPartitionIds[
       I[t] <: Iterable[t],
-      Pid <: BQPartitionId[
-        Any
-      ]]: BQShow[I[Pid]] =
+      Pid <: BQPartitionId[Any]
+  ]: BQShow[I[Pid]] =
     partitions => BQSqlFrag.Combined(partitions.map(bqShowsBQPartitionId[Pid].bqShow).toSeq)
 
   implicit def bqShowTableLike[T <: BQTableLike[Unit]]: BQShow[T] =
@@ -83,13 +82,16 @@ trait BQShowInstances {
   implicit def bqShowTablesLike[I[t] <: Iterable[t], T <: BQTableLike[Unit]]: BQShow[I[T]] =
     tables => BQSqlFrag.Combined(tables.map(_.assertPartition.bqShow).toSeq)
 
-  implicit def bqShowFill: BQShow[BQFill] =
+  implicit def bqShowFill[Fill <: BQFill[Any]]: BQShow[Fill] =
     BQSqlFrag.FillRef.apply
 
-  implicit def bqShowBQFilledTable: BQShow[BQFilledTable] =
+  implicit def bqShowBQFilledTable[Fill <: BQFilledTable[Any]]: BQShow[Fill] =
     BQSqlFrag.FilledTableRef.apply
 
-  implicit def bqShowFills[I[t] <: Iterable[t]]: BQShow[I[BQFill]] =
+  implicit def bqShowFills[
+      I[t] <: Iterable[t],
+      Fill <: BQFill[Any]
+  ]: BQShow[I[Fill]] =
     fills => BQSqlFrag.Combined(fills.map(bqShowFill.bqShow).toSeq)
 
   implicit def bqShowBQLimit[T <: BQLimit]: BQShow[T] = {

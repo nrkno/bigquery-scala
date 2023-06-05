@@ -162,7 +162,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
 
   protected def bqCheckFill(
       testName: String
-  )(fill: BQFill)(implicit loc: Location): Unit =
+  )(fill: BQFill[Any])(implicit loc: Location): Unit =
     test(s"bqCheck: $testName".tag(TestTags.Generated)) {
       bqCheckFragment(
         testName,
