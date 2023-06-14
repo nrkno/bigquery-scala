@@ -36,9 +36,11 @@ case class BQField(
   /** see description in [[BQSchema.recursivelyNullable]] */
   def recursivelyNullable: BQField =
     copy(
-      mode = if (mode == Field.Mode.REQUIRED) Field.Mode.NULLABLE else mode,
+      mode = if (isRequired) Field.Mode.NULLABLE else mode,
       subFields = subFields.map(_.recursivelyNullable)
     )
+
+  def isRequired: Boolean = mode == Field.Mode.REQUIRED
 }
 
 object BQField {

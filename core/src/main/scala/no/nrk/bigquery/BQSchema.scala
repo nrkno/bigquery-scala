@@ -18,7 +18,30 @@ case class BQSchema(fields: List[BQField]) {
   def recursivelyNullable: BQSchema =
     copy(fields = fields.map(_.recursivelyNullable))
 
-  def extend(additional: BQSchema) = BQSchema(fields ::: additional.fields)
+  /** Return all fields that are required. If a struct has required fields, but is not itself required, returns that.
+    * This is a companion to [[recursivelyNullable]]
+    */
+  def requiredFields: List[BQField] = {
+    def go(field: BQField, list: List[BQField]): List[BQField] = {
+      val children = field.subFields.flatMap(go(_, list))
+      if (children.nonEmpty || field.isRequired) {
+        field :: list
+      } else {
+        list
+      }
+    }
+
+    fields.flatMap(go(_, Nil))
+  }
+
+  def extend(additional: BQSchema): BQSchema = BQSchema(fields ::: additional.fields)
+
+  def extendWith(additional: BQField*): BQSchema = BQSchema(fields ::: additional.toList)
+
+  def filter(predicate: BQField => Boolean): BQSchema = BQSchema(fields.filter(predicate))
+
+  def filterNot(predicate: BQField => Boolean): BQSchema = BQSchema(fields.filterNot(predicate))
+
 }
 
 object BQSchema {
