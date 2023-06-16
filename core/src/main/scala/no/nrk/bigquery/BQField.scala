@@ -41,6 +41,19 @@ case class BQField(
     )
 
   def isRequired: Boolean = mode == Field.Mode.REQUIRED
+
+  def withName(newName: String) = copy(name = newName)
+  def required = copy(mode = Field.Mode.REQUIRED)
+
+  def withType(newType: StandardSQLTypeName) = copy(tpe = newType)
+
+  def addSubFields(newSubFields: BQField*) =
+    withSubFields(subFields ::: newSubFields.toList)
+  def withSubFields(newSubFields: List[BQField]) =
+    if (tpe == StandardSQLTypeName.STRUCT) copy(subFields = newSubFields) else this
+
+  def addPolicyTags(newTags: String*) = copy(policyTags = policyTags ::: newTags.toList)
+  def withPolicyTags(newTags: List[String]) = copy(policyTags = newTags)
 }
 
 object BQField {
