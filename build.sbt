@@ -112,7 +112,7 @@ lazy val core = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       "com.google.cloud" % "google-cloud-bigquery" % "2.27.1",
-      "com.google.cloud" % "google-cloud-bigquerystorage" % "2.37.2",
+      "com.google.cloud" % "google-cloud-bigquerystorage" % "2.38.0",
       "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.19.0",
       "org.apache.avro" % "avro" % "1.11.1",
       "com.lihaoyi" %% "sourcecode" % "0.3.0",
@@ -121,12 +121,12 @@ lazy val core = crossProject(JVMPlatform)
       "io.circe" %% "circe-parser" % "0.14.5",
       "co.fs2" %% "fs2-core" % "3.7.0",
       "co.fs2" %% "fs2-io" % "3.7.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.10.0"
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0"
     ),
     libraryDependencies ++= {
       if (scalaVersion.value.startsWith("3")) {
         Seq(
-          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.1"
+          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.2"
         )
       } else {
         // scala2
