@@ -20,7 +20,7 @@ object StreamUtils {
     _.map(_.asJson.noSpaces)
       .intersperse("\n")
       .through(fs2.text.utf8.encode)
-      .through(Compression[F].gzip())
+      .through(Compression.forSync[F].gzip())
       .chunkN(chunkSize)
 
   def logChunks[F[_]: Functor, T](

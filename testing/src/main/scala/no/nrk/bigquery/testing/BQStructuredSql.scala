@@ -13,7 +13,7 @@ import scala.collection.mutable
   */
 case class BQStructuredSql(
     udfs: List[UserDefinedFunction],
-    ctes: List[CTE],
+    ctes: CTEList,
     query: BQSqlFrag,
     queryType: String
 ) {
@@ -34,12 +34,7 @@ case class BQStructuredSql(
           Some(nonEmptyStrings.mkString("", "\n", "\n"))
       }
 
-    val combinedCteString: Option[String] =
-      ctes match {
-        case Nil => None
-        case nonEmpty =>
-          Some("with " + nonEmpty.map(_.definition).mkString(",\n"))
-      }
+    val combinedCteString: Option[String] = ctes.definition.map(_.asString)
 
     BQSqlFrag(
       List(combinedUdfString, combinedCteString, Some(query)).flatten
@@ -78,7 +73,7 @@ object BQStructuredSql {
     )
   }
 
-  def extractCTEs(segments: SegmentList): (List[CTE], SegmentList) = {
+  def extractCTEs(segments: SegmentList): (CTEList, SegmentList) = {
     val rebalanced: SegmentList = segments.words
 
     val relevant: Seq[(Segment, Int)] =
@@ -116,12 +111,16 @@ object BQStructuredSql {
                 s"expected CTE at ${rest.map(_._1.asString).mkString.take(50)}"
               )
           }
+        val (recur, (ctes, endIdx)) = rest match {
+          case Keyword("recursive") :: actualrest => true -> go(actualrest)
 
-        val (ctes, endIdx) = go(rest)
+          case rest => false -> go(rest)
+        }
+
         val query = SegmentList(rebalanced.segs.drop(endIdx + 1))
 
-        (ctes, query)
-      case _ => (Nil, rebalanced)
+        (CTEList(ctes, recur), query)
+      case _ => (CTEList(Nil, recursive = false), rebalanced)
     }
   }
 
