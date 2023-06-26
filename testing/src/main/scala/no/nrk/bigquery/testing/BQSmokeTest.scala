@@ -375,7 +375,8 @@ object BQSmokeTest {
         s"References unstable tables ${unstableTables.map(_.tableId.asString).toList.sorted.mkString(", ")}"
       )
     else
-      Right(structured.copy(ctes = ctes.distinct ++ structured.ctes).asFragment)
+      Right(
+        structured.copy(ctes = CTEList(ctes.distinct ++ structured.ctes.value, structured.ctes.recursive)).asFragment)
   }
 
   private def recurse(frag: BQSqlFrag): (BQSqlFrag, List[CTE]) =

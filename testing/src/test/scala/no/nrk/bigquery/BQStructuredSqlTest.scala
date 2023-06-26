@@ -1,9 +1,9 @@
-package no.nrk.bigquery.testing
+package no.nrk.bigquery
 
 import munit.{FunSuite, Location}
-import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.testing.BQStructuredSql.{Segment, SegmentList}
+import no.nrk.bigquery.testing.{BQStructuredSql, CTE, CTEList}
 
 class BQStructuredSqlTest extends FunSuite {
   def checkSegment(input: String, segments: Segment*)(implicit
@@ -85,7 +85,7 @@ class BQStructuredSqlTest extends FunSuite {
 
   test("none") {
     val actual = BQStructuredSql.parse(bqfr"select 1")
-    val expected = BQStructuredSql(Nil, Nil, BQSqlFrag("select 1"), "select")
+    val expected = BQStructuredSql(Nil, CTEList(Nil, recursive = false), BQSqlFrag("select 1"), "select")
     assertEquals(actual, expected)
   }
   test("one") {
@@ -93,7 +93,7 @@ class BQStructuredSqlTest extends FunSuite {
       BQStructuredSql.parse(bqfr"with a as (select ')') select * from a")
     val expected = BQStructuredSql(
       Nil,
-      List(CTE(ident"a", BQSqlFrag("(select ')')"))),
+      CTEList(List(CTE(ident"a", BQSqlFrag("(select ')')"))), recursive = false),
       BQSqlFrag(" select * from a"),
       "select"
     )
@@ -107,10 +107,31 @@ class BQStructuredSqlTest extends FunSuite {
     val expected =
       BQStructuredSql(
         Nil,
-        List(
-          CTE(ident"a", BQSqlFrag("(select 1)")),
-          CTE(ident"b", BQSqlFrag("(select 2)"))
-        ),
+        CTEList(
+          List(
+            CTE(ident"a", BQSqlFrag("(select 1)")),
+            CTE(ident"b", BQSqlFrag("(select 2)"))
+          ),
+          recursive = false),
+        BQSqlFrag(" select * from a, b"),
+        "select"
+      )
+    assertEquals(actual, expected)
+  }
+
+  test("two with recursive") {
+    val actual = BQStructuredSql.parse(
+      bqfr"with recursive a as (select 1), b as (select 2) select * from a, b"
+    )
+    val expected =
+      BQStructuredSql(
+        Nil,
+        CTEList(
+          List(
+            CTE(ident"a", BQSqlFrag("(select 1)")),
+            CTE(ident"b", BQSqlFrag("(select 2)"))
+          ),
+          recursive = true),
         BQSqlFrag(" select * from a, b"),
         "select"
       )
@@ -123,10 +144,12 @@ class BQStructuredSqlTest extends FunSuite {
     )
     val expected = BQStructuredSql(
       Nil,
-      List(
-        CTE(ident"a", BQSqlFrag("(--foo\nselect 1)")),
-        CTE(ident"b", BQSqlFrag("(select 2)"))
-      ),
+      CTEList(
+        List(
+          CTE(ident"a", BQSqlFrag("(--foo\nselect 1)")),
+          CTE(ident"b", BQSqlFrag("(select 2)"))
+        ),
+        recursive = false),
       BQSqlFrag("/*foo*/ select * from a, b--foo"),
       "select"
     )
