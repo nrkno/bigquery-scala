@@ -34,7 +34,8 @@ object TableUpdateOperation {
                   clustering = Option(remoteTableDef.getClustering).toList
                     .flatMap(_.getFields.asScala)
                     .map(Ident.apply),
-                  labels = TableLabels.fromTableInfo(existingRemoteTable)
+                  labels = TableLabels.fromTableInfo(existingRemoteTable),
+                  partitionFilterRequired = getRequirePartitionFilterSafely(remoteTableDef)
                 )
 
                 val illegalSchemaExtension: Option[UpdateOperation.IllegalSchemaExtension] =
@@ -60,7 +61,8 @@ object TableUpdateOperation {
                         partitioning,
                         description,
                         clustering,
-                        labels
+                        labels,
+                        partitionFilterRequired
                       ) = localTableDef
 
                       existingRemoteTable.toBuilder
@@ -76,6 +78,14 @@ object TableUpdateOperation {
                             .setClustering(clusteringFrom(clustering).orNull)
                             .build()
                         }
+                        .setRequirePartitionFilter(
+                          // Override partitionFilterRequired flag if the table is not partitioned.
+                          partitioning match {
+                            case BQPartitionType.DatePartitioned(_) => partitionFilterRequired
+                            case BQPartitionType.MonthPartitioned(_) => partitionFilterRequired
+                            case _ => false
+                          }
+                        )
                         .setDescription(description.orNull)
                         .setLabels(labels.forUpdate(Some(remoteAsTableDef)))
                         .build()
@@ -149,7 +159,8 @@ object TableUpdateOperation {
                   description = Option(existingRemoteTable.getDescription),
                   // note: we decided to not sync labels to BQ for MVs.
                   // this is because we have to recompute the whole thing on any label change.
-                  labels = localTableDef.labels // TableLabels.fromTableInfo(existingRemoteTable)
+                  labels = localTableDef.labels, // TableLabels.fromTableInfo(existingRemoteTable)
+                  partitionFilterRequired = getRequirePartitionFilterSafely(remoteMVDef)
                 )
 
                 def outline(field: BQField): BQField =
@@ -159,9 +170,17 @@ object TableUpdateOperation {
                     subFields = field.subFields.map(outline)
                   )
 
-                // materialized views are given a schema, but we cant affect it in any way.
                 val patchedLocalMVDef =
-                  localTableDef.copy(schema = BQSchema(localTableDef.schema.fields.map(outline)))
+                  localTableDef.copy(
+                    // Materialized views are given a schema, but we cant affect it in any way.
+                    schema = BQSchema(localTableDef.schema.fields.map(outline)),
+                    // Override partitionFilterRequired flag if the view is not partitioned.
+                    partitionFilterRequired = localTableDef.partitionType match {
+                      case BQPartitionType.DatePartitioned(_) => localTableDef.partitionFilterRequired
+                      case BQPartitionType.MonthPartitioned(_) => localTableDef.partitionFilterRequired
+                      case _ => false
+                    }
+                  )
 
                 if (patchedLocalMVDef == remoteAsTableDef)
                   UpdateOperation.Noop(TableDefOperationMeta(existingRemoteTable, localTableDef))
@@ -211,6 +230,7 @@ object TableUpdateOperation {
           newTable(
             tableId.underlying,
             ViewDefinition.of(query.asStringWithUDFs),
+            partitionFilterRequired = false,
             description,
             labels
           )
@@ -234,7 +254,8 @@ object TableUpdateOperation {
             partitionType,
             description,
             clustering,
-            labels
+            labels,
+            partitionFilterRequired
           ) =>
         val toCreate: TableInfo =
           newTable(
@@ -245,6 +266,7 @@ object TableUpdateOperation {
               .setRangePartitioning(partitionType.rangePartitioning.orNull)
               .setClustering(clusteringFrom(clustering).orNull)
               .build,
+            partitionFilterRequired,
             description,
             labels
           )
@@ -258,7 +280,8 @@ object TableUpdateOperation {
             enableRefresh,
             refreshIntervalMs,
             description,
-            labels
+            labels,
+            partitionFilterRequired
           ) =>
         val toCreate: TableInfo =
           newTable(
@@ -271,6 +294,7 @@ object TableUpdateOperation {
               .setTimePartitioning(partitionType.timePartitioning.orNull)
               .setRangePartitioning(partitionType.rangePartitioning.orNull)
               .build(),
+            partitionFilterRequired,
             description,
             labels
           )
@@ -281,11 +305,13 @@ object TableUpdateOperation {
   private def newTable(
       tableId: TableId,
       definition: TableDefinition,
+      partitionFilterRequired: Boolean,
       description: Option[String],
       labels: TableLabels
   ): TableInfo =
     TableInfo
       .newBuilder(tableId, definition)
+      .setRequirePartitionFilter(partitionFilterRequired)
       .setDescription(description.orNull)
       .setLabels(labels.forUpdate(maybeExistingTable = None))
       .build()
@@ -300,6 +326,19 @@ object TableUpdateOperation {
             .setFields(nonEmpty.map(_.value).asJava)
             .build()
         )
+    }
+
+  private def getRequirePartitionFilterSafely(remoteDef: TableDefinition): Boolean =
+    remoteDef match {
+      case mv: MaterializedViewDefinition =>
+        Option(mv.getTimePartitioning)
+          .flatMap(t => Option(t.getRequirePartitionFilter))
+          .exists(_.booleanValue())
+      case table: StandardTableDefinition =>
+        Option(table.getTimePartitioning)
+          .flatMap(t => Option(t.getRequirePartitionFilter))
+          .exists(_.booleanValue())
+      case _ => false
     }
 
 }
