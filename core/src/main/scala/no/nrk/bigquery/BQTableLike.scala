@@ -107,7 +107,8 @@ object BQTableDef {
       partitionType: BQPartitionType[P],
       description: Option[String] = None,
       clustering: List[Ident] = Nil,
-      labels: TableLabels = TableLabels.Empty
+      labels: TableLabels = TableLabels.Empty,
+      tableOptions: TableOptions = TableOptions.Empty
   ) extends BQTableDef[P] {
     def unpartitioned: Table[Unit] =
       withTableType(BQPartitionType.ignoredPartitioning(partitionType))
@@ -156,7 +157,8 @@ object BQTableDef {
       enableRefresh: Boolean = true, /* default from BQ */
       refreshIntervalMs: Long = 1800000, /* 30 minutes, default from BQ */
       description: Option[String] = None,
-      labels: TableLabels = TableLabels.Empty
+      labels: TableLabels = TableLabels.Empty,
+      tableOptions: TableOptions = TableOptions.Empty
   ) extends ViewLike[P] {
     override def unpartitioned: MaterializedView[Unit] =
       withTableType(BQPartitionType.ignoredPartitioning(partitionType))

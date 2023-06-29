@@ -385,4 +385,50 @@ class TableUpdateOperationTest extends FunSuite {
       case other => fail(other.toString)
     }
   }
+
+  test("updating partitionFilterRequired should result in update") {
+    def testTable(filter: Boolean) = BQTableDef.Table(
+      tableId,
+      BQSchema.of(a),
+      BQPartitionType.DatePartitioned(Ident("date")),
+      description = None,
+      clustering = Nil,
+      TableLabels.Empty,
+      tableOptions = TableOptions(partitionFilterRequired = filter)
+    )
+    def remote(filter: Boolean) = Some(
+      TableInfo
+        .newBuilder(
+          tableId.underlying,
+          StandardTableDefinition.newBuilder
+            .setSchema(BQSchema.of(a).toSchema)
+            .setTimePartitioning(
+              TimePartitioning
+                .newBuilder(Type.DAY)
+                .setField("date")
+                .build()
+            )
+            .build()
+        )
+        .setRequirePartitionFilter(filter)
+        .build()
+    )
+
+    TableUpdateOperation.from(testTable(true), remote(false)) match {
+      case UpdateOperation.UpdateTable(_, _, table) =>
+        assert(table.getRequirePartitionFilter)
+      case other => fail(other.toString)
+    }
+    TableUpdateOperation.from(testTable(false), remote(true)) match {
+      case UpdateOperation.UpdateTable(_, _, table) =>
+        assert(!table.getRequirePartitionFilter)
+      case other => fail(other.toString)
+    }
+    TableUpdateOperation.from(testTable(true), remote(true)) match {
+      case UpdateOperation.Noop(_) =>
+      case other => fail(other.toString)
+    }
+
+  }
+
 }
