@@ -394,7 +394,7 @@ class TableUpdateOperationTest extends FunSuite {
       description = None,
       clustering = Nil,
       TableLabels.Empty,
-      partitionFilterRequired = filter
+      tableOptions = TableOptions(partitionFilterRequired = filter)
     )
     def remote(filter: Boolean) = Some(
       TableInfo
@@ -406,11 +406,11 @@ class TableUpdateOperationTest extends FunSuite {
               TimePartitioning
                 .newBuilder(Type.DAY)
                 .setField("date")
-                .setRequirePartitionFilter(filter)
                 .build()
             )
             .build()
         )
+        .setRequirePartitionFilter(filter)
         .build()
     )
 

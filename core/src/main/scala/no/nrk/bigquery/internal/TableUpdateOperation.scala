@@ -35,7 +35,7 @@ object TableUpdateOperation {
                     .flatMap(_.getFields.asScala)
                     .map(Ident.apply),
                   labels = TableLabels.fromTableInfo(existingRemoteTable),
-                  partitionFilterRequired = getRequirePartitionFilterSafely(remoteTableDef)
+                  tableOptions = TableOptions.fromTableInfo(existingRemoteTable)
                 )
 
                 val illegalSchemaExtension: Option[UpdateOperation.IllegalSchemaExtension] =
@@ -62,7 +62,7 @@ object TableUpdateOperation {
                         description,
                         clustering,
                         labels,
-                        partitionFilterRequired
+                        tableOptions
                       ) = localTableDef
 
                       existingRemoteTable.toBuilder
@@ -81,8 +81,8 @@ object TableUpdateOperation {
                         .setRequirePartitionFilter(
                           // Override partitionFilterRequired flag if the table is not partitioned.
                           partitioning match {
-                            case BQPartitionType.DatePartitioned(_) => partitionFilterRequired
-                            case BQPartitionType.MonthPartitioned(_) => partitionFilterRequired
+                            case BQPartitionType.DatePartitioned(_) => tableOptions.partitionFilterRequired
+                            case BQPartitionType.MonthPartitioned(_) => tableOptions.partitionFilterRequired
                             case _ => false
                           }
                         )
@@ -160,7 +160,7 @@ object TableUpdateOperation {
                   // note: we decided to not sync labels to BQ for MVs.
                   // this is because we have to recompute the whole thing on any label change.
                   labels = localTableDef.labels, // TableLabels.fromTableInfo(existingRemoteTable)
-                  partitionFilterRequired = getRequirePartitionFilterSafely(remoteMVDef)
+                  tableOptions = TableOptions.fromTableInfo(existingRemoteTable)
                 )
 
                 def outline(field: BQField): BQField =
@@ -175,10 +175,10 @@ object TableUpdateOperation {
                     // Materialized views are given a schema, but we cant affect it in any way.
                     schema = BQSchema(localTableDef.schema.fields.map(outline)),
                     // Override partitionFilterRequired flag if the view is not partitioned.
-                    partitionFilterRequired = localTableDef.partitionType match {
-                      case BQPartitionType.DatePartitioned(_) => localTableDef.partitionFilterRequired
-                      case BQPartitionType.MonthPartitioned(_) => localTableDef.partitionFilterRequired
-                      case _ => false
+                    tableOptions = localTableDef.partitionType match {
+                      case BQPartitionType.DatePartitioned(_) => localTableDef.tableOptions
+                      case BQPartitionType.MonthPartitioned(_) => localTableDef.tableOptions
+                      case _ => localTableDef.tableOptions.copy(partitionFilterRequired = false)
                     }
                   )
 
@@ -230,7 +230,7 @@ object TableUpdateOperation {
           newTable(
             tableId.underlying,
             ViewDefinition.of(query.asStringWithUDFs),
-            partitionFilterRequired = false,
+            TableOptions.Empty,
             description,
             labels
           )
@@ -255,7 +255,7 @@ object TableUpdateOperation {
             description,
             clustering,
             labels,
-            partitionFilterRequired
+            tableOptions
           ) =>
         val toCreate: TableInfo =
           newTable(
@@ -266,7 +266,7 @@ object TableUpdateOperation {
               .setRangePartitioning(partitionType.rangePartitioning.orNull)
               .setClustering(clusteringFrom(clustering).orNull)
               .build,
-            partitionFilterRequired,
+            tableOptions,
             description,
             labels
           )
@@ -281,7 +281,7 @@ object TableUpdateOperation {
             refreshIntervalMs,
             description,
             labels,
-            partitionFilterRequired
+            tableOptions
           ) =>
         val toCreate: TableInfo =
           newTable(
@@ -294,7 +294,7 @@ object TableUpdateOperation {
               .setTimePartitioning(partitionType.timePartitioning.orNull)
               .setRangePartitioning(partitionType.rangePartitioning.orNull)
               .build(),
-            partitionFilterRequired,
+            tableOptions,
             description,
             labels
           )
@@ -305,13 +305,13 @@ object TableUpdateOperation {
   private def newTable(
       tableId: TableId,
       definition: TableDefinition,
-      partitionFilterRequired: Boolean,
+      tableOptions: TableOptions,
       description: Option[String],
       labels: TableLabels
   ): TableInfo =
     TableInfo
       .newBuilder(tableId, definition)
-      .setRequirePartitionFilter(partitionFilterRequired)
+      .setRequirePartitionFilter(tableOptions.partitionFilterRequired)
       .setDescription(description.orNull)
       .setLabels(labels.forUpdate(maybeExistingTable = None))
       .build()
@@ -327,18 +327,4 @@ object TableUpdateOperation {
             .build()
         )
     }
-
-  private def getRequirePartitionFilterSafely(remoteDef: TableDefinition): Boolean =
-    remoteDef match {
-      case mv: MaterializedViewDefinition =>
-        Option(mv.getTimePartitioning)
-          .flatMap(t => Option(t.getRequirePartitionFilter))
-          .exists(_.booleanValue())
-      case table: StandardTableDefinition =>
-        Option(table.getTimePartitioning)
-          .flatMap(t => Option(t.getRequirePartitionFilter))
-          .exists(_.booleanValue())
-      case _ => false
-    }
-
 }
