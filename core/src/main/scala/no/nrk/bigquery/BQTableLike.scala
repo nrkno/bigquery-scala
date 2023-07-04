@@ -73,7 +73,7 @@ object BQTableLike {
   * a non-partitioned and a date-partitioned table into a list (or otherwise lose precise types), you also lose the
   * ability to construct legal [[BQPartitionId]] s with `assertPartition`
   */
-case class BQTableRef[+P](tableId: BQTableId, partitionType: BQPartitionType[P]) extends BQTableLike[P] {
+case class BQTableRef[+P](tableId: BQTableId, partitionType: BQPartitionType[P], labels: TableLabels = TableLabels.Empty) extends BQTableLike[P] {
   override def unpartitioned: BQTableRef[Unit] =
     withTableType(BQPartitionType.ignoredPartitioning(partitionType))
 

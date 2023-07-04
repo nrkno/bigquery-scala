@@ -424,7 +424,7 @@ object BQSmokeTest {
       case p @ BQSqlFrag.PartitionRef(pid) =>
         val schemaOpt: Option[BQSchema] =
           pid.wholeTable match {
-            case BQTableRef(_, _) => None
+            case BQTableRef(_, _, _) => None
             case x: BQTableDef[Any] => Some(x.schema)
           }
 
