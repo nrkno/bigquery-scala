@@ -78,7 +78,11 @@ sealed trait BQSqlFrag {
         case BQSqlFrag.Frag(_) => Nil
         case BQSqlFrag.Call(_, args) => args
         case BQSqlFrag.Combined(values) => values.toList
-        case BQSqlFrag.PartitionRef(_) => Nil
+        case BQSqlFrag.PartitionRef(ref) =>
+          ref.wholeTable match {
+            case tableDef: BQTableDef.ViewLike[_] => List(tableDef.query)
+            case _ => Nil
+          }
         case BQSqlFrag.FillRef(_) => Nil
         case BQSqlFrag.FilledTableRef(_) => Nil
       }
@@ -112,12 +116,46 @@ sealed trait BQSqlFrag {
     run(innerBodies(this :: Nil, Nil), Nil, pf.lift) ++ run(this :: Nil, Nil, pf.lift)
   }
 
-  final def allReferencedAsPartitions: Seq[BQPartitionId[Any]] =
-    this.collect {
-      case BQSqlFrag.PartitionRef(ref) => ref
-      case BQSqlFrag.FillRef(fill) => fill.destination
-      case BQSqlFrag.FilledTableRef(fill) => fill.tableDef.unpartitioned.assertPartition
-    }.distinct
+  final def allReferencedAsPartitions: Seq[BQPartitionId[Any]] = allReferencedTablesAsPartitions(ignoreLabels = TableLabels.Empty)
+  final def allReferencedAsPartitions(ignoreLabels: TableLabels): Seq[BQPartitionId[Any]] =
+    this
+      .collect {
+        case BQSqlFrag.PartitionRef(ref) => ref
+        case BQSqlFrag.FillRef(fill) => fill.destination
+        case BQSqlFrag.FilledTableRef(fill) => fill.tableDef.unpartitioned.assertPartition
+      }
+      .distinct
+      .collect { pid =>
+        pid.wholeTable match {
+          case tableDef: BQTableDef[_] if !tableDef.labels.contains(ignoreLabels) => pid
+          case ref: BQTableRef[_] if !ref.labels.contains(ignoreLabels) => pid
+        }
+      }
+
+  final def allReferencedTables: Seq[BQTableLike[Any]] = allReferencedTables(ignoreLabels = TableLabels.Empty)
+  final def allReferencedTables(ignoreLabels: TableLabels): Seq[BQTableLike[Any]] =
+    this
+      .collect {
+        case BQSqlFrag.PartitionRef(ref) => ref.wholeTable
+        case BQSqlFrag.FillRef(fill) => fill.tableDef
+        case BQSqlFrag.FilledTableRef(fill) => fill.tableDef
+      }
+      .distinct
+      .collect {
+        case ref: BQTableRef[_] if !ref.labels.contains(ignoreLabels)  => ref
+        case tableDef: BQTableDef.Table[_] if !tableDef.labels.contains(ignoreLabels) => tableDef
+      }
+
+  final def allReferencedTablesAsPartitions: Seq[BQPartitionId[Any]] = allReferencedTablesAsPartitions(ignoreLabels = TableLabels.Empty)
+  final def allReferencedTablesAsPartitions(ignoreLabels: TableLabels = TableLabels.Empty): Seq[BQPartitionId[Any]] =
+   allReferencedAsPartitions(ignoreLabels)
+      .collect { pid =>
+        pid.wholeTable match {
+          case _: BQTableDef.Table[_] => pid
+          case _: BQTableDef.MaterializedView[_] => pid
+          case _: BQTableRef[_] => pid
+        }
+      }
 
   final def allReferencedUDFs: Seq[UDF[UDF.UDFId]] =
     this.collect { case BQSqlFrag.Call(udf, _) => udf }.distinct
