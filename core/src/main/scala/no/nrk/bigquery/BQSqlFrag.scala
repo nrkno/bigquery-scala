@@ -113,9 +113,8 @@ sealed trait BQSqlFrag {
   }
 
   final def allReferencedAsPartitions: Seq[BQPartitionId[Any]] =
-    allReferencedAsPartitions(ignoreLabels = TableLabels.Empty , expandAndExcludeViews = true)
-
-  final def allReferencedAsPartitions(ignoreLabels: TableLabels, expandAndExcludeViews: Boolean): Seq[BQPartitionId[Any]] = {
+    allReferencedAsPartitions(expandAndExcludeViews = true)
+  final def allReferencedAsPartitions(expandAndExcludeViews: Boolean): Seq[BQPartitionId[Any]] = {
     def pf: PartialFunction[BQSqlFrag, List[BQPartitionId[Any]]] = {
       case BQSqlFrag.PartitionRef(ref) =>
         ref.wholeTable match {
@@ -126,28 +125,16 @@ sealed trait BQSqlFrag {
       case BQSqlFrag.FilledTableRef(fill) => List(fill.tableDef.unpartitioned.assertPartition)
     }
 
-    this
-      .collect(pf)
-      .flatten
-      .distinct
-      .collect { pid =>
-        pid.wholeTable match {
-          case tableDef: BQTableDef[_] if !tableDef.labels.contains(ignoreLabels) => pid
-          case ref: BQTableRef[_] if !ref.labels.contains(ignoreLabels) => pid
-        }
-      }
+    this.collect(pf).flatten.distinct
   }
 
-  final def allReferencedTables: Seq[BQTableLike[Any]] = allReferencedTables(ignoreLabels = TableLabels.Empty)
-  final def allReferencedTables(ignoreLabels: TableLabels): Seq[BQTableLike[Any]] =
-    allReferencedAsPartitions(ignoreLabels, expandAndExcludeViews = true)
+  final def allReferencedTables: Seq[BQTableLike[Any]] =
+    allReferencedAsPartitions(expandAndExcludeViews = true)
       .map(_.wholeTable)
       .filterNot(tableLike => tableLike.isInstanceOf[BQTableDef.View[_]])
 
   final def allReferencedTablesAsPartitions: Seq[BQPartitionId[Any]] =
-    allReferencedTablesAsPartitions(ignoreLabels = TableLabels.Empty)
-  final def allReferencedTablesAsPartitions(ignoreLabels: TableLabels): Seq[BQPartitionId[Any]] =
-    allReferencedAsPartitions(ignoreLabels, expandAndExcludeViews = true)
+    allReferencedAsPartitions(expandAndExcludeViews = true)
       .filterNot(pid => pid.wholeTable.isInstanceOf[BQTableDef.View[_]])
 
   final def allReferencedUDFs: Seq[UDF[UDF.UDFId]] =
