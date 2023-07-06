@@ -48,6 +48,13 @@ case class TableLabels(values: SortedMap[String, String]) {
   def ++(other: TableLabels): TableLabels =
     withAll(other.values)
 
+  def contains(tableLabels: TableLabels): Boolean =
+    if (tableLabels.values.nonEmpty) {
+      tableLabels.values.forall { case (key, value) =>
+        values.get(key).contains(value)
+      }
+    } else false
+
   /** This method is needed for the case where we delete a label. It is deleted by setting it to `null`.
     *
     * As such, we need to know the labels of a table in production before we compute the new set of labels to use when
