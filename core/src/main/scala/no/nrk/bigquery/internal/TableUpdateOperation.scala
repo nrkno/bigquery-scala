@@ -83,7 +83,7 @@ object TableUpdateOperation {
                           partitioning match {
                             case BQPartitionType.DatePartitioned(_) => tableOptions.partitionFilterRequired
                             case BQPartitionType.MonthPartitioned(_) => tableOptions.partitionFilterRequired
-                            case _ => false
+                            case _ => null
                           }
                         )
                         .setDescription(description.orNull)
@@ -308,13 +308,19 @@ object TableUpdateOperation {
       tableOptions: TableOptions,
       description: Option[String],
       labels: TableLabels
-  ): TableInfo =
-    TableInfo
+  ): TableInfo = {
+    val builder = TableInfo
       .newBuilder(tableId, definition)
-      .setRequirePartitionFilter(tableOptions.partitionFilterRequired)
       .setDescription(description.orNull)
       .setLabels(labels.forUpdate(maybeExistingTable = None))
-      .build()
+
+    // For some reason requirePartitionFilter = false <> requirePartitionFilter = null
+    if (tableOptions.partitionFilterRequired) {
+      builder.setRequirePartitionFilter(tableOptions.partitionFilterRequired).build()
+    } else {
+      builder.build()
+    }
+  }
 
   private def clusteringFrom(clustering: List[Ident]): Option[Clustering] =
     clustering match {
