@@ -114,7 +114,7 @@ lazy val core = crossProject(JVMPlatform)
       "com.google.cloud" % "google-cloud-bigquery" % "2.29.0",
       "com.google.cloud" % "google-cloud-bigquerystorage" % "2.39.1",
       "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.20.0",
-      "org.apache.avro" % "avro" % "1.11.1",
+      "org.apache.avro" % "avro" % "1.11.2",
       "com.lihaoyi" %% "sourcecode" % "0.3.0",
       "org.typelevel" %% "log4cats-slf4j" % "2.6.0",
       "io.circe" %% "circe-generic" % "0.14.5",
