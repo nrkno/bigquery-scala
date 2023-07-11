@@ -43,7 +43,10 @@ case class BQField(
   def isRequired: Boolean = mode == Field.Mode.REQUIRED
 
   def withName(newName: String) = copy(name = newName)
+  def withDescription(desc: String) = copy(description = Some(desc))
+  def withoutDescription = copy(description = None)
   def required = copy(mode = Field.Mode.REQUIRED)
+  def repeated = copy(mode = Field.Mode.REPEATED)
 
   def withType(newType: StandardSQLTypeName) = copy(tpe = newType)
 

@@ -94,10 +94,11 @@ val commonSettings = Seq(
 
 lazy val root = tlCrossRootProject
   .settings(name := "bigquery-scala")
-  .aggregate(core, testing, prometheus, docs)
+  .aggregate(core, testing, prometheus, zetasql, docs)
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val core = crossProject(JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("core"))
   .settings(commonSettings)
@@ -141,6 +142,7 @@ lazy val core = crossProject(JVMPlatform)
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val prometheus = crossProject(JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("prometheus"))
   .settings(commonSettings)
@@ -153,7 +155,23 @@ lazy val prometheus = crossProject(JVMPlatform)
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
+lazy val zetasql = crossProject(JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("zetasql"))
+  .settings(commonSettings)
+  .dependsOn(core)
+  .settings(
+    name := "bigquery-zetasql",
+    libraryDependencies ++= Seq(
+      "com.google.zetasql.toolkit" % "zetasql-toolkit-core" % "0.3.3",
+      "org.scalameta" %% "munit" % "0.7.29"
+    )
+  )
+  .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
+
 lazy val testing = crossProject(JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("testing"))
   .dependsOn(core)
