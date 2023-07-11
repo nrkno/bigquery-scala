@@ -1,5 +1,6 @@
 package no.nrk.bigquery
 
+import cats.effect.IO
 import com.google.cloud.bigquery.Field.Mode
 import com.google.cloud.bigquery.{Field, StandardSQLTypeName}
 import com.google.zetasql.ZetaSQLType.TypeKind
@@ -11,18 +12,20 @@ import com.google.zetasql.{AnalyzerOptions, SimpleColumn, SimpleTable, StructTyp
 import scala.jdk.CollectionConverters._
 
 object ZetaSql {
-  def queryFields(frag: BQSqlFrag): List[BQField] = {
-    val builder = List.newBuilder[BQField]
-    analyze(frag).foreach(tree =>
-      tree.accept(new ResolvedNodes.Visitor {
-        override def visit(node: ResolvedNodes.ResolvedQueryStmt): Unit =
-          node.getOutputColumnList.asScala.foreach(col =>
-            builder += ZetaSql.fromColumnNameAndType(col.getColumn.getName, col.getColumn.getType))
-      }))
-    builder.result()
-  }
+  def queryFields(frag: BQSqlFrag): IO[List[BQField]] =
+    analyzeFirst(frag).map { res =>
+      val builder = List.newBuilder[BQField]
 
-  def analyze(frag: BQSqlFrag): Option[ResolvedNodes.ResolvedStatement] = {
+      res.foreach(tree =>
+        tree.accept(new ResolvedNodes.Visitor {
+          override def visit(node: ResolvedNodes.ResolvedQueryStmt): Unit =
+            node.getOutputColumnList.asScala.foreach(col =>
+              builder += ZetaSql.fromColumnNameAndType(col.getColumn.getName, col.getColumn.getType))
+        }))
+      builder.result()
+    }
+
+  def analyzeFirst(frag: BQSqlFrag): IO[Option[ResolvedNodes.ResolvedStatement]] = IO {
     val tables = frag.allReferencedTables
     val catalog = toCatalog(tables: _*)
     val rendered = frag.asString

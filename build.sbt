@@ -165,7 +165,8 @@ lazy val zetasql = crossProject(JVMPlatform)
     name := "bigquery-zetasql",
     libraryDependencies ++= Seq(
       "com.google.zetasql.toolkit" % "zetasql-toolkit-core" % "0.3.3",
-      "org.scalameta" %% "munit" % "0.7.29"
+      "org.scalameta" %% "munit" % "0.7.29",
+      "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     )
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)

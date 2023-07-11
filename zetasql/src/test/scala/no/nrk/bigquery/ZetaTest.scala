@@ -6,7 +6,7 @@ import no.nrk.bigquery.syntax.bqShowInterpolator
 
 import java.time.LocalDate
 
-class ZetaTest extends munit.FunSuite {
+class ZetaTest extends munit.CatsEffectSuite {
   private val table = BQTableDef.Table(
     BQTableId(BQDataset.of(ProjectId("com.example"), "example"), "test"),
     BQSchema.of(
@@ -24,9 +24,8 @@ class ZetaTest extends munit.FunSuite {
 
     val query = bqsql"select partitionDate, a, b, c from ${table.assertPartition(date)}"
 
-    val result = ZetaSql.queryFields(query)
     val expected = table.schema.fields.dropRight(1).map(_.recursivelyNullable.withoutDescription)
-    assertEquals(result, expected)
+    ZetaSql.queryFields(query).assertEquals(expected)
   }
 
   test("all fields should be selected from example") {
@@ -34,8 +33,7 @@ class ZetaTest extends munit.FunSuite {
 
     val query = bqsql"select partitionDate, a, b, c, d from ${table.assertPartition(date)}"
 
-    val result = ZetaSql.queryFields(query)
     val expected = table.schema.fields.map(_.recursivelyNullable.withoutDescription)
-    assertEquals(result, expected)
+    ZetaSql.queryFields(query).assertEquals(expected)
   }
 }
