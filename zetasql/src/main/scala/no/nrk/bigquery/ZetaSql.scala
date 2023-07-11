@@ -37,7 +37,7 @@ object ZetaSql {
     val analyser = new toolkit.ZetaSQLToolkitAnalyzer(analyzerOptions)
     val analyzed = analyser.analyzeStatements(rendered, catalog)
 
-    analyzed.asScala.nextOption()
+    if (analyzed.hasNext) Option(analyzed.next()) else None
   }
 
   def toCatalog(tables: BQTableLike[Any]*): BasicCatalogWrapper = {
