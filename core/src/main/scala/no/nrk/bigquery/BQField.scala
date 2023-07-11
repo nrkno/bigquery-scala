@@ -45,8 +45,11 @@ case class BQField(
   def withName(newName: String) = copy(name = newName)
   def withDescription(desc: String) = copy(description = Some(desc))
   def withoutDescription = copy(description = None)
+
+  @deprecated("use withRequired instead", "0.8.2")
   def required = copy(mode = Field.Mode.REQUIRED)
-  def repeated = copy(mode = Field.Mode.REPEATED)
+  def withRequired = copy(mode = Field.Mode.REQUIRED)
+  def withRepeated = copy(mode = Field.Mode.REPEATED)
 
   def withType(newType: StandardSQLTypeName) = copy(tpe = newType)
 

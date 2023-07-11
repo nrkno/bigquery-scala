@@ -1,7 +1,6 @@
 package no.nrk.bigquery
 
 import cats.effect.IO
-import com.google.cloud.bigquery.Field.Mode
 import com.google.cloud.bigquery.{Field, StandardSQLTypeName}
 import com.google.zetasql.ZetaSQLType.TypeKind
 import com.google.zetasql.resolvedast.ResolvedCreateStatementEnums.{CreateMode, CreateScope}
