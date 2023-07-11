@@ -59,6 +59,7 @@ ThisBuild / tlVersionIntroduced := Map(
   "3" -> "0.1.1",
   "2.13" -> "0.1.0"
 )
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11"))
 
 val commonSettings = Seq(
   resolvers += "MyGet - datahub".at(s"https://nrk.myget.org/F/datahub/maven/"),
