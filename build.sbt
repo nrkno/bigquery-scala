@@ -59,6 +59,7 @@ ThisBuild / tlVersionIntroduced := Map(
   "3" -> "0.1.1",
   "2.13" -> "0.1.0"
 )
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11"))
 
 val commonSettings = Seq(
   resolvers += "MyGet - datahub".at(s"https://nrk.myget.org/F/datahub/maven/"),
@@ -94,7 +95,7 @@ val commonSettings = Seq(
 
 lazy val root = tlCrossRootProject
   .settings(name := "bigquery-scala")
-  .aggregate(core, testing, prometheus, docs)
+  .aggregate(core, testing, prometheus, zetasql, docs)
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val core = crossProject(JVMPlatform)
@@ -155,6 +156,23 @@ lazy val prometheus = crossProject(JVMPlatform)
     name := "bigquery-prometheus",
     libraryDependencies ++= Seq(
       "io.prometheus" % "simpleclient" % "0.16.0"
+    )
+  )
+  .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
+
+lazy val zetasql = crossProject(JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("zetasql"))
+  .settings(commonSettings)
+  .dependsOn(core)
+  .settings(
+    name := "bigquery-zetasql",
+    tlMimaPreviousVersions := Set.empty,
+    libraryDependencies ++= Seq(
+      "com.google.zetasql.toolkit" % "zetasql-toolkit-bigquery" % "0.4.0",
+      "org.scalameta" %% "munit" % "0.7.29",
+      "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     )
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
