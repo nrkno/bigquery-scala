@@ -24,7 +24,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         scala: [2.13.11, 2.12.18, 3.3.0]
-        java: [temurin@8]
+        java: [temurin@11]
         project: [rootJVM]
     runs-on: ${{ matrix.os }}
     steps:
@@ -33,21 +33,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download Java (temurin@8)
-        id: download-java-temurin-8
-        if: matrix.java == 'temurin@8'
+      - name: Download Java (temurin@11)
+        id: download-java-temurin-11
+        if: matrix.java == 'temurin@11'
         uses: typelevel/download-java@v2
         with:
           distribution: temurin
-          java-version: 8
+          java-version: 11
 
-      - name: Setup Java (temurin@8)
-        if: matrix.java == 'temurin@8'
+      - name: Setup Java (temurin@11)
+        if: matrix.java == 'temurin@11'
         uses: actions/setup-java@v3
         with:
           distribution: jdkfile
-          java-version: 8
-          jdkFile: ${{ steps.download-java-temurin-8.outputs.jdkFile }}
+          java-version: 11
+          jdkFile: ${{ steps.download-java-temurin-11.outputs.jdkFile }}
 
       - name: Cache sbt
         uses: actions/cache@v3
@@ -65,7 +65,7 @@ jobs:
         run: sbt githubWorkflowCheck
 
       - name: Check formatting
-        if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-latest'
+        if: matrix.java == 'temurin@11' && matrix.os == 'ubuntu-latest'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' scalafmtCheckAll 'project /' scalafmtSbtCheck
 
       - name: Test
@@ -75,23 +75,23 @@ jobs:
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' test
 
       - name: Check binary compatibility
-        if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-latest'
+        if: matrix.java == 'temurin@11' && matrix.os == 'ubuntu-latest'
         env:
           MYGET_USERNAME: ${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_ID }}
           MYGET_PASSWORD: ${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_SECRET }}
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' mimaReportBinaryIssues
 
       - name: Generate API documentation
-        if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-latest'
+        if: matrix.java == 'temurin@11' && matrix.os == 'ubuntu-latest'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' doc
 
       - name: Make target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-        run: mkdir -p target .js/target site/target prometheus/.jvm/target testing/.jvm/target .jvm/target .native/target core/.jvm/target project/target
+        run: mkdir -p target .js/target site/target prometheus/.jvm/target testing/.jvm/target .jvm/target .native/target core/.jvm/target zetasql/.jvm/target project/target
 
       - name: Compress target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-        run: tar cf targets.tar target .js/target site/target prometheus/.jvm/target testing/.jvm/target .jvm/target .native/target core/.jvm/target project/target
+        run: tar cf targets.tar target .js/target site/target prometheus/.jvm/target testing/.jvm/target .jvm/target .native/target core/.jvm/target zetasql/.jvm/target project/target
 
       - name: Upload target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
@@ -107,7 +107,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        java: [temurin@8]
+        java: [temurin@11]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (full)
@@ -115,21 +115,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download Java (temurin@8)
-        id: download-java-temurin-8
-        if: matrix.java == 'temurin@8'
+      - name: Download Java (temurin@11)
+        id: download-java-temurin-11
+        if: matrix.java == 'temurin@11'
         uses: typelevel/download-java@v2
         with:
           distribution: temurin
-          java-version: 8
+          java-version: 11
 
-      - name: Setup Java (temurin@8)
-        if: matrix.java == 'temurin@8'
+      - name: Setup Java (temurin@11)
+        if: matrix.java == 'temurin@11'
         uses: actions/setup-java@v3
         with:
           distribution: jdkfile
-          java-version: 8
-          jdkFile: ${{ steps.download-java-temurin-8.outputs.jdkFile }}
+          java-version: 11
+          jdkFile: ${{ steps.download-java-temurin-11.outputs.jdkFile }}
 
       - name: Cache sbt
         uses: actions/cache@v3
