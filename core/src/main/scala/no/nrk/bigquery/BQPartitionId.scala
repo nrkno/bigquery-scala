@@ -46,6 +46,16 @@ object BQPartitionId {
   implicit def shows[Pid <: BQPartitionId[Any]]: Show[Pid] =
     pid => pid.asTableId.asString
 
+  final case class WholeTable(wholeTable: BQTableLike[LocalDate]) extends BQPartitionId[LocalDate] {
+    override val partition: LocalDate = LocalDate.of(2023, 1 ,1)
+
+    def asSubQuery: BQSqlFrag =
+      bqfr"""(select * from ${wholeTable.tableId.asFragment}"""
+
+    def asTableId: BQTableId = wholeTable.tableId
+    override def partitionString: String = ""
+  }
+
   final case class DatePartitioned(
       wholeTable: BQTableLike[LocalDate],
       partition: LocalDate

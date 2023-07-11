@@ -4,6 +4,7 @@ import cats.syntax.all._
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.BQSqlFrag.asSubQuery
 
+import java.time.LocalDate
 import scala.annotation.tailrec
 
 /* The result of building a BigQuery sql. The `Frag` part of the name was chosen because it can be a fragment and not a complete query */
@@ -57,6 +58,7 @@ sealed trait BQSqlFrag {
 
       case BQSqlFrag.PartitionRef(partitionId) =>
         partitionId match {
+          case x @ BQPartitionId.WholeTable(_) => x.asSubQuery.asString
           case x @ BQPartitionId.MonthPartitioned(_, _) => x.asSubQuery.asString
           case x @ BQPartitionId.DatePartitioned(_, _) => x.asSubQuery.asString
           case x @ BQPartitionId.Sharded(_, _) =>
@@ -133,9 +135,13 @@ sealed trait BQSqlFrag {
       .map(_.wholeTable)
       .filterNot(tableLike => tableLike.isInstanceOf[BQTableDef.View[_]])
 
-  final def allReferencedTablesAsPartitions: Seq[BQPartitionId[Any]] =
+  final def allReferencedTablesAsPartitions(queryDate: LocalDate): Seq[BQPartitionId[Any]] =
     allReferencedAsPartitions(expandAndExcludeViews = true)
       .filterNot(pid => pid.wholeTable.isInstanceOf[BQTableDef.View[_]])
+      .collect{
+        case BQPartitionId.WholeTable(table) => table.assertPartition(queryDate)
+        case pid => pid
+      }
 
   final def allReferencedUDFs: Seq[UDF[UDF.UDFId]] =
     this.collect { case BQSqlFrag.Call(udf, _) => udf }.distinct

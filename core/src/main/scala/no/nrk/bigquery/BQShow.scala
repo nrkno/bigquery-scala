@@ -76,6 +76,9 @@ trait BQShowInstances {
   ]: BQShow[I[Pid]] =
     partitions => BQSqlFrag.Combined(partitions.map(bqShowsBQPartitionId[Pid].bqShow).toSeq)
 
+  implicit def bqShowTableLikeLocalDate[T <: BQTableLike[LocalDate]]: BQShow[T] =
+    x => BQPartitionId.WholeTable(x).bqShow
+
   implicit def bqShowTableLike[T <: BQTableLike[Unit]]: BQShow[T] =
     x => x.assertPartition.bqShow
 
