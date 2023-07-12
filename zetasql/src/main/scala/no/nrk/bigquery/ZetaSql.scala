@@ -1,5 +1,6 @@
 package no.nrk.bigquery
 
+import cats.syntax.all._
 import cats.effect.IO
 import com.google.cloud.bigquery.{Field, StandardSQLTypeName}
 import com.google.zetasql.ZetaSQLType.TypeKind
@@ -11,13 +12,14 @@ import com.google.zetasql._
 import scala.jdk.CollectionConverters._
 
 object ZetaSql {
-  def parse(frag: BQSqlFrag): IO[Either[SqlException, BQSqlFrag]] = IO.interruptible {
+  def parse(frag: BQSqlFrag): IO[Either[SqlException, BQSqlFrag]] = parseScript(frag).map(_.as(frag))
+
+  def parseScript(frag: BQSqlFrag): IO[Either[SqlException, parser.ASTNodes.ASTScript]] = IO.interruptible {
     val options = toolkit.options.BigQueryLanguageOptions.get()
 
-    try {
-      Parser.parseScript(frag.asString, options)
-      Right(frag)
-    } catch {
+    try
+      Right(Parser.parseScript(frag.asString, options))
+    catch {
       case e: SqlException => Left(e) // only catch sql exception and let all others bubble up to IO
     }
   }
