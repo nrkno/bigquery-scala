@@ -56,7 +56,7 @@ sealed trait BQSqlFrag {
           .PartitionRef(fill.tableDef.unpartitioned.assertPartition)
           .asString
 
-      case BQSqlFrag.TableRef(table) => table.tableId.asString
+      case BQSqlFrag.TableRef(table) => table.tableId.asFragment.asString
 
       case BQSqlFrag.PartitionRef(partitionId) =>
         partitionId match {
