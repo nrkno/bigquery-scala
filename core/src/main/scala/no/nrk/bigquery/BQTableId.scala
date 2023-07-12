@@ -45,6 +45,19 @@ object BQTableId {
     BQTableId(dataset, tableId.getTable)
   }
 
+  def unsafeFromString(id: String): BQTableId =
+    fromString(id).fold(
+      err => throw new IllegalArgumentException(err),
+      identity
+    )
+
+  def fromString(id: String): Either[String, BQTableId] =
+    id.split("\\.", 3) match {
+      case Array(project, dataset, tableName) =>
+        Right(BQTableId(BQDataset(ProjectId(project), dataset, None), tableName))
+      case _ => Left(s"Expected [projectId].[datasetId].[tableName] but got ${id}")
+    }
+
   implicit val show: Show[BQTableId] =
     Show.show(_.asFragment.asString)
 
