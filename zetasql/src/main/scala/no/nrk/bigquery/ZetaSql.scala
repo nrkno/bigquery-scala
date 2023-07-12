@@ -75,7 +75,7 @@ object ZetaSql {
       case TypeKind.TYPE_TIME => StandardSQLTypeName.TIME
       case TypeKind.TYPE_GEOGRAPHY => StandardSQLTypeName.GEOGRAPHY
       case TypeKind.TYPE_INTERVAL => StandardSQLTypeName.INTERVAL
-      case _ => ???
+      case _ => throw new IllegalArgumentException(s"$name with type ${typ.debugString()} is not supported ")
     }
 
     if (typ.isArray) {
@@ -110,7 +110,8 @@ object ZetaSql {
               .map(sub => new StructType.StructField(sub.name, toType(sub)))
               .asJavaCollection
           )
-        case StandardSQLTypeName.ARRAY => ???
+        case StandardSQLTypeName.ARRAY =>
+          throw new IllegalArgumentException(s"${field.name} with type ARRAY is not supported")
         case StandardSQLTypeName.TIMESTAMP => TypeFactory.createSimpleType(TypeKind.TYPE_TIMESTAMP)
         case StandardSQLTypeName.DATE => TypeFactory.createSimpleType(TypeKind.TYPE_DATE)
         case StandardSQLTypeName.TIME => TypeFactory.createSimpleType(TypeKind.TYPE_TIME)
