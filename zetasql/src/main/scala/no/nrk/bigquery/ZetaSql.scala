@@ -11,7 +11,7 @@ import com.google.zetasql._
 import scala.jdk.CollectionConverters._
 
 object ZetaSql {
-  def parse(frag: BQSqlFrag): IO[Either[SqlException, BQSqlFrag]] = IO {
+  def parse(frag: BQSqlFrag): IO[Either[SqlException, BQSqlFrag]] = IO.blocking {
     val options = toolkit.options.BigQueryLanguageOptions.get()
 
     try {
@@ -35,7 +35,7 @@ object ZetaSql {
       builder.result()
     }
 
-  def analyzeFirst(frag: BQSqlFrag): IO[Option[ResolvedNodes.ResolvedStatement]] = IO {
+  def analyzeFirst(frag: BQSqlFrag): IO[Option[ResolvedNodes.ResolvedStatement]] = IO.blocking {
     val tables = frag.allReferencedTables
     val catalog = toCatalog(tables: _*)
     val rendered = frag.asString
