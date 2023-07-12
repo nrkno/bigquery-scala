@@ -4,7 +4,6 @@ import cats.syntax.all._
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.BQSqlFrag.asSubQuery
 
-import java.time.LocalDate
 import scala.annotation.tailrec
 
 /* The result of building a BigQuery sql. The `Frag` part of the name was chosen because it can be a fragment and not a complete query */
@@ -129,20 +128,18 @@ sealed trait BQSqlFrag {
         }
 
       case BQSqlFrag.TableRef(table) =>
-        (table, outerRef) match {
-          case (t: BQTableRef[LocalDate], Some(partitionRef: BQPartitionId.DatePartitioned)) =>
-            List(t.assertPartition(partitionRef.partition))
-          case (t: BQTableDef[LocalDate], Some(partitionRef: BQPartitionId.DatePartitioned)) =>
-            List(t.assertPartition(partitionRef.partition))
-          case _ => List(table.unpartitioned.assertPartition)
+        (table.partitionType, outerRef) match {
+          case (partitionType: BQPartitionType.DatePartitioned, Some(partitionRef: BQPartitionId.DatePartitioned)) =>
+            List(table.withTableType(partitionType).assertPartition(partitionRef.partition))
+          case (_, _) => List(table.unpartitioned.assertPartition)
         }
 
       case BQSqlFrag.FillRef(fill) => List(fill.destination)
       case BQSqlFrag.FilledTableRef(fill) =>
-        (fill.tableDef, outerRef) match {
-          case (t: BQTableDef.Table[LocalDate], Some(partitionRef: BQPartitionId.DatePartitioned)) =>
-            List(t.assertPartition(partitionRef.partition))
-          case _ => List(fill.tableDef.unpartitioned.assertPartition)
+        (fill.tableDef.partitionType, outerRef) match {
+          case (partitionType: BQPartitionType.DatePartitioned, Some(partitionRef: BQPartitionId.DatePartitioned)) =>
+            List(fill.tableDef.withTableType(partitionType).assertPartition(partitionRef.partition))
+          case (_, _) => List(fill.tableDef.unpartitioned.assertPartition)
         }
         List(fill.tableDef.unpartitioned.assertPartition)
     }
@@ -177,7 +174,7 @@ object BQSqlFrag {
     )
   }
   case class Combined(values: Seq[BQSqlFrag]) extends BQSqlFrag
-  case class TableRef(table: BQTableLike[_]) extends BQSqlFrag
+  case class TableRef(table: BQTableLike[Any]) extends BQSqlFrag
   case class PartitionRef(ref: BQPartitionId[Any]) extends BQSqlFrag
 
   case class FillRef(fill: BQFill[Any]) extends BQSqlFrag
