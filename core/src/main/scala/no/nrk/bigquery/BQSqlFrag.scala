@@ -129,8 +129,11 @@ sealed trait BQSqlFrag {
         }
 
       case BQSqlFrag.TableRef(table) =>
-        outerRef match {
-          case Some(partitionRef: BQPartitionId.DatePartitioned) => List(table.assertPartition(partitionRef.partition))
+        (table, outerRef) match {
+          case (t: BQTableRef[LocalDate], Some(partitionRef: BQPartitionId.DatePartitioned)) =>
+            List(t.assertPartition(partitionRef.partition))
+          case (t: BQTableDef[LocalDate], Some(partitionRef: BQPartitionId.DatePartitioned)) =>
+            List(t.assertPartition(partitionRef.partition))
           case _ => List(table.unpartitioned.assertPartition)
         }
 
@@ -174,7 +177,7 @@ object BQSqlFrag {
     )
   }
   case class Combined(values: Seq[BQSqlFrag]) extends BQSqlFrag
-  case class TableRef(table: BQTableLike[LocalDate]) extends BQSqlFrag
+  case class TableRef(table: BQTableLike[_]) extends BQSqlFrag
   case class PartitionRef(ref: BQPartitionId[Any]) extends BQSqlFrag
 
   case class FillRef(fill: BQFill[Any]) extends BQSqlFrag

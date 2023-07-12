@@ -82,6 +82,8 @@ trait BQShowInstances {
   implicit def bqShowTablesLike[I[t] <: Iterable[t], T <: BQTableLike[Unit]]: BQShow[I[T]] =
     tables => BQSqlFrag.Combined(tables.map(_.assertPartition.bqShow).toSeq)
 
+  implicit def bqShowWholeTable[P]: BQShow[WholeTable[P]] = x => BQSqlFrag.TableRef(x.table)
+
   implicit def bqShowFill[Fill <: BQFill[Any]]: BQShow[Fill] =
     BQSqlFrag.FillRef.apply
 
