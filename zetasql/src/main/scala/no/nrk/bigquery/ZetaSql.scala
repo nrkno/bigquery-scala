@@ -6,11 +6,22 @@ import com.google.zetasql.ZetaSQLType.TypeKind
 import com.google.zetasql.resolvedast.ResolvedCreateStatementEnums.{CreateMode, CreateScope}
 import com.google.zetasql.resolvedast.ResolvedNodes
 import com.google.zetasql.toolkit.catalog.basic.BasicCatalogWrapper
-import com.google.zetasql.{AnalyzerOptions, SimpleColumn, SimpleTable, StructType, Type, TypeFactory, toolkit}
+import com.google.zetasql._
 
 import scala.jdk.CollectionConverters._
 
 object ZetaSql {
+  def parse(frag: BQSqlFrag): IO[Either[SqlException, BQSqlFrag]] = IO {
+    val options = toolkit.options.BigQueryLanguageOptions.get()
+
+    try {
+      Parser.parseScript(frag.asString, options)
+      Right(frag)
+    } catch {
+      case e: SqlException => Left(e) // only catch sql exception and let all others bubble up to IO
+    }
+  }
+
   def queryFields(frag: BQSqlFrag): IO[List[BQField]] =
     analyzeFirst(frag).map { res =>
       val builder = List.newBuilder[BQField]
