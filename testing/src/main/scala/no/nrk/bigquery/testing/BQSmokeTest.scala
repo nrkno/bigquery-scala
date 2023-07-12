@@ -439,6 +439,9 @@ object BQSmokeTest {
             (p, Nil)
         }
 
+      case BQSqlFrag.TableRef(table) =>
+        recurse(table.unpartitioned.assertPartition.bqShow)
+
       case BQSqlFrag.FilledTableRef(filledTable) =>
         recurse(filledTable.tableDef.unpartitioned.assertPartition.bqShow)
 
