@@ -17,7 +17,8 @@ import com.google.cloud.http.HttpTransportOptions
 import fs2.{Chunk, Stream}
 import io.circe.Encoder
 import no.nrk.bigquery.syntax.showJob
-import no.nrk.bigquery.internal.TableUpdateOperation
+import no.nrk.bigquery.internal.{PartitionTypeHelper, SchemaHelper, TableUpdateOperation}
+import no.nrk.bigquery.internal.GoogleTypeHelper._
 import no.nrk.bigquery.metrics.{BQMetrics, MetricsOps}
 import no.nrk.bigquery.util.StreamUtils
 import org.apache.avro
@@ -273,7 +274,7 @@ class BigQueryClient[F[_]](
         .newBuilder(partitionId.asTableId.underlying)
         .setWriteDisposition(writeDisposition)
         .setFormatOptions(formatOptions)
-        .setSchema(schema.toSchema)
+        .setSchema(SchemaHelper.toSchema(schema))
         .build()
 
       val writerResource: Resource[F, TableDataWriteChannel] =
@@ -511,10 +512,10 @@ class BigQueryClient[F[_]](
         .asScala
         .toVector
         .parTraverseFilter { table =>
-          val tableId = BQTableId.unsafeFromGoogle(dataset, table.getTableId)
+          val tableId = unsafeTableIdFromGoogle(dataset, table.getTableId)
           table.getDefinition[TableDefinition] match {
             case definition: StandardTableDefinition =>
-              BQPartitionType.from(definition) match {
+              PartitionTypeHelper.from(definition) match {
                 case Right(partitionType) =>
                   F.pure(Some(BQTableRef(tableId, partitionType)))
                 case Left(msg) =>

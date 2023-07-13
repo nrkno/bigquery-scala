@@ -1,8 +1,5 @@
 package no.nrk.bigquery
 
-import com.google.cloud.bigquery.{Field, FieldList, PolicyTags, StandardSQLTypeName}
-import scala.jdk.CollectionConverters._
-
 /** This is isomorphic to `Field` (can translate back and forth without data lass)
   *
   * We need this because
@@ -14,33 +11,22 @@ import scala.jdk.CollectionConverters._
   */
 case class BQField(
     name: String,
-    tpe: StandardSQLTypeName,
-    mode: Field.Mode,
+    tpe: BQField.Type,
+    mode: BQField.Mode,
     description: Option[String] = None,
     subFields: List[BQField] = Nil,
     policyTags: List[String] = Nil
 ) {
   val ident: Ident = Ident(name)
 
-  def toField: Field = {
-    val b = Field.newBuilder(name, tpe, subFields.map(_.toField): _*)
-    b.setMode(mode)
-    description.foreach(b.setDescription)
-    if (policyTags.nonEmpty)
-      b.setPolicyTags(
-        PolicyTags.newBuilder().setNames(policyTags.asJava).build()
-      )
-    b.build()
-  }
-
   /** see description in [[BQSchema.recursivelyNullable]] */
   def recursivelyNullable: BQField =
     copy(
-      mode = if (isRequired) Field.Mode.NULLABLE else mode,
+      mode = if (isRequired) BQField.Mode.NULLABLE else mode,
       subFields = subFields.map(_.recursivelyNullable)
     )
 
-  def isRequired: Boolean = mode == Field.Mode.REQUIRED
+  def isRequired: Boolean = mode == BQField.Mode.REQUIRED
 
   def withName(newName: String) = copy(name = newName)
 
@@ -50,31 +36,143 @@ case class BQField(
   def withoutDescription = copy(description = None)
 
   @deprecated("use withRequired instead", "0.9.0")
-  def required = copy(mode = Field.Mode.REQUIRED)
-  def withRequired = copy(mode = Field.Mode.REQUIRED)
-  def withRepeated = copy(mode = Field.Mode.REPEATED)
+  def required = copy(mode = BQField.Mode.REQUIRED)
+  def withRequired = copy(mode = BQField.Mode.REQUIRED)
+  def withRepeated = copy(mode = BQField.Mode.REPEATED)
 
-  def withType(newType: StandardSQLTypeName) = copy(tpe = newType)
+  def withType(newType: BQField.Type) = copy(tpe = newType)
 
   def addSubFields(newSubFields: BQField*) =
     withSubFields(subFields ::: newSubFields.toList)
   def withSubFields(newSubFields: List[BQField]) =
-    if (tpe == StandardSQLTypeName.STRUCT) copy(subFields = newSubFields) else this
+    if (tpe == BQField.Type.STRUCT) copy(subFields = newSubFields) else this
 
   def addPolicyTags(newTags: String*) = copy(policyTags = policyTags ::: newTags.toList)
   def withPolicyTags(newTags: List[String]) = copy(policyTags = newTags)
 }
 
 object BQField {
+  sealed abstract class Type(val name: String) extends Product with Serializable {
+    override def toString: String = name
+
+    override def equals(obj: Any): Boolean =
+      obj match {
+        case m: Type => m.name == name
+        case _ => false
+      }
+
+    override def hashCode(): Int = 31 * name.hashCode
+  }
+  object Type {
+
+    /** A Boolean value (true or false). */
+    case object BOOL extends Type("BOOL")
+
+    /** A 64-bit signed integer value. */
+    case object INT64 extends Type("INT64")
+
+    /** A 64-bit IEEE binary floating-point value. */
+    case object FLOAT64 extends Type("FLOAT64")
+
+    /** A decimal value with 38 digits of precision and 9 digits of scale. */
+    case object NUMERIC extends Type("NUMERIC")
+
+    /** A decimal value with 76+ digits of precision (the 77th digit is partial) and 38 digits of scale
+      */
+    case object BIGNUMERIC extends Type("BIGNUMERIC")
+
+    /** Variable-length character (Unicode) data. */
+    case object STRING extends Type("STRING")
+
+    /** Variable-length binary data. */
+    case object BYTES extends Type("BYTES")
+
+    /** Container of ordered fields each with a type (required) and field name (optional). */
+    case object STRUCT extends Type("STRUCT")
+
+    /** Ordered list of zero or more elements of any non-array type. */
+    case object ARRAY extends Type("ARRAY")
+
+    /** Represents an absolute point in time, with microsecond precision. Values range between the years 1 and 9999,
+      * inclusive.
+      */
+    case object TIMESTAMP extends Type("TIMESTAMP")
+
+    /** Represents a logical calendar date. Values range between the years 1 and 9999, inclusive. */
+    case object DATE extends Type("DATE")
+
+    /** Represents a time, independent of a specific date, to microsecond precision. */
+    case object TIME extends Type("TIME")
+
+    /** Represents a year, month, day, hour, minute, second, and subsecond (microsecond precision). */
+    case object DATETIME extends Type("DATETIME")
+
+    /** Represents a set of geographic points, represented as a Well Known Text (WKT) string. */
+    case object GEOGRAPHY extends Type("GEOGRAPHY")
+
+    /** Represents JSON data. */
+    case object JSON extends Type("JSON")
+
+    /** Represents duration or amount of time. */
+    case object INTERVAL extends Type("INTERVAL")
+
+    val values: List[Type] = List(
+      BOOL,
+      INT64,
+      FLOAT64,
+      NUMERIC,
+      BIGNUMERIC,
+      STRING,
+      BYTES,
+      STRUCT,
+      ARRAY,
+      TIMESTAMP,
+      DATE,
+      TIME,
+      DATETIME,
+      GEOGRAPHY,
+      JSON,
+      INTERVAL)
+
+    def fromString(name: String): Option[Type] = values.find(_.name == name.toUpperCase)
+
+    def unsafeFromString(name: String): Type =
+      fromString(name).getOrElse(throw new NoSuchElementException(s"$name is not a valid Type"))
+  }
+
+  sealed abstract class Mode(val name: String) extends Product with Serializable {
+    override def toString: String = name
+
+    override def equals(obj: Any): Boolean =
+      obj match {
+        case m: Mode => m.name == name
+        case _ => false
+      }
+
+    override def hashCode(): Int = 31 * name.hashCode
+  }
+  object Mode {
+    case object REQUIRED extends Mode("REQUIRED")
+    case object NULLABLE extends Mode("NULLABLE")
+    case object REPEATED extends Mode("REPEATED")
+
+    val values: List[Mode] = List(REQUIRED, NULLABLE, REPEATED)
+
+    def fromString(name: String): Option[Mode] = values.find(_.name == name.toUpperCase)
+
+    def unsafeFromString(name: String): Mode =
+      fromString(name).getOrElse(throw new NoSuchElementException(s"$name is not a valid Mode"))
+  }
+
   // convenience constructor for structs
   def struct(
       name: String,
-      mode: Field.Mode,
+      mode: BQField.Mode,
       description: Option[String] = None
   )(subFields: BQField*): BQField =
     BQField(
       name,
-      StandardSQLTypeName.STRUCT,
+      BQField.Type.STRUCT,
       mode,
       description,
       subFields.toList,
@@ -84,10 +182,10 @@ object BQField {
   // convenience constructor for arrays
   def repeated(
       name: String,
-      tpe: StandardSQLTypeName,
+      tpe: BQField.Type,
       description: Option[String] = None
   ): BQField =
-    BQField(name, tpe, Field.Mode.REPEATED, description, Nil, Nil)
+    BQField(name, tpe, BQField.Mode.REPEATED, description, Nil, Nil)
 
   // convenience constructor for repeated structs
   def repeatedStruct(name: String, description: Option[String] = None)(
@@ -95,41 +193,10 @@ object BQField {
   ): BQField =
     BQField(
       name,
-      StandardSQLTypeName.STRUCT,
-      Field.Mode.REPEATED,
+      BQField.Type.STRUCT,
+      BQField.Mode.REPEATED,
       description,
       subFields.toList,
       Nil
     )
-
-  def fromField(f: Field): BQField =
-    BQField(
-      name = f.getName,
-      mode = mapMode(f.getMode),
-      tpe = f.getType.getStandardType,
-      description = mapDescription(f.getDescription),
-      subFields = mapSubFields(f.getSubFields),
-      policyTags = Option(f.getPolicyTags)
-        .flatMap(pt => Option(pt.getNames))
-        .fold(List.empty[String])(_.asScala.toList)
-    )
-
-  def mapMode(mode: Field.Mode): Field.Mode =
-    mode match {
-      case null => Field.Mode.NULLABLE
-      case other => other
-    }
-
-  def mapDescription(description: String): Option[String] =
-    description match {
-      case null => None
-      case "" => None
-      case other => Some(other)
-    }
-
-  def mapSubFields(fs: FieldList): List[BQField] =
-    Option(fs) match {
-      case Some(fs) => fs.asScala.toList.map(fromField)
-      case None => List.empty
-    }
 }

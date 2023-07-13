@@ -1,7 +1,5 @@
 package no.nrk.bigquery
 
-import com.google.cloud.bigquery.DatasetId
-
 import java.util.regex.Pattern
 
 /** When you create a dataset in BigQuery, the dataset name must be unique for each project. The dataset name can
@@ -17,7 +15,6 @@ final case class BQDataset private[bigquery] (
     id: String,
     location: Option[LocationId]
 ) {
-  def underlying: DatasetId = DatasetId.of(project.value, id)
 
   def withLocation(locationId: LocationId): BQDataset = copy(location = Some(locationId))
   def withoutLocation: BQDataset = copy(location = None)

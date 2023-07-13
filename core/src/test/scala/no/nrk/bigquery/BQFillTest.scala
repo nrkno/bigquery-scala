@@ -1,6 +1,5 @@
 package no.nrk.bigquery
 
-import com.google.cloud.bigquery.{Field, StandardSQLTypeName}
 import munit.FunSuite
 import no.nrk.bigquery.syntax._
 
@@ -11,7 +10,7 @@ class BQFillTest extends FunSuite {
 
   private def tableId(name: String) = BQTableId(BQDataset(ProjectId("p1"), "d1", None), name)
 
-  private val c1 = BQField("c1", StandardSQLTypeName.DATE, Field.Mode.REQUIRED)
+  private val c1 = BQField("c1", BQField.Type.DATE, BQField.Mode.REQUIRED)
   private val source1: BQTableDef.Table[LocalDate] =
     BQTableDef.Table(tableId("src_1"), BQSchema(List(c1)), BQPartitionType.DatePartitioned(c1.ident))
   private val source2: BQTableDef.Table[LocalDate] =

@@ -2,7 +2,6 @@ package no.nrk.bigquery.util
 
 import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
-import com.google.cloud.bigquery.{Field, StandardSQLTypeName}
 
 object BqSqlProjection {
   case class TypedFragment(fragment: BQSqlFrag, tpe: BQField)
@@ -38,10 +37,10 @@ object BqSqlProjection {
       }
 
       field match {
-        case field if field.mode == Field.Mode.REPEATED =>
+        case field if field.mode == BQField.Mode.REPEATED =>
           // invent a field for the current element in the array
           val arrayElement =
-            field.copy(name = s"${field.name}Elem", mode = Field.Mode.REQUIRED)
+            field.copy(name = s"${field.name}Elem", mode = BQField.Mode.REQUIRED)
 
           val selectedElement = recurse(Nil, numIndent + 2, arrayElement, f)
 
@@ -69,7 +68,7 @@ object BqSqlProjection {
               val typedArraySelector = TypedFragment(
                 arraySelector,
                 uniqueSelector.tpe
-                  .copy(name = field.name, mode = Field.Mode.REPEATED)
+                  .copy(name = field.name, mode = BQField.Mode.REPEATED)
               )
               SelectedField(
                 Some(typedArraySelector),
@@ -89,7 +88,7 @@ object BqSqlProjection {
                   val typedArraySelector = TypedFragment(
                     arraySelector,
                     elemSelector.tpe
-                      .copy(name = field.name, mode = Field.Mode.REPEATED)
+                      .copy(name = field.name, mode = BQField.Mode.REPEATED)
                   )
                   SelectedField(
                     Some(typedArraySelector),
@@ -101,7 +100,7 @@ object BqSqlProjection {
               }
           }
 
-        case field if field.tpe == StandardSQLTypeName.STRUCT =>
+        case field if field.tpe == BQField.Type.STRUCT =>
           val selecteds: List[(Ident, Selected)] =
             field.subFields.flatMap { (subField: BQField) =>
               f(subField) match {
@@ -111,7 +110,7 @@ object BqSqlProjection {
 
                   // cosmetic: add alias only if needed
                   val selectedAliasedSubField =
-                    if (subField.tpe == StandardSQLTypeName.STRUCT || subField.tpe == StandardSQLTypeName.ARRAY || subField.mode == Field.Mode.REPEATED)
+                    if (subField.tpe == BQField.Type.STRUCT || subField.tpe == BQField.Type.ARRAY || subField.mode == BQField.Mode.REPEATED)
                       selectedSubField.forceField.withAlias(
                         Some(subField.ident)
                       )
