@@ -1,8 +1,8 @@
 package no.nrk.bigquery
 
 import cats.syntax.show._
-import com.google.cloud.bigquery.{Field, StandardSQLTypeName}
 import io.circe.{Decoder, Encoder}
+import no.nrk.bigquery
 
 import scala.annotation.nowarn
 
@@ -13,19 +13,19 @@ package object testing {
   implicit val encoderIdent: Encoder[Ident] = Encoder.encodeString.contramap(_.value)
 
   implicit lazy val encodeField: Encoder[BQField] = {
-    @nowarn implicit val encodesStandardSQLTypeName: Encoder[StandardSQLTypeName] =
-      Encoder[String].contramap(_.name())
+    @nowarn implicit val encodesStandardSQLTypeName: Encoder[BQField.Type] =
+      Encoder[String].contramap(_.name)
 
-    @nowarn implicit val encodesFieldMode: Encoder[Field.Mode] =
-      Encoder[String].contramap(_.name())
+    @nowarn implicit val encodesFieldMode: Encoder[bigquery.BQField.Mode] =
+      Encoder[String].contramap(_.name)
     io.circe.generic.semiauto.deriveEncoder
   }
 
   implicit lazy val decodeField: Decoder[BQField] = {
-    @nowarn implicit val decodesStandardSQLTypeName: Decoder[StandardSQLTypeName] =
-      Decoder[String].map(StandardSQLTypeName.valueOf)
-    @nowarn implicit val decodesFieldMode: Decoder[Field.Mode] =
-      Decoder[String].map(Field.Mode.valueOf)
+    @nowarn implicit val decodesStandardSQLTypeName: Decoder[BQField.Type] =
+      Decoder[String].map(BQField.Type.unsafeFromString)
+    @nowarn implicit val decodesFieldMode: Decoder[BQField.Mode] =
+      Decoder[String].map(BQField.Mode.unsafeFromString)
     io.circe.generic.semiauto.deriveDecoder
   }
 

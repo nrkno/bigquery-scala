@@ -1,17 +1,17 @@
 package no.nrk.bigquery.internal
 
-import com.google.cloud.bigquery.Field.Mode
 import com.google.cloud.bigquery.TimePartitioning.Type
 import com.google.cloud.bigquery.{Option => _, _}
 import munit.FunSuite
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery._
+import GoogleTypeHelper._
 
 class TableUpdateOperationTest extends FunSuite {
 
-  private val a = BQField("a", StandardSQLTypeName.INT64, Mode.REQUIRED)
-  private val b = BQField("b", StandardSQLTypeName.INT64, Mode.REQUIRED)
-  private val c = BQField("c", StandardSQLTypeName.INT64, Mode.REQUIRED)
+  private val a = BQField("a", BQField.Type.INT64, BQField.Mode.REQUIRED)
+  private val b = BQField("b", BQField.Type.INT64, BQField.Mode.REQUIRED)
+  private val c = BQField("c", BQField.Type.INT64, BQField.Mode.REQUIRED)
   private val viewId = BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset"), "view")
   private val tableId = BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset"), "table")
   private val materializedViewId =
@@ -57,7 +57,7 @@ class TableUpdateOperationTest extends FunSuite {
           viewId.underlying,
           ViewDefinition
             .newBuilder(query.asStringWithUDFs)
-            .setSchema(schema.toSchema)
+            .setSchema(SchemaHelper.toSchema(schema))
             .build()
         )
         .build()
@@ -100,7 +100,7 @@ class TableUpdateOperationTest extends FunSuite {
             viewId.underlying,
             ViewDefinition
               .newBuilder(query.asStringWithUDFs)
-              .setSchema(schema.toSchema)
+              .setSchema(SchemaHelper.toSchema(schema))
               .build()
           )
           .setDescription(description)
@@ -129,7 +129,7 @@ class TableUpdateOperationTest extends FunSuite {
       TableInfo
         .newBuilder(
           viewId.underlying,
-          StandardTableDefinition.newBuilder.setSchema(schema.toSchema).build()
+          StandardTableDefinition.newBuilder.setSchema(SchemaHelper.toSchema(schema)).build()
         )
         .setFriendlyName(friendlyName)
         .build()
@@ -159,7 +159,7 @@ class TableUpdateOperationTest extends FunSuite {
         .newBuilder(
           viewId.underlying,
           StandardTableDefinition.newBuilder
-            .setSchema(BQSchema.of(a, b).toSchema)
+            .setSchema(SchemaHelper.toSchema(BQSchema.of(a, b)))
             .build()
         )
         .build()
@@ -185,7 +185,7 @@ class TableUpdateOperationTest extends FunSuite {
         .newBuilder(
           viewId.underlying,
           StandardTableDefinition.newBuilder
-            .setSchema(BQSchema.of(a, b).toSchema)
+            .setSchema(SchemaHelper.toSchema(BQSchema.of(a, b)))
             .build()
         )
         .build()
@@ -199,8 +199,8 @@ class TableUpdateOperationTest extends FunSuite {
   }
 
   test("should allow valid extension of nested schema") {
-    val ba = BQField.struct("b", Mode.REQUIRED)(a)
-    val bac = BQField.struct("b", Mode.REQUIRED)(a, c)
+    val ba = BQField.struct("b", BQField.Mode.REQUIRED)(a)
+    val bac = BQField.struct("b", BQField.Mode.REQUIRED)(a, c)
 
     val givenTable = BQTableDef.Table(
       tableId,
@@ -215,7 +215,7 @@ class TableUpdateOperationTest extends FunSuite {
         .newBuilder(
           viewId.underlying,
           StandardTableDefinition.newBuilder
-            .setSchema(BQSchema.of(ba).toSchema)
+            .setSchema(SchemaHelper.toSchema(BQSchema.of(ba)))
             .build()
         )
         .build()
@@ -228,8 +228,8 @@ class TableUpdateOperationTest extends FunSuite {
   }
 
   test("should not allow invalid extension of nested schema") {
-    val bab = BQField.struct("b", Mode.REQUIRED)(a, b)
-    val bac = BQField.struct("b", Mode.REQUIRED)(a, c)
+    val bab = BQField.struct("b", BQField.Mode.REQUIRED)(a, b)
+    val bac = BQField.struct("b", BQField.Mode.REQUIRED)(a, c)
 
     val givenTable = BQTableDef.Table(
       tableId,
@@ -244,7 +244,7 @@ class TableUpdateOperationTest extends FunSuite {
         .newBuilder(
           viewId.underlying,
           StandardTableDefinition.newBuilder
-            .setSchema(BQSchema.of(bab).toSchema)
+            .setSchema(SchemaHelper.toSchema(BQSchema.of(bab)))
             .build()
         )
         .build()
@@ -278,7 +278,7 @@ class TableUpdateOperationTest extends FunSuite {
           materializedViewId.underlying,
           MaterializedViewDefinition
             .newBuilder(query.asStringWithUDFs)
-            .setSchema(testView.schema.toSchema)
+            .setSchema(SchemaHelper.toSchema(testView.schema))
             .build()
         )
         .setFriendlyName(friendlyName)
@@ -306,7 +306,7 @@ class TableUpdateOperationTest extends FunSuite {
         .newBuilder(
           viewId.underlying,
           StandardTableDefinition.newBuilder
-            .setSchema(BQSchema.of(a).toSchema)
+            .setSchema(SchemaHelper.toSchema(BQSchema.of(a)))
             .setTimePartitioning(TimePartitioning.of(Type.HOUR))
             .build()
         )
@@ -337,7 +337,7 @@ class TableUpdateOperationTest extends FunSuite {
         .newBuilder(
           viewId.underlying,
           StandardTableDefinition.newBuilder
-            .setSchema(BQSchema.of(a).toSchema)
+            .setSchema(SchemaHelper.toSchema(BQSchema.of(a)))
             .setTimePartitioning(
               TimePartitioning.newBuilder(Type.DAY).setField("date").build()
             )
@@ -370,7 +370,7 @@ class TableUpdateOperationTest extends FunSuite {
         .newBuilder(
           viewId.underlying,
           StandardTableDefinition.newBuilder
-            .setSchema(BQSchema.of(a, c, b).toSchema)
+            .setSchema(SchemaHelper.toSchema(BQSchema.of(a, c, b)))
             .build()
         )
         .build()
@@ -401,7 +401,7 @@ class TableUpdateOperationTest extends FunSuite {
         .newBuilder(
           tableId.underlying,
           StandardTableDefinition.newBuilder
-            .setSchema(BQSchema.of(a).toSchema)
+            .setSchema(SchemaHelper.toSchema(BQSchema.of(a)))
             .setTimePartitioning(
               TimePartitioning
                 .newBuilder(Type.DAY)

@@ -1,7 +1,6 @@
 package no.nrk.bigquery
 
 import cats.Show
-import com.google.cloud.bigquery.TableId
 
 import java.util.regex.Pattern
 
@@ -17,8 +16,6 @@ final case class BQTableId private[bigquery] (dataset: BQDataset, tableName: Str
 
   def modifyTableName(f: String => String): BQTableId =
     BQTableId.unsafeOf(dataset, f(tableName))
-  def underlying: TableId =
-    TableId.of(dataset.project.value, dataset.id, tableName)
 
   def withLocation(locationId: Option[LocationId]) = withDataset(dataset.copy(location = locationId))
   def withDataset(ds: BQDataset) = copy(dataset = ds)
@@ -37,14 +34,6 @@ object BQTableId {
 
   def unsafeOf(dataset: BQDataset, tableName: String): BQTableId =
     of(dataset, tableName).fold(err => throw new IllegalArgumentException(err), identity)
-
-  def unsafeFromGoogle(dataset: BQDataset, tableId: TableId): BQTableId = {
-    require(
-      tableId.getProject == dataset.project.value && dataset.id == tableId.getDataset,
-      s"Expected google table Id($tableId) to be the same datasetId and project as provided dataset[$dataset]"
-    )
-    BQTableId(dataset, tableId.getTable)
-  }
 
   def unsafeFromString(id: String): BQTableId =
     fromString(id).fold(

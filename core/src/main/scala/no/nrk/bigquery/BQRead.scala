@@ -1,6 +1,5 @@
 package no.nrk.bigquery
 
-import com.google.cloud.bigquery.{Field, StandardSQLTypeName}
 import io.circe.Json
 
 import org.apache.avro.util.Utf8
@@ -41,8 +40,8 @@ object BQRead extends BQReadCompat {
     new BQRead[Option[A]] {
       override val bqType: BQType = {
         val base = BQRead[A].bqType
-        if (base.mode == Field.Mode.REQUIRED)
-          base.copy(mode = Field.Mode.NULLABLE)
+        if (base.mode == BQField.Mode.REQUIRED)
+          base.copy(mode = BQField.Mode.NULLABLE)
         else base
       }
 
@@ -62,7 +61,7 @@ object BQRead extends BQReadCompat {
   ): BQRead[I[A]] =
     new BQRead[I[A]] {
       override val bqType: BQType =
-        BQRead[A].bqType.copy(mode = Field.Mode.REPEATED)
+        BQRead[A].bqType.copy(mode = BQField.Mode.REPEATED)
 
       override def read(transportSchema: avro.Schema, value: Any): I[A] = {
         val b = cb.newBuilder
@@ -83,7 +82,7 @@ object BQRead extends BQReadCompat {
   implicit def convertsArray[A: BQRead: ClassTag]: BQRead[Array[A]] =
     new BQRead[Array[A]] {
       override val bqType: BQType =
-        BQRead[A].bqType.copy(mode = Field.Mode.REPEATED)
+        BQRead[A].bqType.copy(mode = BQField.Mode.REPEATED)
 
       override def read(transportSchema: avro.Schema, value: Any): Array[A] = {
         val b = Array.newBuilder[A]
@@ -104,7 +103,7 @@ object BQRead extends BQReadCompat {
   implicit val convertsString: BQRead[String] =
     new BQRead[String] {
       override val bqType: BQType =
-        BQType(Field.Mode.REQUIRED, StandardSQLTypeName.STRING, Nil)
+        BQType(BQField.Mode.REQUIRED, BQField.Type.STRING, Nil)
 
       override def read(transportSchema: avro.Schema, value: Any): String =
         value match {
@@ -123,7 +122,7 @@ object BQRead extends BQReadCompat {
   implicit val convertsLong: BQRead[Long] =
     new BQRead[Long] {
       override val bqType: BQType =
-        BQType(Field.Mode.REQUIRED, StandardSQLTypeName.INT64, Nil)
+        BQType(BQField.Mode.REQUIRED, BQField.Type.INT64, Nil)
 
       override def read(transportSchema: avro.Schema, value: Any): Long =
         value match {
@@ -138,7 +137,7 @@ object BQRead extends BQReadCompat {
   implicit val convertsDouble: BQRead[Double] =
     new BQRead[Double] {
       override val bqType: BQType =
-        BQType(Field.Mode.REQUIRED, StandardSQLTypeName.FLOAT64, Nil)
+        BQType(BQField.Mode.REQUIRED, BQField.Type.FLOAT64, Nil)
 
       override def read(transportSchema: avro.Schema, value: Any): Double =
         value match {
@@ -153,7 +152,7 @@ object BQRead extends BQReadCompat {
   implicit val convertsBoolean: BQRead[Boolean] =
     new BQRead[Boolean] {
       override val bqType: BQType =
-        BQType(Field.Mode.REQUIRED, StandardSQLTypeName.BOOL, Nil)
+        BQType(BQField.Mode.REQUIRED, BQField.Type.BOOL, Nil)
 
       override def read(transportSchema: avro.Schema, value: Any): Boolean =
         value match {
@@ -168,7 +167,7 @@ object BQRead extends BQReadCompat {
   implicit val convertsLocalDate: BQRead[LocalDate] =
     new BQRead[LocalDate] {
       override val bqType: BQType =
-        BQType(Field.Mode.REQUIRED, StandardSQLTypeName.DATE, Nil)
+        BQType(BQField.Mode.REQUIRED, BQField.Type.DATE, Nil)
 
       override def read(transportSchema: avro.Schema, value: Any): LocalDate =
         value match {
@@ -183,7 +182,7 @@ object BQRead extends BQReadCompat {
   implicit val convertsLocalTime: BQRead[LocalTime] =
     new BQRead[LocalTime] {
       override val bqType: BQType =
-        BQType(Field.Mode.REQUIRED, StandardSQLTypeName.TIME, Nil)
+        BQType(BQField.Mode.REQUIRED, BQField.Type.TIME, Nil)
 
       override def read(transportSchema: avro.Schema, value: Any): LocalTime =
         value match {
@@ -198,7 +197,7 @@ object BQRead extends BQReadCompat {
   implicit val convertsLocalDateTime: BQRead[LocalDateTime] =
     new BQRead[LocalDateTime] {
       override val bqType: BQType =
-        BQType(Field.Mode.REQUIRED, StandardSQLTypeName.DATETIME, Nil)
+        BQType(BQField.Mode.REQUIRED, BQField.Type.DATETIME, Nil)
 
       override def read(transportSchema: avro.Schema, value: Any): LocalDateTime =
         value match {
@@ -222,7 +221,7 @@ object BQRead extends BQReadCompat {
       }
 
       override val bqType: BQType =
-        BQType(Field.Mode.REQUIRED, StandardSQLTypeName.TIMESTAMP, Nil)
+        BQType(BQField.Mode.REQUIRED, BQField.Type.TIMESTAMP, Nil)
 
       override def read(transportSchema: avro.Schema, value: Any): Instant =
         value match {

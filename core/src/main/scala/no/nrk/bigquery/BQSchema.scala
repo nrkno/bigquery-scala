@@ -1,11 +1,6 @@
 package no.nrk.bigquery
 
-import com.google.cloud.bigquery.Schema
-import scala.jdk.CollectionConverters._
-
 case class BQSchema(fields: List[BQField]) {
-  def toSchema: Schema =
-    Schema.of(fields.map(_.toField): _*)
 
   /** This is useful for views, because we're unable to create views with required columns.
     *
@@ -46,11 +41,4 @@ case class BQSchema(fields: List[BQField]) {
 
 object BQSchema {
   def of(fields: BQField*) = new BQSchema(fields.toList)
-
-  def fromSchema(schema: Schema): BQSchema =
-    schema match {
-      case null => BQSchema(Nil)
-      case schema =>
-        BQSchema(schema.getFields.asScala.toList.map(BQField.fromField))
-    }
 }
