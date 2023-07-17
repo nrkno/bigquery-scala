@@ -141,7 +141,6 @@ sealed trait BQSqlFrag {
             List(fill.tableDef.withTableType(partitionType).assertPartition(partitionRef.partition))
           case (_, _) => List(fill.tableDef.unpartitioned.assertPartition)
         }
-        List(fill.tableDef.unpartitioned.assertPartition)
     }
 
     this.collect(pf(None)).flatten.distinct
