@@ -11,6 +11,7 @@ sealed trait BQTableLike[+P] {
   def partitionType: BQPartitionType[P]
   def withTableType[PP](tpe: BQPartitionType[PP]): BQTableLike[PP]
   def unpartitioned: BQTableLike[Unit]
+  def wholeTable: WholeTable[P] = WholeTable(this)
 }
 
 object BQTableLike {
@@ -95,6 +96,8 @@ sealed trait BQTableDef[+P] extends BQTableLike[P] {
 
   labels.verify(tableId)
 }
+
+case class WholeTable[+P](table: BQTableLike[P])
 
 object BQTableDef {
 
