@@ -43,10 +43,13 @@ case class BQField(
   def isRequired: Boolean = mode == Field.Mode.REQUIRED
 
   def withName(newName: String) = copy(name = newName)
+
+  def mapName(f: String => String) = withName(f(name))
+
   def withDescription(desc: String) = copy(description = Some(desc))
   def withoutDescription = copy(description = None)
 
-  @deprecated("use withRequired instead", "0.8.2")
+  @deprecated("use withRequired instead", "0.8.3")
   def required = copy(mode = Field.Mode.REQUIRED)
   def withRequired = copy(mode = Field.Mode.REQUIRED)
   def withRepeated = copy(mode = Field.Mode.REPEATED)
