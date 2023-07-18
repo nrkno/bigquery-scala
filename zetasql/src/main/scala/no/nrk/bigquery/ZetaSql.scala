@@ -30,6 +30,7 @@ object ZetaSql {
   def parseAndBuildAnalysableFragment(
       query: String,
       allTables: List[BQTableLike[Any]],
+      toFragment: BQTableLike[Any] => BQSqlFrag = _.unpartitioned.bqShow,
       eqv: (BQTableId, BQTableId) => Boolean = _ == _): IO[BQSqlFrag] = {
 
     def evalFragments(
@@ -41,7 +42,7 @@ object ZetaSql {
           parsedTables.flatMap { case (id, range) => if (eqv(table.tableId, id)) List(table -> range) else Nil })
         .distinct
       val (rest, aggregate) = found.foldLeft((asString, BQSqlFrag.Empty)) { case ((input, agg), (t, loc)) =>
-        val frag = agg ++ BQSqlFrag.Frag(input.substring(0, loc.start() - 1)) ++ t.unpartitioned.bqShow
+        val frag = agg ++ BQSqlFrag.Frag(input.substring(0, loc.start() - 1)) ++ toFragment(t)
         val rest = input.substring(loc.end())
         rest -> frag
       }
