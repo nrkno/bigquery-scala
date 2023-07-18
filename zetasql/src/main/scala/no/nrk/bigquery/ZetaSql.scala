@@ -53,19 +53,23 @@ object ZetaSql {
     ZetaSql
       .parseScript(BQSqlFrag.Frag(query))
       .flatMap(IO.fromEither)
-      .map { script =>
-        val buffer = new ListBuffer[(BQTableId, ParseLocationRange)]
-        script.getStatementListNode.getStatementList
-          .get(0)
-          .accept(new ParseTreeVisitor {
-            override def visit(node: ASTNodes.ASTTablePathExpression): Unit =
-              node.getPathExpr.getNames.forEach(ident =>
-                BQTableId
-                  .fromString(ident.getIdString)
-                  .toOption
-                  .foreach(id => buffer += (id -> ident.getParseLocationRange)))
-          })
-        buffer.toList
+      .flatMap { script =>
+        val list = script.getStatementListNode.getStatementList
+        if (list.size() != 1) {
+          IO.raiseError(new IllegalArgumentException("Expects only one statement"))
+        } else
+          IO {
+            val buffer = new ListBuffer[(BQTableId, ParseLocationRange)]
+            list.asScala.headOption.foreach(_.accept(new ParseTreeVisitor {
+              override def visit(node: ASTNodes.ASTTablePathExpression): Unit =
+                node.getPathExpr.getNames.forEach(ident =>
+                  BQTableId
+                    .fromString(ident.getIdString)
+                    .toOption
+                    .foreach(id => buffer += (id -> ident.getParseLocationRange)))
+            }))
+            buffer.toList
+          }
       }
       .map(evalFragments)
   }
