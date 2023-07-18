@@ -3,15 +3,14 @@ package no.nrk.bigquery
 import cats.effect.IO
 import com.google.cloud.bigquery.Field.Mode
 import com.google.cloud.bigquery.StandardSQLTypeName
-import no.nrk.bigquery.syntax.bqShowInterpolator
-
+import no.nrk.bigquery.syntax._
 import com.google.zetasql.SqlException
 
 import java.time.LocalDate
 
 class ZetaTest extends munit.CatsEffectSuite {
   private val table = BQTableDef.Table(
-    BQTableId(BQDataset.of(ProjectId("com.example"), "example"), "test"),
+    BQTableId(BQDataset.of(ProjectId("com-example"), "example"), "test"),
     BQSchema.of(
       BQField("partitionDate", StandardSQLTypeName.DATE, Mode.REQUIRED),
       BQField("a", StandardSQLTypeName.STRING, Mode.REQUIRED),
@@ -65,5 +64,27 @@ class ZetaTest extends munit.CatsEffectSuite {
         .map(_.recursivelyNullable.withoutDescription)
 
     ZetaSql.queryFields(query).assertEquals(expected)
+  }
+
+  test("parse then build analysis") {
+    val query =
+      """|with data as (
+         | select partitionDate, a, b, c from `com-example.example.test`
+         |),
+         | grouped as (
+         |   select partitionDate, a, b, COUNTIF(c is null) as nullableCs from data
+         |   group by 1, 2, 3
+         | )
+         |select * from grouped
+         |""".stripMargin
+
+    val expected =
+      (table.schema.fields.dropRight(2) ++ List(BQField("nullableCs", StandardSQLTypeName.INT64, Mode.NULLABLE)))
+        .map(_.recursivelyNullable.withoutDescription)
+
+    ZetaSql
+      .parseAndBuildAnalysableFragment(query, List(table))
+      .flatMap(ZetaSql.queryFields)
+      .assertEquals(expected)
   }
 }

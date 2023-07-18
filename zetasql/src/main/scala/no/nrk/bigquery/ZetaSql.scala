@@ -2,13 +2,16 @@ package no.nrk.bigquery
 
 import cats.syntax.all._
 import cats.effect.IO
+import no.nrk.bigquery.syntax._
 import com.google.cloud.bigquery.{Field, StandardSQLTypeName}
 import com.google.zetasql.ZetaSQLType.TypeKind
 import com.google.zetasql.resolvedast.ResolvedCreateStatementEnums.{CreateMode, CreateScope}
 import com.google.zetasql.resolvedast.ResolvedNodes
 import com.google.zetasql.toolkit.catalog.basic.BasicCatalogWrapper
+import com.google.zetasql.parser.{ASTNodes, ParseTreeVisitor}
 import com.google.zetasql._
 
+import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
 
 object ZetaSql {
@@ -22,6 +25,48 @@ object ZetaSql {
     catch {
       case e: SqlException => Left(e) // only catch sql exception and let all others bubble up to IO
     }
+  }
+
+  def parseAndBuildAnalysableFragment(
+      query: String,
+      allTables: List[BQTableLike[Any]],
+      eqv: (BQTableId, BQTableId) => Boolean = _ == _): IO[BQSqlFrag] = {
+
+    def evalFragments(
+        parsedTables: List[(BQTableId, ParseLocationRange)]
+    ): BQSqlFrag = {
+      val asString = query
+      val found = allTables
+        .flatMap(table =>
+          parsedTables.flatMap { case (id, range) => if (eqv(table.tableId, id)) List(table -> range) else Nil })
+        .distinct
+      val (rest, aggregate) = found.foldLeft((asString, BQSqlFrag.Empty)) { case ((input, agg), (t, loc)) =>
+        val frag = agg ++ BQSqlFrag.Frag(input.substring(0, loc.start() - 1)) ++ t.unpartitioned.bqShow
+        val rest = input.substring(loc.end())
+        rest -> frag
+      }
+
+      aggregate ++ BQSqlFrag.Frag(rest)
+    }
+
+    ZetaSql
+      .parseScript(BQSqlFrag.Frag(query))
+      .flatMap(IO.fromEither)
+      .map { script =>
+        val buffer = new ListBuffer[(BQTableId, ParseLocationRange)]
+        script.getStatementListNode.getStatementList
+          .get(0)
+          .accept(new ParseTreeVisitor {
+            override def visit(node: ASTNodes.ASTTablePathExpression): Unit =
+              node.getPathExpr.getNames.forEach(ident =>
+                BQTableId
+                  .fromString(ident.getIdString)
+                  .toOption
+                  .foreach(id => buffer += (id -> ident.getParseLocationRange)))
+          })
+        buffer.toList
+      }
+      .map(evalFragments)
   }
 
   def queryFields(frag: BQSqlFrag): IO[List[BQField]] =
