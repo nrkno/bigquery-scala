@@ -394,10 +394,12 @@ object BQSmokeTest {
               ctesFromUDF ++ ctes.flatten
             )
           case pUdf @ UDF.Persistent(_, _, Body.Sql(body), _) =>
-            // todo: verify that this is what we want to do!
             val (newUdfBody, ctesFromUDF) = recurse(body)
             (
-              BQSqlFrag.Call(pUdf.copy(body = UDF.Body.Sql(newUdfBody)), newArgs),
+              BQSqlFrag.Call(
+                pUdf.copy(body = UDF.Body.Sql(newUdfBody)).convertToTemporary,
+                newArgs
+              ),
               ctesFromUDF ++ ctes.flatten
             )
           case _ => (BQSqlFrag.Call(udf, newArgs), ctes.flatten)
