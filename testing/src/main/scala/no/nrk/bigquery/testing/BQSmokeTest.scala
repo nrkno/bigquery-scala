@@ -433,7 +433,7 @@ object BQSmokeTest {
             val cteName = tempTable(pid)
             (
               cteName.bqShow,
-              List(CTE(cteName, bqfr"(select as value ${exampleRow(schema)})"))
+              List(CTE(cteName, bqfr"(select ${exampleRow(schema)})"))
             )
           case None =>
             (p, Nil)
@@ -453,7 +453,7 @@ object BQSmokeTest {
           List(
             CTE(
               cteName,
-              bqfr"(select as value ${exampleRow(fill.tableDef.schema)})"
+              bqfr"(select ${exampleRow(fill.tableDef.schema)})"
             )
           )
         )
@@ -513,7 +513,9 @@ object BQSmokeTest {
         .map(field => bqfr"${valueForType(field)} as ${Ident(field.name)}")
         .mkFragment(bqfr"struct(", bqfr", ", bqfr")")
 
-    struct(schema.fields)
+    schema.fields
+      .map(field => bqfr"${valueForType(field)} as ${Ident(field.name)}")
+      .mkFragment(",")
   }
 
   // this is a user-wide query cache to speed up development/CI
