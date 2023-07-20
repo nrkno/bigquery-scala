@@ -113,7 +113,7 @@ object BQTableId {
 
   /** FROM https://cloud.google.com/bigquery/docs/tables#table_naming
     */
-  private val regex: Pattern = "^[\\w_ -]{1,1024}".r.pattern
+  private val regex: Pattern = "^\\w[\\w_ -]{1,1023}".r.pattern
 
   def of(project: ProjectId, dataset: String, tableName: String) =
     unsafeOfTable(BQDataset.of(project, dataset), tableName)
