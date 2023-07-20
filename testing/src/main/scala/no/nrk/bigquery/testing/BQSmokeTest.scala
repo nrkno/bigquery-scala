@@ -394,10 +394,12 @@ object BQSmokeTest {
               ctesFromUDF ++ ctes.flatten
             )
           case pUdf @ UDF.Persistent(_, _, Body.Sql(body), _) =>
-            // todo: verify that this is what we want to do!
             val (newUdfBody, ctesFromUDF) = recurse(body)
             (
-              BQSqlFrag.Call(pUdf.copy(body = UDF.Body.Sql(newUdfBody)), newArgs),
+              BQSqlFrag.Call(
+                pUdf.copy(body = UDF.Body.Sql(newUdfBody)).convertToTemporary,
+                newArgs
+              ),
               ctesFromUDF ++ ctes.flatten
             )
           case _ => (BQSqlFrag.Call(udf, newArgs), ctes.flatten)
@@ -433,7 +435,7 @@ object BQSmokeTest {
             val cteName = tempTable(pid)
             (
               cteName.bqShow,
-              List(CTE(cteName, bqfr"(select as value ${exampleRow(schema)})"))
+              List(CTE(cteName, bqfr"(select ${exampleRow(schema)})"))
             )
           case None =>
             (p, Nil)
@@ -453,7 +455,7 @@ object BQSmokeTest {
           List(
             CTE(
               cteName,
-              bqfr"(select as value ${exampleRow(fill.tableDef.schema)})"
+              bqfr"(select ${exampleRow(fill.tableDef.schema)})"
             )
           )
         )
@@ -513,7 +515,9 @@ object BQSmokeTest {
         .map(field => bqfr"${valueForType(field)} as ${Ident(field.name)}")
         .mkFragment(bqfr"struct(", bqfr", ", bqfr")")
 
-    struct(schema.fields)
+    schema.fields
+      .map(field => bqfr"${valueForType(field)} as ${Ident(field.name)}")
+      .mkFragment(",")
   }
 
   // this is a user-wide query cache to speed up development/CI
