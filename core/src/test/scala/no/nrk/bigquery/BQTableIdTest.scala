@@ -9,9 +9,6 @@ class BQTableIdTest extends munit.ScalaCheckSuite {
   property("valid tableId") {
     Prop.forAll(Generators.validTableIdGen) { (input: String) =>
       val obtained = BQTableId.ofTable(dataset, input)
-      if (obtained.isLeft) {
-        println(s"'${input}'")
-      }
       assertEquals(obtained, Right(BQTableId(dataset, input)))
     }
   }
