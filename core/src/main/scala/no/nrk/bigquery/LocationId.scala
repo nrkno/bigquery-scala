@@ -44,9 +44,9 @@ object LocationId {
   val EuropeSouthWest1 = LocationId("europe-southwest1")
 
   // Middle east
-  val MIddleEastWest1 = LocationId("me-west1")
+  val MiddleEastWest1 = LocationId("me-west1")
 
-  val MIddleEastCentral1 = LocationId("me-central1")
+  val MiddleEastCentral1 = LocationId("me-central1")
 
   // Asia and Oceania
   val AsiaEast1 = LocationId("asia-east1")
