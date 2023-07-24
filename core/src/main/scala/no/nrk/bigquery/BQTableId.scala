@@ -1,7 +1,7 @@
 package no.nrk.bigquery
 
 import cats.Show
-import com.google.cloud.bigquery.{DatasetId, TableId}
+import com.google.cloud.bigquery.TableId
 
 import java.util.regex.Pattern
 
