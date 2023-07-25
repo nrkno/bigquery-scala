@@ -1,7 +1,7 @@
 import com.typesafe.tools.mima.core._
 
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
-ThisBuild / tlBaseVersion := "0.8" // your current series x.y
+ThisBuild / tlBaseVersion := "0.9" // your current series x.y
 
 ThisBuild / organization := "no.nrk.bigquery"
 ThisBuild / organizationName := "NRK"
@@ -98,6 +98,7 @@ lazy val root = tlCrossRootProject
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val core = crossProject(JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("core"))
   .settings(commonSettings)
@@ -110,6 +111,7 @@ lazy val core = crossProject(JVMPlatform)
       "org.typelevel" %% "cats-effect" % "3.5.1",
       "org.typelevel" %% "literally" % "1.1.0",
       "org.scalameta" %% "munit" % "0.7.29" % Test,
+      "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       "com.google.cloud" % "google-cloud-bigquery" % "2.30.1",
       "com.google.cloud" % "google-cloud-bigquerystorage" % "2.40.1",
@@ -141,6 +143,7 @@ lazy val core = crossProject(JVMPlatform)
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val prometheus = crossProject(JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("prometheus"))
   .settings(commonSettings)
@@ -154,6 +157,7 @@ lazy val prometheus = crossProject(JVMPlatform)
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val testing = crossProject(JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("testing"))
   .dependsOn(core)

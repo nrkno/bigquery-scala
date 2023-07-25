@@ -12,10 +12,10 @@ class TableUpdateOperationTest extends FunSuite {
   private val a = BQField("a", StandardSQLTypeName.INT64, Mode.REQUIRED)
   private val b = BQField("b", StandardSQLTypeName.INT64, Mode.REQUIRED)
   private val c = BQField("c", StandardSQLTypeName.INT64, Mode.REQUIRED)
-  private val viewId = BQTableId.of(ProjectId("project"), "dataset", "view")
-  private val tableId = BQTableId.of(ProjectId("project"), "dataset", "table")
+  private val viewId = BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset"), "view")
+  private val tableId = BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset"), "table")
   private val materializedViewId =
-    BQTableId.of(ProjectId("project"), "dataset", "mat_view")
+    BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset"), "mat_view")
 
   test("views with schema should trigger update after create") {
     val schema = BQSchema.of(a)
