@@ -16,7 +16,7 @@ import java.util.regex.Pattern
 final case class BQTableId private[bigquery] (dataset: BQDataset, tableName: String) {
 
   def modifyTableName(f: String => String): BQTableId =
-    BQTableId.unsafeOfTable(dataset, f(tableName))
+    BQTableId.unsafeOf(dataset, f(tableName))
   def underlying: TableId =
     TableId.of(dataset.project.value, dataset.id, tableName)
 
@@ -31,15 +31,12 @@ object BQTableId {
 
   private val regex: Pattern = "(?U)^\\w[\\w_ -]{1,1023}".r.pattern
 
-  def of(project: ProjectId, dataset: String, tableName: String): BQTableId =
-    unsafeOfTable(BQDataset.of(project, dataset), tableName)
-
-  def ofTable(dataset: BQDataset, tableName: String): Either[String, BQTableId] =
+  def of(dataset: BQDataset, tableName: String): Either[String, BQTableId] =
     if (regex.matcher(tableName).matches()) Right(BQTableId(dataset, tableName))
     else Left(s"Expected '$tableName' to match regex (${regex.pattern()})")
 
-  def unsafeOfTable(dataset: BQDataset, tableName: String): BQTableId =
-    ofTable(dataset, tableName).fold(err => throw new IllegalArgumentException(err), identity)
+  def unsafeOf(dataset: BQDataset, tableName: String): BQTableId =
+    of(dataset, tableName).fold(err => throw new IllegalArgumentException(err), identity)
 
   def unsafeFromGoogle(dataset: BQDataset, tableId: TableId): BQTableId = {
     require(
@@ -58,7 +55,7 @@ object BQTableId {
   def fromString(id: String): Either[String, BQTableId] =
     id.split("\\.", 3) match {
       case Array(project, dataset, tableName) =>
-        ProjectId.fromString(project).flatMap(BQDataset.fromId(_, dataset)).flatMap(ofTable(_, tableName))
+        ProjectId.fromString(project).flatMap(BQDataset.of(_, dataset)).flatMap(of(_, tableName))
       case _ => Left(s"Expected [projectId].[datasetId].[tableName] but got ${id}")
     }
 

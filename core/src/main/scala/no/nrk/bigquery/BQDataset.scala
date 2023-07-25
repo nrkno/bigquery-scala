@@ -25,10 +25,10 @@ final case class BQDataset private[bigquery] (
 object BQDataset {
   private val regex: Pattern = "^[a-zA-Z0-9_]{1,1024}".r.pattern
 
-  def of(project: ProjectId, dataset: String) =
-    fromId(project, dataset).fold(err => throw new IllegalArgumentException(err), identity)
+  def unsafeOf(project: ProjectId, dataset: String) =
+    of(project, dataset).fold(err => throw new IllegalArgumentException(err), identity)
 
-  def fromId(project: ProjectId, dataset: String): Either[String, BQDataset] =
+  def of(project: ProjectId, dataset: String): Either[String, BQDataset] =
     if (regex.matcher(dataset).matches()) Right(BQDataset(project, dataset, None))
     else Left(s"invalid project ID '$dataset' - must match ${regex.pattern()}")
 }

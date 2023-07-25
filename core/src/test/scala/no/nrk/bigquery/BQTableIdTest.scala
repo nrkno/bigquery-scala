@@ -4,11 +4,11 @@ import org.scalacheck.Prop
 
 class BQTableIdTest extends munit.ScalaCheckSuite {
 
-  val dataset = BQDataset.of(ProjectId.unsafeFromString("com-example"), "test")
+  val dataset = BQDataset.unsafeOf(ProjectId.unsafeFromString("com-example"), "test")
 
   property("valid tableId") {
     Prop.forAll(Generators.validTableIdGen) { (input: String) =>
-      val obtained = BQTableId.ofTable(dataset, input)
+      val obtained = BQTableId.of(dataset, input)
       assertEquals(obtained, Right(BQTableId(dataset, input)))
     }
   }

@@ -7,7 +7,7 @@ class BQDatasetTest extends munit.ScalaCheckSuite {
 
   property("valid dataset") {
     Prop.forAll(Generators.validDatasetIdGen) { (ident: String) =>
-      assertEquals(BQDataset.fromId(project, ident), Right(BQDataset(project, ident, None)))
+      assertEquals(BQDataset.of(project, ident), Right(BQDataset(project, ident, None)))
     }
   }
 
@@ -20,7 +20,7 @@ class BQDatasetTest extends munit.ScalaCheckSuite {
     } yield alpha
 
     Prop.forAll(gen) { (ident: String) =>
-      BQDataset.fromId(project, ident).isLeft
+      BQDataset.of(project, ident).isLeft
     }
   }
 }
