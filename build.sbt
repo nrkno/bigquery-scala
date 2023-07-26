@@ -12,6 +12,7 @@ ThisBuild / developers := List(
   tlGitHubDev("oyvindberg", "Øyvind Raddum Berg"),
   tlGitHubDev("lysebraate", "Alfred Sandvik Lysebraate"),
   tlGitHubDev("HenningKoller", "Henning Grimeland Koller"),
+  tlGitHubDev("ingararb", "Ingar Abrahamsen"),
   tlGitHubDev("hamnis", "Erlend Hamnaberg")
 )
 ThisBuild / tlCiHeaderCheck := false
@@ -19,20 +20,10 @@ ThisBuild / tlCiScalafmtCheck := true
 
 // publish website from this branch
 //ThisBuild / tlSitePublishBranch := Some("main")
-ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
+
 ThisBuild / githubWorkflowPublishTargetBranches :=
   Seq(RefPredicate.StartsWith(Ref.Tag("v")))
 
-ThisBuild / githubWorkflowPublish := Seq(
-  WorkflowStep.Sbt(
-    commands = List("+publish"),
-    name = Some("Publish project"),
-    env = Map(
-      "MYGET_USERNAME" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_WRITE_ID }}",
-      "MYGET_PASSWORD" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_WRITE_SECRET }}"
-    )
-  )
-)
 ThisBuild / githubWorkflowBuild := {
   val list = (ThisBuild / githubWorkflowBuild).value
   list.collect {
@@ -40,11 +31,6 @@ ThisBuild / githubWorkflowBuild := {
       step.copy(env = Map(
         "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}",
         "ASSERT_CURRENT_GENERATED_FILES" -> "1"
-      ))
-    case step: WorkflowStep.Sbt if step.name.contains("Check binary compatibility") =>
-      step.copy(env = Map(
-        "MYGET_USERNAME" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_ID }}",
-        "MYGET_PASSWORD" -> "${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_SECRET }}"
       ))
     case s => s
   }
@@ -55,29 +41,15 @@ val Scala213 = "2.13.11"
 ThisBuild / crossScalaVersions := Seq(Scala213, Scala212, "3.3.0")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 ThisBuild / tlVersionIntroduced := Map(
-  "2.12" -> "0.1.1",
-  "3" -> "0.1.1",
-  "2.13" -> "0.1.0"
+  "2.12" -> "0.9.0",
+  "3" -> "0.9.0",
+  "2.13" -> "0.9.0"
 )
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11"))
 
 val commonSettings = Seq(
-  resolvers += "MyGet - datahub".at(s"https://nrk.myget.org/F/datahub/maven/"),
   Compile / headerSources := Nil,
   Test / headerSources := Nil,
-  publishTo := {
-    val MyGet = "https://nrk.myget.org/F/datahub/maven/"
-    if (isSnapshot.value) None else Some("releases".at(MyGet))
-  },
-  credentials ++= {
-    (sys.env.get("MYGET_USERNAME"), sys.env.get("MYGET_PASSWORD")) match {
-      case (Some(username), Some(password)) =>
-        List(
-          Credentials("MyGet - datahub", "nrk.myget.org", username, password)
-        )
-      case _ => Nil
-    }
-  },
   scalacOptions -= "-source:3.0-migration",
   scalacOptions ++= {
     val compilerWarnings =
@@ -96,7 +68,6 @@ val commonSettings = Seq(
 lazy val root = tlCrossRootProject
   .settings(name := "bigquery-scala")
   .aggregate(core, testing, prometheus, zetasql, docs)
-  .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val core = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -144,7 +115,6 @@ lazy val core = crossProject(JVMPlatform)
       ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.BQDataset.unsafeOf")
     )
   )
-  .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val prometheus = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -158,7 +128,6 @@ lazy val prometheus = crossProject(JVMPlatform)
       "io.prometheus" % "simpleclient" % "0.16.0"
     )
   )
-  .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val zetasql = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -175,7 +144,6 @@ lazy val zetasql = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     )
   )
-  .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val testing = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -191,13 +159,11 @@ lazy val testing = crossProject(JVMPlatform)
     ),
     mimaBinaryIssueFilters ++= Nil
   )
-  .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
 lazy val docs = project
   .in(file("site"))
   //  .enablePlugins(TypelevelSitePlugin)
   .enablePlugins(MdocPlugin, NoPublishPlugin)
-  .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
   .dependsOn(core.jvm, testing.jvm)
   .settings(
     compile := {
