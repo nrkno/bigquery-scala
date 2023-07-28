@@ -493,13 +493,13 @@ class BigQueryClient[F[_]](
     }
 
   def create(table: TableInfo): F[Table] =
-    F.delay(bigQuery.create(table))
+    F.blocking(bigQuery.create(table))
 
   def update(table: TableInfo): F[Table] =
-    F.delay(bigQuery.update(table))
+    F.blocking(bigQuery.update(table))
 
   def delete(tableId: BQTableId): F[Boolean] =
-    F.delay(bigQuery.delete(tableId.underlying))
+    F.blocking(bigQuery.delete(tableId.underlying))
 
   def tablesIn(
       dataset: BQDataset,
@@ -541,13 +541,13 @@ class BigQueryClient[F[_]](
     }
 
   def create(info: RoutineInfo): F[Routine] =
-    F.delay(bigQuery.create(info))
+    F.blocking(bigQuery.create(info))
 
   def update(info: RoutineInfo): F[Routine] =
-    F.delay(bigQuery.update(info))
+    F.blocking(bigQuery.update(info))
 
   def delete(udfId: UDF.UDFId.PersistentId): F[Boolean] =
-    F.delay(bigQuery.delete(RoutineId.of(udfId.dataset.project.value, udfId.dataset.id, udfId.name.value)))
+    F.blocking(bigQuery.delete(RoutineId.of(udfId.dataset.project.value, udfId.dataset.id, udfId.name.value)))
 
 }
 
