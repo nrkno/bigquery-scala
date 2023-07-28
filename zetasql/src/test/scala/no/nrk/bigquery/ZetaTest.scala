@@ -7,6 +7,8 @@ import com.google.zetasql.toolkit.AnalysisException
 import java.time.LocalDate
 
 class ZetaTest extends munit.CatsEffectSuite {
+  private val zetaSql = new ZetaSql[IO]
+
   private val table = BQTableDef.Table(
     BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("com-example"), "example"), "test"),
     BQSchema.of(
@@ -20,11 +22,11 @@ class ZetaTest extends munit.CatsEffectSuite {
   )
 
   test("parses select 1") {
-    ZetaSql.analyzeFirst(bqsql"select 1").map(_.isRight).assertEquals(true)
+    zetaSql.analyzeFirst(bqsql"select 1").map(_.isRight).assertEquals(true)
   }
 
   test("fails to parse select from foo") {
-    ZetaSql.analyzeFirst(bqsql"select from foo").flatMap(IO.fromEither).intercept[AnalysisException]
+    zetaSql.analyzeFirst(bqsql"select from foo").flatMap(IO.fromEither).intercept[AnalysisException]
   }
 
   test("subset select from example") {
@@ -33,7 +35,7 @@ class ZetaTest extends munit.CatsEffectSuite {
     val query = bqsql"select partitionDate, a, b, c from ${table.assertPartition(date)}"
 
     val expected = table.schema.fields.dropRight(1).map(_.recursivelyNullable.withoutDescription)
-    ZetaSql.queryFields(query).assertEquals(expected)
+    zetaSql.queryFields(query).assertEquals(expected)
   }
 
   test("all fields should be selected from example") {
@@ -42,7 +44,7 @@ class ZetaTest extends munit.CatsEffectSuite {
     val query = bqsql"select partitionDate, a, b, c, d from ${table.assertPartition(date)}"
 
     val expected = table.schema.fields.map(_.recursivelyNullable.withoutDescription)
-    ZetaSql.queryFields(query).assertEquals(expected)
+    zetaSql.queryFields(query).assertEquals(expected)
   }
 
   test("CTE selections") {
@@ -61,7 +63,7 @@ class ZetaTest extends munit.CatsEffectSuite {
       (table.schema.fields.dropRight(2) ++ List(BQField("nullableCs", BQField.Type.INT64, BQField.Mode.NULLABLE)))
         .map(_.recursivelyNullable.withoutDescription)
 
-    ZetaSql.queryFields(query).assertEquals(expected)
+    zetaSql.queryFields(query).assertEquals(expected)
   }
 
   test("parse then build analysis") {
@@ -80,9 +82,9 @@ class ZetaTest extends munit.CatsEffectSuite {
       (table.schema.fields.dropRight(2) ++ List(BQField("nullableCs", BQField.Type.INT64, BQField.Mode.NULLABLE)))
         .map(_.recursivelyNullable.withoutDescription)
 
-    ZetaSql
+    zetaSql
       .parseAndBuildAnalysableFragment(query, List(table))
-      .flatMap(ZetaSql.queryFields)
+      .flatMap(zetaSql.queryFields)
       .assertEquals(expected)
   }
 }

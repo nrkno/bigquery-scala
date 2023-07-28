@@ -1,7 +1,7 @@
 package no.nrk.bigquery
 
 import cats.syntax.all._
-import cats.effect.IO
+import cats.effect.Sync
 import no.nrk.bigquery.syntax._
 import com.google.zetasql.{
   AnalyzerOptions,
@@ -26,24 +26,26 @@ import scala.collection.mutable.ListBuffer
 import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters._
 
-object ZetaSql {
-  def parse(frag: BQSqlFrag): IO[Either[SqlException, BQSqlFrag]] = parseScript(frag).map(_.as(frag))
+class ZetaSql[F[_]](implicit F: Sync[F]) {
+  import ZetaSql._
+  def parse(frag: BQSqlFrag): F[Either[SqlException, BQSqlFrag]] = parseScript(frag).map(_.as(frag))
 
-  def parseScript(frag: BQSqlFrag): IO[Either[SqlException, ASTNodes.ASTScript]] = IO.interruptible {
-    val options = BigQueryLanguageOptions.get()
+  def parseScript(frag: BQSqlFrag): F[Either[SqlException, ASTNodes.ASTScript]] =
+    F.interruptible {
+      val options = BigQueryLanguageOptions.get()
 
-    try
-      Right(Parser.parseScript(frag.asString, options))
-    catch {
-      case e: SqlException => Left(e) // only catch sql exception and let all others bubble up to IO
+      try
+        Right(Parser.parseScript(frag.asString, options))
+      catch {
+        case e: SqlException => Left(e) // only catch sql exception and let all others bubble up to IO
+      }
     }
-  }
 
   def parseAndBuildAnalysableFragment(
       query: String,
       allTables: List[BQTableLike[Any]],
       toFragment: BQTableLike[Any] => BQSqlFrag = _.unpartitioned.bqShow,
-      eqv: (BQTableId, BQTableId) => Boolean = _ == _): IO[BQSqlFrag] = {
+      eqv: (BQTableId, BQTableId) => Boolean = _ == _): F[BQSqlFrag] = {
 
     def evalFragments(
         parsedTables: List[(BQTableId, ParseLocationRange)]
@@ -63,13 +65,14 @@ object ZetaSql {
     }
 
     parseScript(BQSqlFrag.Frag(query))
-      .flatMap(IO.fromEither)
+      .flatMap(F.fromEither)
       .flatMap { script =>
         val list = script.getStatementListNode.getStatementList
         if (list.size() != 1) {
-          IO.raiseError(new IllegalArgumentException("Expects only one statement"))
+          Sync[F].raiseError[List[(no.nrk.bigquery.BQTableId, com.google.zetasql.ParseLocationRange)]](
+            new IllegalArgumentException("Expects only one statement"))
         } else
-          IO {
+          Sync[F].delay {
             val buffer = new ListBuffer[(BQTableId, ParseLocationRange)]
             list.asScala.headOption.foreach(_.accept(new ParseTreeVisitor {
               override def visit(node: ASTNodes.ASTTablePathExpression): Unit =
@@ -85,7 +88,7 @@ object ZetaSql {
       .map(evalFragments)
   }
 
-  def queryFields(frag: BQSqlFrag): IO[List[BQField]] =
+  def queryFields(frag: BQSqlFrag): F[List[BQField]] =
     analyzeFirst(frag).map { res =>
       val builder = List.newBuilder[BQField]
 
@@ -95,28 +98,33 @@ object ZetaSql {
           tree.accept(new ResolvedNodes.Visitor {
             override def visit(node: ResolvedNodes.ResolvedQueryStmt): Unit =
               node.getOutputColumnList.asScala.foreach(col =>
-                builder += ZetaSql.fromColumnNameAndType(col.getColumn.getName, col.getColumn.getType))
+                builder += fromColumnNameAndType(col.getColumn.getName, col.getColumn.getType))
           }))
       builder.result()
     }
 
-  def analyzeFirst(frag: BQSqlFrag): IO[Either[AnalysisException, AnalyzedStatement]] = IO.interruptible {
-    val tables = frag.allReferencedTables
-    val catalog = toCatalog(tables: _*)
-    val rendered = frag.asString
+  def analyzeFirst(frag: BQSqlFrag): F[Either[AnalysisException, AnalyzedStatement]] =
+    F.interruptible {
+      val tables = frag.allReferencedTables
+      val catalog = toCatalog(tables: _*)
+      val rendered = frag.asString
 
-    val options = BigQueryLanguageOptions.get()
-    val analyzerOptions = new AnalyzerOptions
-    analyzerOptions.setLanguageOptions(options)
-    analyzerOptions.setPreserveColumnAliases(true)
+      val options = BigQueryLanguageOptions.get()
+      val analyzerOptions = new AnalyzerOptions
+      analyzerOptions.setLanguageOptions(options)
+      analyzerOptions.setPreserveColumnAliases(true)
 
-    val analyser = new ZetaSQLToolkitAnalyzer(analyzerOptions)
-    val analyzed = analyser.analyzeStatements(rendered, catalog)
+      val analyser = new ZetaSQLToolkitAnalyzer(analyzerOptions)
+      val analyzed = analyser.analyzeStatements(rendered, catalog)
 
-    if (analyzed.hasNext)
-      Right(analyzed.next())
-    else Left(new AnalysisException("Unable to find any analyzed statements"))
-  }
+      if (analyzed.hasNext)
+        Right(analyzed.next())
+      else Left(new AnalysisException("Unable to find any analyzed statements"))
+    }
+}
+
+object ZetaSql {
+  def apply[F[_]: Sync]: ZetaSql[F] = new ZetaSql[F]
 
   def toCatalog(tables: BQTableLike[Any]*): BasicCatalogWrapper = {
     val catalog = new BasicCatalogWrapper()
@@ -192,6 +200,7 @@ object ZetaSql {
 
     def toSimpleField(field: BQField) =
       new SimpleColumn(table.tableId.tableName, field.name, toType(field), false, true)
+
     val simple = table match {
       case BQTableRef(tableId, _, _) =>
         new SimpleTable(tableId.tableName)
@@ -210,5 +219,4 @@ object ZetaSql {
     simple.setFullName(table.tableId.asString)
     simple
   }
-
 }
