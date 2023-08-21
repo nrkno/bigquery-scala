@@ -107,7 +107,7 @@ lazy val core = crossProject(JVMPlatform)
     Compile / headerSources := Nil,
     Test / headerSources := Nil,
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.9.0",
+      "org.typelevel" %% "cats-core" % "2.10.0",
       "org.typelevel" %% "cats-effect" % "3.5.1",
       "org.typelevel" %% "literally" % "1.1.0",
       "org.scalameta" %% "munit" % "0.7.29" % Test,
