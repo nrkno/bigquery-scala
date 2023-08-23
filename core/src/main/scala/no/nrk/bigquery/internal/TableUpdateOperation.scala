@@ -39,15 +39,17 @@ object TableUpdateOperation {
                 )
 
                 val illegalSchemaExtension: Option[UpdateOperation.IllegalSchemaExtension] =
-                  conforms(
-                    actualSchema = remoteAsTableDef.schema,
-                    givenSchema = localTableDef.schema
-                  ).map { reasons =>
-                    UpdateOperation.IllegalSchemaExtension(
-                      TableDefOperationMeta(existingRemoteTable, tableDef),
-                      reasons.mkString(", ")
+                  conforms
+                    .onlyTypes(
+                      actualSchema = remoteAsTableDef.schema,
+                      givenSchema = localTableDef.schema
                     )
-                  }
+                    .map { reasons =>
+                      UpdateOperation.IllegalSchemaExtension(
+                        TableDefOperationMeta(existingRemoteTable, tableDef),
+                        reasons.mkString(", ")
+                      )
+                    }
 
                 if (localTableDef == remoteAsTableDef)
                   UpdateOperation.Noop(TableDefOperationMeta(existingRemoteTable, localTableDef))

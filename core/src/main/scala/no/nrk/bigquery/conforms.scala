@@ -32,7 +32,7 @@ object conforms {
       case other => BQSchema.of(other)
     }
 
-    apply(
+    onlyTypes(
       actualSchema.copy(fields = actualSchema.fields.map(anonymize)),
       givenSchema
     )
@@ -60,11 +60,10 @@ object conforms {
       case other => BQSchema.of(other)
     }
 
-    apply(actualSchema, givenSchema)
+    typesAndName(actualSchema, givenSchema)
   }
 
-  /* this is a stronger comparison than `onlyTypes`, because it takes into column names as well */
-  def apply(
+  def onlyTypes(
       actualSchema: BQSchema,
       givenSchema: BQSchema
   ): Option[List[String]] = {
@@ -95,6 +94,47 @@ object conforms {
             ()
           case None =>
             reasonsBuilder += s"Expected ${render(actualField)} at 0-based index $idx, but it given table/struct was shorter"
+        }
+      }
+
+    go(Nil, actualSchema.fields, givenSchema.fields)
+
+    reasonsBuilder.result() match {
+      case Nil => None
+      case reasons => Some(reasons)
+    }
+  }
+
+  /** this is a stronger comparison than `onlyTypes`, because it takes into column names as well */
+  def typesAndName(
+      actualSchema: BQSchema,
+      givenSchema: BQSchema
+  ): Option[List[String]] = {
+    val reasonsBuilder = List.newBuilder[String]
+
+    def go(
+        path: List[BQField],
+        actualFields: Seq[BQField],
+        givenFields: Seq[BQField]
+    ): Unit =
+      actualFields.foreach { actualField =>
+        val givenFieldOpt = givenFields.find(_.name == actualField.name)
+
+        // if we're inside structs, render the full path
+        def render(f: BQField) =
+          s"field `${(f :: path).reverse.map(_.name).mkString(".")}`"
+
+        givenFieldOpt match {
+          case Some(givenField) if givenField.tpe != actualField.tpe =>
+            reasonsBuilder += s"Expected ${render(actualField)} to have type ${actualField.tpe}, got ${givenField.tpe}"
+          case Some(givenField) if (givenField.mode == Mode.REPEATED) != (actualField.mode == Mode.REPEATED) =>
+            reasonsBuilder += s"Expected ${render(actualField)} to have mode ${actualField.mode}, got ${givenField.mode}"
+          case Some(givenField) if givenField.subFields.nonEmpty =>
+            go(givenField :: path, actualField.subFields, givenField.subFields)
+          case Some(ok @ _) =>
+            ()
+          case None =>
+            reasonsBuilder += s"Expected ${render(actualField)} to part of [${givenFields.map(_.name).mkString(", ")}]"
         }
       }
 
