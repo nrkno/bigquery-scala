@@ -125,7 +125,8 @@ object conforms {
         givenFieldOpt match {
           case Some(givenField) if givenField.tpe != actualField.tpe =>
             reasonsBuilder += s"Expected ${render(actualField)} to have type ${actualField.tpe}, got ${givenField.tpe}"
-          case Some(givenField) if (givenField.mode == Mode.REPEATED) != (actualField.mode == Mode.REPEATED) =>
+          case Some(givenField)
+              if (givenField.mode == BQField.Mode.REPEATED) != (actualField.mode == BQField.Mode.REPEATED) =>
             reasonsBuilder += s"Expected ${render(actualField)} to have mode ${actualField.mode}, got ${givenField.mode}"
           case Some(givenField) if givenField.subFields.nonEmpty =>
             go(givenField :: path, actualField.subFields, givenField.subFields)
