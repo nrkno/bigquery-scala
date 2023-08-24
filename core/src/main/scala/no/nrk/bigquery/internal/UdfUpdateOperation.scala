@@ -80,6 +80,7 @@ object UdfUpdateOperation {
       if (bqType.tpe == StandardSQLTypeName.STRUCT)
         StandardSQLDataType
           .newBuilder()
+          .setTypeKind(StandardSQLTypeName.STRUCT.name)
           .setStructType(
             StandardSQLStructType
               .newBuilder()
