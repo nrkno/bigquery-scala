@@ -10,6 +10,7 @@ import cats.syntax.all._
 import munit.FunSuite
 import no.nrk.bigquery.BQPartitionType.DatePartitioned
 import no.nrk.bigquery.syntax._
+import shapeless.Sized
 
 import java.time.LocalDate
 
@@ -17,14 +18,18 @@ class BQSqlFragTest extends FunSuite {
   private val udfToString =
     UDF.temporary(
       ident"udf_toString",
-      UDF.Param("i", BQType.INT64) :: Nil,
+      UDF.Params.of(UDF.Param("i", BQType.INT64)),
       UDF.Body.Sql(bqfr"(string(i))"),
       Some(BQType.STRING))
   private val udfAddOne =
-    UDF.temporary(ident"udf_add1", UDF.Param("i", BQType.INT64) :: Nil, UDF.Body.Sql(bqfr"(i + 1)"), Some(BQType.INT64))
+    UDF.temporary(
+      ident"udf_add1",
+      UDF.Params.of(UDF.Param("i", BQType.INT64)),
+      UDF.Body.Sql(bqfr"(i + 1)"),
+      Some(BQType.INT64))
 
   test("collect nested UDFs") {
-    val udfIdents = bqfr"select ${udfToString(udfAddOne(bqfr"1"))}"
+    val udfIdents = bqfr"select ${udfToString(Sized(udfAddOne(Sized(bqfr"1"))))}"
       .collect { case BQSqlFrag.Call(udf, _) => udf }
       .map(_.name)
       .sortBy(_.show)
@@ -35,21 +40,22 @@ class BQSqlFragTest extends FunSuite {
   test("collect UDF used in body in other UDFs") {
     val innerUdf1 = UDF.temporary(
       Ident("bb"),
-      List(UDF.Param("input", BQType.INT64)),
+      UDF.Params.of(UDF.Param("input", BQType.INT64)),
       UDF.Body.Sql(bqsql"(input + input)"),
       Some(BQType.INT64))
     val innerUdf2 = UDF.temporary(
       Ident("cc"),
-      List(UDF.Param("input", BQType.INT64)),
+      UDF.Params.of(UDF.Param("input", BQType.INT64)),
       UDF.Body.Sql(bqsql"(input + input)"),
       Some(BQType.INT64))
     val outerUdf = UDF.temporary(
       Ident("aa"),
-      List(UDF.Param("input", BQType.INT64)),
-      UDF.Body.Sql(bqsql"(${innerUdf1(ident"input")} / ${innerUdf2(bqfr"2")})"),
-      Some(BQType.FLOAT64))
+      UDF.Params.of(UDF.Param("input", BQType.INT64)),
+      UDF.Body.Sql(bqsql"(${innerUdf1(Sized(ident"input"))} / ${innerUdf2(Sized(bqfr"2"))})"),
+      Some(BQType.FLOAT64)
+    )
 
-    val udfIdents = bqsql"select ${outerUdf(1)}"
+    val udfIdents = bqsql"select ${outerUdf(Sized(1))}"
       .collect { case BQSqlFrag.Call(udf, _) => udf }
       .map(_.name)
 
@@ -81,22 +87,23 @@ class BQSqlFragTest extends FunSuite {
 
     val outerUdf1 = UDF.temporary(
       Ident("outer1"),
-      List(UDF.Param("input", BQType.INT64)),
+      UDF.Params.of(UDF.Param("input", BQType.INT64)),
       UDF.Body.Sql(bqsql"(2.0)"),
       Some(BQType.FLOAT64))
 
     val outerUdf2 = UDF.temporary(
       Ident("outer2"),
-      List(UDF.Param("input", BQType.INT64)),
+      UDF.Params.of(UDF.Param("input", BQType.INT64)),
       UDF.Body.Sql(bqsql"(1.0)"),
       Some(BQType.FLOAT64))
 
-    val fill2 = BQFill(JobKey("hello2"), mkTable("bree"), bqsql"select ${outerUdf2(1)}", LocalDate.of(2023, 1, 1))
+    val fill2 =
+      BQFill(JobKey("hello2"), mkTable("bree"), bqsql"select ${outerUdf2(Sized(1))}", LocalDate.of(2023, 1, 1))
 
     val fill1 = BQFill(
       JobKey("hello"),
       mkTable("baz"),
-      bqsql"select ${outerUdf1(1)} from $fill2",
+      bqsql"select ${outerUdf1(Sized(1))} from $fill2",
       LocalDate.of(2023, 1, 1)
     )
 

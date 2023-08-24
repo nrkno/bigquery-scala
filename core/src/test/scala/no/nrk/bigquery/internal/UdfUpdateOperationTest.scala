@@ -11,14 +11,15 @@ import munit.FunSuite
 import no.nrk.bigquery.UpdateOperation.{CreatePersistentUdf, Illegal, UpdatePersistentUdf}
 import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
+import shapeless._0
 
 class UdfUpdateOperationTest extends FunSuite {
 
-  private val udf =
+  private val udf: UDF.Persistent[_0] =
     UDF.persistent(
       ident"foo",
       BQDataset(ProjectId("p1"), "ds1", None),
-      Nil,
+      UDF.Params.empty,
       UDF.Body.Sql(bqfr"(1)"),
       Some(BQType.INT64))
   private val routineId: RoutineId = RoutineId.of("p1", "ds1", "foo")
@@ -38,11 +39,11 @@ class UdfUpdateOperationTest extends FunSuite {
     }
 
     UdfUpdateOperation.from(
-      udf.copy(params = UDF.Param(ident"foo", Some(BQType.INT64)) :: Nil),
+      udf.copy(params = UDF.Params.of(UDF.Param(ident"foo", Some(BQType.INT64)))),
       Some(existingRoutine)
     ) match {
       case UpdatePersistentUdf(newUdf, newRoutine) =>
-        assertNotEquals(newUdf, udf)
+        assertNotEquals(newUdf.params.unsized.toList, udf.params.unsized.toList)
         assertNotEquals(newRoutine, existingRoutine)
       case other => fail(other.toString)
     }

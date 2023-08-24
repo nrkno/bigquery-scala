@@ -17,7 +17,7 @@ object UdfUpdateOperation {
   private val UdfRoutineType = "SCALAR_FUNCTION"
 
   def from(
-      udf: UDF.Persistent,
+      udf: UDF.Persistent[_],
       maybeExisting: Option[RoutineInfo]
   ): UpdateOperation = maybeExisting match {
     case None =>
@@ -31,7 +31,7 @@ object UdfUpdateOperation {
       else UpdateOperation.UpdatePersistentUdf(udf, routineFromUdf)
   }
 
-  private def createRoutineInfo(udf: UDF.Persistent) = {
+  private def createRoutineInfo(udf: UDF.Persistent[_]) = {
     val baseBuilder = RoutineInfo
       .newBuilder(toRoutineId(udf.name))
       .setRoutineType(UdfRoutineType)

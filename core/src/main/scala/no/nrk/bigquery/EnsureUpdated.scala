@@ -23,7 +23,7 @@ case class TableDefOperationMeta(
 }
 case class UdfOperationMeta(
     routine: RoutineInfo,
-    persistentUdf: UDF.Persistent
+    persistentUdf: UDF.Persistent[_]
 ) extends OperationMeta {
   override def identifier: String = persistentUdf.name.asString
 }
@@ -56,12 +56,12 @@ object UpdateOperation {
   ) extends Success
 
   case class CreatePersistentUdf(
-      persistentUdf: UDF.Persistent,
+      persistentUdf: UDF.Persistent[_],
       routine: RoutineInfo
   ) extends Success
 
   case class UpdatePersistentUdf(
-      persistentUdf: UDF.Persistent,
+      persistentUdf: UDF.Persistent[_],
       routine: RoutineInfo
   ) extends Success
 
@@ -89,7 +89,7 @@ class EnsureUpdated[F[_]](
       TableUpdateOperation.from(template, maybeExisting)
     }
 
-  def check(persistentUdf: UDF.Persistent): F[UpdateOperation] =
+  def check(persistentUdf: UDF.Persistent[_]): F[UpdateOperation] =
     bqClient.getRoutine(persistentUdf.name).map { maybeExisting =>
       UdfUpdateOperation.from(persistentUdf, maybeExisting)
     }
