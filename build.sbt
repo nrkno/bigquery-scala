@@ -138,7 +138,10 @@ lazy val core = crossProject(JVMPlatform)
         )
       }
     },
-    mimaBinaryIssueFilters ++= Nil
+    mimaBinaryIssueFilters ++= List(
+      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.BQDataset.of"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.BQDataset.unsafeOf")
+    )
   )
   .disablePlugins(TypelevelCiSigningPlugin, Sonatype, SbtGpg)
 
