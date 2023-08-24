@@ -13,12 +13,12 @@ object Generators {
 
   val validProjectIdGen = for {
     firstchar <- Gen.stringOfN(1, Gen.alphaLowerChar)
-    maybedash <- Gen.oneOf("", "-")
+    maybeSymbol <- Gen.oneOf("", "-")
     alphaNumLower = Gen.oneOf(Gen.alphaLowerChar, Gen.numChar)
-    afterdash <- Gen.stringOfN(6 - maybedash.length, alphaNumLower)
+    afterdash <- Gen.stringOfN(6 - maybeSymbol.length, alphaNumLower)
     lastChars <- Generators
-      .shorterThan(29 - (1 + afterdash.length + maybedash.length), Gen.stringOf(alphaNumLower))
-  } yield firstchar + maybedash + afterdash + lastChars
+      .shorterThan(29 - (1 + afterdash.length + maybeSymbol.length), Gen.stringOf(alphaNumLower))
+  } yield firstchar + maybeSymbol + afterdash + lastChars
 
   val validDatasetIdGen = for {
     alpha <- Generators.shorterThanAlphaNum(1021).filterNot(_.isEmpty)
@@ -31,7 +31,7 @@ object Generators {
       .stringOfN(1, unicodeIdentifierPart)
       .map(_.replaceAll("(?U)\\W", ""))
       .map(s => if (s.isEmpty) "a" else s)
-    choose <- Gen.oneOf("", " ", "-", "_")
+    choose <- Gen.oneOf("", " ", "-", "_", "$", "*")
     next <- Generators.shorterThan(
       1022,
       Gen.stringOf(unicodeIdentifierPart).map(_.replaceAll("(?U)\\W", "")).filter(_.nonEmpty))

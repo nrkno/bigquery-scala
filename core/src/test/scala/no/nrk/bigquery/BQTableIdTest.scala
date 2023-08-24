@@ -20,4 +20,13 @@ class BQTableIdTest extends munit.ScalaCheckSuite {
         assertEquals(obtained, Right(BQTableId(BQDataset(ProjectId(project), dataset, None), table)))
     }
   }
+
+  test("examples must work") {
+    val ids = List("cloudaudit_googleapis_com_data_access_*", "service_daily_example_v01$20200801")
+
+    for (id <- ids) {
+      val obtained = BQTableId.of(dataset, id)
+      assertEquals(obtained, Right(BQTableId(dataset, id)))
+    }
+  }
 }

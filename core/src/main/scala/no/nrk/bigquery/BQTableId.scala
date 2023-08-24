@@ -29,7 +29,7 @@ final case class BQTableId private[bigquery] (dataset: BQDataset, tableName: Str
 
 object BQTableId {
 
-  private val regex: Pattern = "(?U)^\\w[\\w_ -]{1,1023}".r.pattern
+  private val regex: Pattern = "(?U)^\\w[\\w_ *$-]{1,1023}".r.pattern
 
   def of(dataset: BQDataset, tableName: String): Either[String, BQTableId] =
     if (regex.matcher(tableName).matches()) Right(BQTableId(dataset, tableName))
@@ -37,6 +37,9 @@ object BQTableId {
 
   def unsafeOf(dataset: BQDataset, tableName: String): BQTableId =
     of(dataset, tableName).fold(err => throw new IllegalArgumentException(err), identity)
+
+  def unsafeFrom(project: ProjectId, dataset: String, tableName: String): BQTableId =
+    unsafeFromString(s"${project.value}.${dataset}.${tableName}")
 
   def unsafeFromGoogle(dataset: BQDataset, tableId: TableId): BQTableId = {
     require(
