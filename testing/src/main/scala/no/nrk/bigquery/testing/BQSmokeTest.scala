@@ -291,7 +291,7 @@ object BQSmokeTest {
     def checkSchema(actualSchema: BQSchema): Unit =
       this match {
         case CheckType.Schema(expectedSchema) =>
-          conforms(actualSchema, expectedSchema) match {
+          conforms.onlyTypes(actualSchema, expectedSchema) match {
             case Some(reasons) =>
               fail(s"Failed because ${reasons.mkString(", ")}", TypeClue(expectedSchema, actualSchema))
             case None => assert(true)
