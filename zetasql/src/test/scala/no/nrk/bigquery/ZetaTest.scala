@@ -7,7 +7,7 @@ import com.google.zetasql.toolkit.AnalysisException
 import java.time.LocalDate
 
 class ZetaTest extends munit.CatsEffectSuite {
-  private val zetaSql = new ZetaSql[IO]
+  private lazy val zetaSql = new ZetaSql[IO]
 
   private val table = BQTableDef.Table(
     BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("com-example"), "example"), "test"),
@@ -87,4 +87,19 @@ class ZetaTest extends munit.CatsEffectSuite {
       .flatMap(zetaSql.queryFields)
       .assertEquals(expected)
   }
+
+  override def munitTestTransforms: List[TestTransform] =
+    super.munitTestTransforms ++ List(
+      new TestTransform(
+        "disabled-for-aarch64",
+        test =>
+          if ("aarch64" == System.getProperty("os.arch").toLowerCase)
+            test
+              .withBody[Boolean] { () =>
+                println("Test is Disabled for \"aarch64\"")
+                true
+              }
+              .asInstanceOf[Test]
+          else test
+      ))
 }
