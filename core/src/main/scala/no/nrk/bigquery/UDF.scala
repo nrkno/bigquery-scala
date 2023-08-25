@@ -12,14 +12,28 @@ import cats.Show
 import no.nrk.bigquery.UDF._
 import no.nrk.bigquery.UDF.UDFId._
 import no.nrk.bigquery.syntax._
-import shapeless.{Nat, Sized, SizedBuilder, _0}
+import shapeless.{Nat, Sized, SizedBuilder}
+import shapeless.nat. _0
 
+/** The UDF has an apply method rendering a BQSqlFrag that matches the size of `params`.
+  *
+  * {{{
+  * val myUdf =
+  *   UDF.temporary(
+  *     ident"myUdf",
+  *     UDF.Params.of(UDF.Param("foo", BQType.STRING)),
+  *     UDF.Body.SQL(bqfr"(foo)"),
+  *     Some(BQType.STRING)
+  *   )
+  * bqfr"\${myUdf(ident"bar")}" // ok
+  * bqfr"\${myUdf()}" // compile error
+  * bqfr"\${myUdf(ident"bar1", ident"bar")}" // compile error
+  * }}}
+  */
 sealed trait UDF[+A <: UDFId, N <: Nat] {
   def name: A
-  def params: Sized[Seq[UDF.Param], N]
+  def params: Sized[IndexedSeq[UDF.Param], N]
   def returnType: Option[BQType]
-  def apply(args: Sized[Seq[BQSqlFrag.Magnet], N]): BQSqlFrag.Call =
-    BQSqlFrag.Call(this, args.unsized.toList.map(_.frag))
 }
 object UDF {
 
@@ -27,9 +41,8 @@ object UDF {
 
   object Params {
     val empty: Sized[IndexedSeq[UDF.Param], _0] = Sized.wrap[IndexedSeq[UDF.Param], _0](IndexedSeq.empty[UDF.Param])
-    def apply = new SizedBuilder[
-      IndexedSeq
-    ]() // todo: figure out why we need to explicit call apply. Might be related to the type alias
+    // todo: figure out why we need to explicit call apply. Might be related to the type alias
+    def apply = new SizedBuilder[IndexedSeq]()
     def of = new SizedBuilder[IndexedSeq]()
   }
 

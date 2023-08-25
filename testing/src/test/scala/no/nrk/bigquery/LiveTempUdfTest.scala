@@ -8,7 +8,6 @@ package no.nrk.bigquery
 
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.testing.{BQSmokeTest, BigQueryTestClient}
-import shapeless.Sized
 
 class LiveTempUdfTest extends BQSmokeTest(BigQueryTestClient.testClient) {
   val udf1 = UDF.temporary(
@@ -19,10 +18,10 @@ class LiveTempUdfTest extends BQSmokeTest(BigQueryTestClient.testClient) {
   val udf2 = UDF.temporary(
     Ident("half_TMP"),
     UDF.Params.of(UDF.Param("input", BQType.INT64)),
-    UDF.Body.Sql(bqsql"(${udf1(Sized(Ident("input")))} / 2)"),
+    UDF.Body.Sql(bqsql"(${udf1(Ident("input"))} / 2)"),
     Some(BQType.FLOAT64))
 
   bqTypeCheckTest("query with UDF") {
-    BQQuery[Double](bqsql"select ${udf2(Sized(1))}")
+    BQQuery[Double](bqsql"select ${udf2(1)}")
   }
 }

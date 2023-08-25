@@ -35,7 +35,7 @@ object UdfUpdateOperation {
     val baseBuilder = RoutineInfo
       .newBuilder(toRoutineId(udf.name))
       .setRoutineType(UdfRoutineType)
-      .setArguments(udf.params.map(toRoutineArgs).asJava)
+      .setArguments(udf.params.unsized.map(toRoutineArgs).asJava)
       .setReturnType(udf.returnType.map(toSqlDataType).orNull)
 
     (udf.body match {

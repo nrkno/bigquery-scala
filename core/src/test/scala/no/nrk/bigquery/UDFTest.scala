@@ -8,7 +8,7 @@ package no.nrk.bigquery
 
 import munit.FunSuite
 import no.nrk.bigquery.syntax._
-import shapeless.{Sized, _0}
+import shapeless._0
 
 class UDFTest extends FunSuite {
 
@@ -96,11 +96,11 @@ class UDFTest extends FunSuite {
     val udf = UDF
       .temporary(
         ident"fnName",
-        Sized(UDF.Param("n", BQType.FLOAT64)),
+        UDF.Params.of(UDF.Param("n", BQType.FLOAT64)),
         UDF.Body.Js("return n + 1", List("bucket/foo.js")),
         Some(BQType.FLOAT64)
       )
-    assertEquals(bqfr"${udf(Sized(1d))}".asString, "fnName(1.0)")
+    assertEquals(bqfr"${udf(1d)}".asString, "fnName(1.0)")
   }
 
   test("render persistent call") {
@@ -113,7 +113,7 @@ class UDFTest extends FunSuite {
         Some(BQType.FLOAT64)
       )
 
-    assertEquals(bqfr"${udf(Sized(1d))}".asString, "`p1.ds1.fnName`(1.0)")
+    assertEquals(bqfr"${udf(1d)}".asString, "`p1.ds1.fnName`(1.0)")
   }
 
   test("render udf ref call") {
@@ -124,7 +124,7 @@ class UDFTest extends FunSuite {
       Some(BQType.FLOAT64)
     )
 
-    assertEquals(bqfr"${udf.apply(Sized(1d))}".asString, "`p1.ds1.fnName`(1.0)")
+    assertEquals(bqfr"${udf.apply(1d)}".asString, "`p1.ds1.fnName`(1.0)")
   }
 
 }

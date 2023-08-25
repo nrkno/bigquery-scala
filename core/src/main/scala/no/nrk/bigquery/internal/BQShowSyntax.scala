@@ -6,14 +6,13 @@
 
 package no.nrk.bigquery.internal
 
-import no.nrk.bigquery.{BQFill, BQFilledTable, BQShow, BQSqlFrag, UDF}
+import no.nrk.bigquery.{BQFill, BQFilledTable, BQShow, BQSqlFrag}
 import cats.Foldable
 import cats.syntax.all._
-import shapeless._0
 
 import java.time.LocalDate
 
-trait BQShowSyntax {
+trait BQShowSyntax extends UdfSyntax {
 
   implicit def bqShowInterpolator(sc: StringContext): BQShow.BQShowInterpolator = new BQShow.BQShowInterpolator(sc)
   implicit def bqShowOps[A](a: A): BQShowOps[A] = new BQShowOps[A](a)
@@ -21,15 +20,6 @@ trait BQShowSyntax {
   implicit def bqFilledTableLocalDateOps(fill: BQFilledTable[LocalDate]): BQFilledTableLocalDateOps =
     new BQFilledTableLocalDateOps(fill)
 
-  implicit def bqUdfOps(udf: UDF[UDF.UDFId, _0]): UdfOps = new UdfOps(udf)
-}
-
-/** Makes it possible to call UDFs with no arguments. Shapeless Sized does not by default have an empty instance and we
-  * do not want to clutter the api with it.
-  */
-// todo: consider if we should create apply methods matching the Nat class. Then we do not need to think about the Sized instance
-class UdfOps(udf: UDF[UDF.UDFId, _0]) {
-  def apply(): BQSqlFrag.Call = BQSqlFrag.Call(udf, List.empty)
 }
 
 class BQShowOps[A](a: A) {

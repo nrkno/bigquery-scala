@@ -10,7 +10,6 @@ import cats.syntax.all._
 import munit.FunSuite
 import no.nrk.bigquery.BQPartitionType.DatePartitioned
 import no.nrk.bigquery.syntax._
-import shapeless.Sized
 
 import java.time.LocalDate
 
@@ -29,7 +28,7 @@ class BQSqlFragTest extends FunSuite {
       Some(BQType.INT64))
 
   test("collect nested UDFs") {
-    val udfIdents = bqfr"select ${udfToString(Sized(udfAddOne(Sized(bqfr"1"))))}"
+    val udfIdents = bqfr"select ${udfToString(udfAddOne(bqfr"1"))}"
       .collect { case BQSqlFrag.Call(udf, _) => udf }
       .map(_.name)
       .sortBy(_.show)
@@ -51,11 +50,11 @@ class BQSqlFragTest extends FunSuite {
     val outerUdf = UDF.temporary(
       Ident("aa"),
       UDF.Params.of(UDF.Param("input", BQType.INT64)),
-      UDF.Body.Sql(bqsql"(${innerUdf1(Sized(ident"input"))} / ${innerUdf2(Sized(bqfr"2"))})"),
+      UDF.Body.Sql(bqsql"(${innerUdf1(ident"input")} / ${innerUdf2(bqfr"2")})"),
       Some(BQType.FLOAT64)
     )
 
-    val udfIdents = bqsql"select ${outerUdf(Sized(1))}"
+    val udfIdents = bqsql"select ${outerUdf(1)}"
       .collect { case BQSqlFrag.Call(udf, _) => udf }
       .map(_.name)
 
@@ -98,12 +97,12 @@ class BQSqlFragTest extends FunSuite {
       Some(BQType.FLOAT64))
 
     val fill2 =
-      BQFill(JobKey("hello2"), mkTable("bree"), bqsql"select ${outerUdf2(Sized(1))}", LocalDate.of(2023, 1, 1))
+      BQFill(JobKey("hello2"), mkTable("bree"), bqsql"select ${outerUdf2(1)}", LocalDate.of(2023, 1, 1))
 
     val fill1 = BQFill(
       JobKey("hello"),
       mkTable("baz"),
-      bqsql"select ${outerUdf1(Sized(1))} from $fill2",
+      bqsql"select ${outerUdf1(1)} from $fill2",
       LocalDate.of(2023, 1, 1)
     )
 
