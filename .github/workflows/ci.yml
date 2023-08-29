@@ -17,49 +17,40 @@ on:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+
+concurrency:
+  group: ${{ github.workflow }} @ ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build and Test
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [2.13.11, 2.12.18, 3.3.0]
+        scala: [2.13, 2.12, 3]
         java: [temurin@8]
         project: [rootJVM]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     steps:
       - name: Checkout current branch (full)
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Download Java (temurin@8)
-        id: download-java-temurin-8
-        if: matrix.java == 'temurin@8'
-        uses: typelevel/download-java@v2
-        with:
-          distribution: temurin
-          java-version: 8
-
       - name: Setup Java (temurin@8)
+        id: setup-java-temurin-8
         if: matrix.java == 'temurin@8'
         uses: actions/setup-java@v3
         with:
-          distribution: jdkfile
+          distribution: temurin
           java-version: 8
-          jdkFile: ${{ steps.download-java-temurin-8.outputs.jdkFile }}
+          cache: sbt
 
-      - name: Cache sbt
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.sbt
-            ~/.ivy2/cache
-            ~/.coursier/cache/v1
-            ~/.cache/coursier/v1
-            ~/AppData/Local/Coursier/Cache/v1
-            ~/Library/Caches/Coursier/v1
-          key: ${{ runner.os }}-sbt-cache-v2-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
+      - name: sbt update
+        if: matrix.java == 'temurin@8' && steps.setup-java-temurin-8.outputs.cache-hit == 'false'
+        run: sbt +update
 
       - name: Check that workflows are up to date
         run: sbt githubWorkflowCheck
@@ -74,24 +65,13 @@ jobs:
           ASSERT_CURRENT_GENERATED_FILES: 1
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' test
 
-      - name: Check binary compatibility
-        if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-latest'
-        env:
-          MYGET_USERNAME: ${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_ID }}
-          MYGET_PASSWORD: ${{ secrets.PLATTFORM_MYGET_ENTERPRISE_READ_SECRET }}
-        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' mimaReportBinaryIssues
-
-      - name: Generate API documentation
-        if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-latest'
-        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' doc
-
       - name: Make target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-        run: mkdir -p target .js/target site/target prometheus/.jvm/target testing/.jvm/target .jvm/target .native/target core/.jvm/target project/target
+        run: mkdir -p prometheus/.jvm/target testing/.jvm/target core/.jvm/target project/target
 
       - name: Compress target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-        run: tar cf targets.tar target .js/target site/target prometheus/.jvm/target testing/.jvm/target .jvm/target .native/target core/.jvm/target project/target
+        run: tar cf targets.tar prometheus/.jvm/target testing/.jvm/target core/.jvm/target project/target
 
       - name: Upload target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
@@ -115,60 +95,45 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download Java (temurin@8)
-        id: download-java-temurin-8
-        if: matrix.java == 'temurin@8'
-        uses: typelevel/download-java@v2
-        with:
-          distribution: temurin
-          java-version: 8
-
       - name: Setup Java (temurin@8)
+        id: setup-java-temurin-8
         if: matrix.java == 'temurin@8'
         uses: actions/setup-java@v3
         with:
-          distribution: jdkfile
+          distribution: temurin
           java-version: 8
-          jdkFile: ${{ steps.download-java-temurin-8.outputs.jdkFile }}
+          cache: sbt
 
-      - name: Cache sbt
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.sbt
-            ~/.ivy2/cache
-            ~/.coursier/cache/v1
-            ~/.cache/coursier/v1
-            ~/AppData/Local/Coursier/Cache/v1
-            ~/Library/Caches/Coursier/v1
-          key: ${{ runner.os }}-sbt-cache-v2-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
+      - name: sbt update
+        if: matrix.java == 'temurin@8' && steps.setup-java-temurin-8.outputs.cache-hit == 'false'
+        run: sbt +update
 
-      - name: Download target directories (2.13.11, rootJVM)
+      - name: Download target directories (2.13, rootJVM)
         uses: actions/download-artifact@v3
         with:
-          name: target-${{ matrix.os }}-${{ matrix.java }}-2.13.11-rootJVM
+          name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-rootJVM
 
-      - name: Inflate target directories (2.13.11, rootJVM)
+      - name: Inflate target directories (2.13, rootJVM)
         run: |
           tar xf targets.tar
           rm targets.tar
 
-      - name: Download target directories (2.12.18, rootJVM)
+      - name: Download target directories (2.12, rootJVM)
         uses: actions/download-artifact@v3
         with:
-          name: target-${{ matrix.os }}-${{ matrix.java }}-2.12.18-rootJVM
+          name: target-${{ matrix.os }}-${{ matrix.java }}-2.12-rootJVM
 
-      - name: Inflate target directories (2.12.18, rootJVM)
+      - name: Inflate target directories (2.12, rootJVM)
         run: |
           tar xf targets.tar
           rm targets.tar
 
-      - name: Download target directories (3.3.0, rootJVM)
+      - name: Download target directories (3, rootJVM)
         uses: actions/download-artifact@v3
         with:
-          name: target-${{ matrix.os }}-${{ matrix.java }}-3.3.0-rootJVM
+          name: target-${{ matrix.os }}-${{ matrix.java }}-3-rootJVM
 
-      - name: Inflate target directories (3.3.0, rootJVM)
+      - name: Inflate target directories (3, rootJVM)
         run: |
           tar xf targets.tar
           rm targets.tar
@@ -178,3 +143,36 @@ jobs:
           MYGET_USERNAME: ${{ secrets.PLATTFORM_MYGET_ENTERPRISE_WRITE_ID }}
           MYGET_PASSWORD: ${{ secrets.PLATTFORM_MYGET_ENTERPRISE_WRITE_SECRET }}
         run: sbt +publish
+
+  dependency-submission:
+    name: Submit Dependencies
+    if: github.event_name != 'pull_request'
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        java: [temurin@8]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout current branch (full)
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java (temurin@8)
+        id: setup-java-temurin-8
+        if: matrix.java == 'temurin@8'
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 8
+          cache: sbt
+
+      - name: sbt update
+        if: matrix.java == 'temurin@8' && steps.setup-java-temurin-8.outputs.cache-hit == 'false'
+        run: sbt +update
+
+      - name: Submit Dependencies
+        uses: scalacenter/sbt-dependency-submission@v2
+        with:
+          modules-ignore: bigquery-scala_2.13 bigquery-scala_2.12 bigquery-scala_3 docs_2.13 docs_2.12 docs_3 bigquery-scala_2.13 bigquery-scala_2.12 bigquery-scala_3 bigquery-scala_2.13 bigquery-scala_2.12 bigquery-scala_3
+          configs-ignore: test scala-tool scala-doc-tool test-internal
