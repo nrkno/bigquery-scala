@@ -35,7 +35,7 @@ object TableUpdateOperation {
                   clustering = Option(remoteTableDef.getClustering).toList
                     .flatMap(_.getFields.asScala)
                     .map(Ident.apply),
-                  labels = TableLabels.fromTableInfo(existingRemoteTable),
+                  labels = GoogleTypeHelper.tableLabelsfromTableInfo(existingRemoteTable),
                   tableOptions = TableOptions.fromTableInfo(existingRemoteTable)
                 )
 
@@ -121,7 +121,7 @@ object TableUpdateOperation {
               query = BQSqlFrag(remoteViewDef.getQuery),
               schema = SchemaHelper.fromSchema(remoteViewDef.getSchema),
               description = Option(existingRemoteTable.getDescription),
-              labels = TableLabels.fromTableInfo(existingRemoteTable)
+              labels = GoogleTypeHelper.tableLabelsfromTableInfo(existingRemoteTable)
             )
 
             if (localTableDef == remoteAsTableDef)

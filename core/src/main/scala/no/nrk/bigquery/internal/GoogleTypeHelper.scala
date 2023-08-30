@@ -1,7 +1,11 @@
 package no.nrk.bigquery.internal
 
-import com.google.cloud.bigquery.{DatasetId, TableId}
-import no.nrk.bigquery.{BQDataset, BQTableId}
+import com.google.cloud.bigquery.{DatasetId, TableId, TableInfo}
+import no.nrk.bigquery.TableLabels.Empty
+import no.nrk.bigquery.{BQDataset, BQTableId, TableLabels}
+
+import scala.jdk.CollectionConverters._
+
 
 object GoogleTypeHelper {
 
@@ -24,4 +28,11 @@ object GoogleTypeHelper {
   implicit class BQDatasetOps(val ds: BQDataset) extends AnyVal {
     def underlying: DatasetId = toDatasetGoogle(ds)
   }
+
+
+  def tableLabelsfromTableInfo(tableInfo: TableInfo): TableLabels =
+    Option(tableInfo.getLabels) match {
+      case Some(values) => Empty.withAll(values.asScala)
+      case None => Empty
+    }
 }
