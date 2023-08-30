@@ -1,7 +1,5 @@
 package no.nrk.bigquery.util
 
-import com.google.cloud.bigquery.Field.Mode
-import com.google.cloud.bigquery.StandardSQLTypeName
 import munit.FunSuite
 import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
@@ -9,18 +7,18 @@ import no.nrk.bigquery.syntax._
 class BqSqlProjectionTest extends FunSuite {
 
   test("project a struct".ignore) {
-    val structField = BQField.struct("foo", Mode.NULLABLE)(
-      BQField("keep_me_1", StandardSQLTypeName.STRING, Mode.NULLABLE),
-      BQField("keep_me_2", StandardSQLTypeName.STRING, Mode.NULLABLE),
-      BQField("drop_me", StandardSQLTypeName.STRING, Mode.NULLABLE),
-      BQField("rename_me", StandardSQLTypeName.STRING, Mode.NULLABLE),
-      BQField.struct("keep_struct", Mode.NULLABLE)(
-        BQField("one", StandardSQLTypeName.STRING, Mode.NULLABLE),
-        BQField("two", StandardSQLTypeName.STRING, Mode.NULLABLE)
+    val structField = BQField.struct("foo", BQField.Mode.NULLABLE)(
+      BQField("keep_me_1", BQField.Type.STRING, BQField.Mode.NULLABLE),
+      BQField("keep_me_2", BQField.Type.STRING, BQField.Mode.NULLABLE),
+      BQField("drop_me", BQField.Type.STRING, BQField.Mode.NULLABLE),
+      BQField("rename_me", BQField.Type.STRING, BQField.Mode.NULLABLE),
+      BQField.struct("keep_struct", BQField.Mode.NULLABLE)(
+        BQField("one", BQField.Type.STRING, BQField.Mode.NULLABLE),
+        BQField("two", BQField.Type.STRING, BQField.Mode.NULLABLE)
       ),
-      BQField.struct("flatten_struct", Mode.NULLABLE)(
-        BQField("one", StandardSQLTypeName.STRING, Mode.NULLABLE),
-        BQField("two", StandardSQLTypeName.STRING, Mode.NULLABLE)
+      BQField.struct("flatten_struct", BQField.Mode.NULLABLE)(
+        BQField("one", BQField.Type.STRING, BQField.Mode.NULLABLE),
+        BQField("two", BQField.Type.STRING, BQField.Mode.NULLABLE)
       )
     )
     val projection = BqSqlProjection(structField) {

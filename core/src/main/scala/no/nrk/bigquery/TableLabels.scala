@@ -1,10 +1,8 @@
 package no.nrk.bigquery
 
 import cats.syntax.show._
-import com.google.cloud.bigquery.TableInfo
 
 import scala.collection.immutable.SortedMap
-import scala.jdk.CollectionConverters._
 
 /** @param values sorted for consistent behaviour */
 case class TableLabels(values: SortedMap[String, String]) {
@@ -85,9 +83,4 @@ object TableLabels {
   def apply(values: (String, String)*): TableLabels =
     Empty.withAll(values)
 
-  def fromTableInfo(tableInfo: TableInfo): TableLabels =
-    Option(tableInfo.getLabels) match {
-      case Some(values) => Empty.withAll(values.asScala)
-      case None => Empty
-    }
 }

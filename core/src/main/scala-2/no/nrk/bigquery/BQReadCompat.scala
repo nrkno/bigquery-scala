@@ -4,8 +4,6 @@ import magnolia1.{CaseClass, Magnolia}
 
 import org.apache.avro
 import org.apache.avro.generic.GenericRecord
-import com.google.cloud.bigquery.Field
-import com.google.cloud.bigquery.StandardSQLTypeName
 import scala.annotation.nowarn
 
 private[bigquery] trait BQReadCompat { self: BQRead.type =>
@@ -16,8 +14,8 @@ private[bigquery] trait BQReadCompat { self: BQRead.type =>
     new BQRead[T] {
       override val bqType: BQType =
         BQType(
-          Field.Mode.REQUIRED,
-          StandardSQLTypeName.STRUCT,
+          BQField.Mode.REQUIRED,
+          BQField.Type.STRUCT,
           ctx.parameters
             .map(param => param.label -> param.typeclass.bqType)
             .toList

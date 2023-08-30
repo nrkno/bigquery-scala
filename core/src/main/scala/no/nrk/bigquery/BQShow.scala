@@ -132,9 +132,11 @@ trait BQShowInstances {
   implicit val bqShowInstant: BQShow[Instant] =
     x => BQSqlFrag(s"TIMESTAMP('${x.truncatedTo(ChronoUnit.MICROS)}')")
 
+  // todo: remove
   implicit val bqShowField: BQShow[Field] =
     x => BQSqlFrag(x.getName)
 
+  // todo: remove
   implicit val bqShowTimePartitioning: BQShow[TimePartitioning] =
     x => BQSqlFrag(x.getField)
 

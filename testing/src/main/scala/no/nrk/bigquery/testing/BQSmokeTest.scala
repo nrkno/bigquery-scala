@@ -5,13 +5,14 @@ import cats.effect.{IO, Resource}
 import cats.effect.kernel.Outcome
 import cats.syntax.alternative._
 import com.google.cloud.bigquery.JobStatistics.QueryStatistics
-import com.google.cloud.bigquery.{BigQueryException, Field, StandardSQLTypeName}
+import com.google.cloud.bigquery.BigQueryException
 import io.circe.parser.decode
 import io.circe.syntax._
 import munit.Assertions.{clues, fail}
 import munit.{CatsEffectSuite, Clues, Location}
 import no.nrk.bigquery.UDF.Body
 import no.nrk.bigquery._
+import no.nrk.bigquery.internal.SchemaHelper
 import no.nrk.bigquery.testing.BQSmokeTest.{CheckType, bqCheckFragment}
 import org.typelevel.log4cats.slf4j._
 import no.nrk.bigquery.syntax._
@@ -254,7 +255,7 @@ object BQSmokeTest {
               val run = bqClient
                 .dryRun(BQJobName("smoketest"), staticFrag, None)
                 .map(job =>
-                  BQSchema.fromSchema(
+                  SchemaHelper.fromSchema(
                     job.getStatistics[QueryStatistics]().getSchema
                   ))
                 .guaranteeCase {
@@ -280,7 +281,7 @@ object BQSmokeTest {
               IO(println(s"failed query: ${frag.asStringWithUDFs}"))
             case _ => IO.unit
           }
-          .map(job => BQSchema.fromSchema(job.getStatistics[QueryStatistics]().getSchema))
+          .map(job => SchemaHelper.fromSchema(job.getStatistics[QueryStatistics]().getSchema))
           .map(checkType.checkSchema)
 
         log *> compareAsIs *> runCheck
@@ -320,7 +321,7 @@ object BQSmokeTest {
 
     case class Field(
         name: String,
-        tpe: StandardSQLTypeName,
+        tpe: BQField.Type,
         subFields: List[Field]
     )
 
@@ -474,37 +475,37 @@ object BQSmokeTest {
 
     def valueForType(field: BQField): BQSqlFrag = {
       val base = field.tpe match {
-        case StandardSQLTypeName.JSON => BQSqlFrag("""JSON '{"foo": "bar"}'""")
-        case StandardSQLTypeName.BOOL => true.bqShow
-        case StandardSQLTypeName.INT64 => counter.next().bqShow
-        case StandardSQLTypeName.FLOAT64 => (counter.next() + 0.5).bqShow
-        case StandardSQLTypeName.NUMERIC => counter.next().bqShow
-        case StandardSQLTypeName.BIGNUMERIC => counter.next().bqShow
-        case StandardSQLTypeName.STRING => StringValue(field.name).bqShow
-        case StandardSQLTypeName.BYTES =>
+        case BQField.Type.JSON => BQSqlFrag("""JSON '{"foo": "bar"}'""")
+        case BQField.Type.BOOL => true.bqShow
+        case BQField.Type.INT64 => counter.next().bqShow
+        case BQField.Type.FLOAT64 => (counter.next() + 0.5).bqShow
+        case BQField.Type.NUMERIC => counter.next().bqShow
+        case BQField.Type.BIGNUMERIC => counter.next().bqShow
+        case BQField.Type.STRING => StringValue(field.name).bqShow
+        case BQField.Type.BYTES =>
           BQSqlFrag(
             "(select HLL_COUNT.INIT(x) from unnest(['a']) x)"
           ).bqShow // how to write a literal?
-        case StandardSQLTypeName.STRUCT => struct(field.subFields)
-        case StandardSQLTypeName.ARRAY =>
+        case BQField.Type.STRUCT => struct(field.subFields)
+        case BQField.Type.ARRAY =>
           List
             .range(0, 2)
             .map(_ => valueForType(field.copy(tpe = field.subFields.head.tpe)))
             .mkFragment("[", ", ", "]")
-        case StandardSQLTypeName.TIMESTAMP =>
+        case BQField.Type.TIMESTAMP =>
           BQSqlFrag("TIMESTAMP('2020-01-01 00:00:00+00')")
-        case StandardSQLTypeName.DATE => BQSqlFrag("DATE(2020, 1, 1)")
-        case StandardSQLTypeName.TIME => BQSqlFrag("TIME(12, 0, 0)")
-        case StandardSQLTypeName.DATETIME =>
+        case BQField.Type.DATE => BQSqlFrag("DATE(2020, 1, 1)")
+        case BQField.Type.TIME => BQSqlFrag("TIME(12, 0, 0)")
+        case BQField.Type.DATETIME =>
           BQSqlFrag("DATETIME(2020, 1, 1, 00, 00, 00)")
-        case StandardSQLTypeName.GEOGRAPHY =>
+        case BQField.Type.GEOGRAPHY =>
           BQSqlFrag("ST_GeogFromText('POINT(0 0)')")
-        case StandardSQLTypeName.INTERVAL =>
+        case BQField.Type.INTERVAL =>
           BQSqlFrag("MAKE_INTERVAL(1, 6, 15)")
       }
 
       field.mode match {
-        case Field.Mode.REPEATED =>
+        case BQField.Mode.REPEATED =>
           List.range(0, 2).map(_ => base).mkFragment("[", ", ", "]")
         case _ => base
       }

@@ -1,8 +1,6 @@
 package no.nrk.bigquery
 
 import cats.syntax.all._
-import com.google.cloud.bigquery.Field.Mode
-import com.google.cloud.bigquery.StandardSQLTypeName
 import munit.FunSuite
 import no.nrk.bigquery.BQPartitionType.DatePartitioned
 import no.nrk.bigquery.syntax._
@@ -104,11 +102,11 @@ class BQSqlFragTest extends FunSuite {
   }
 
   def mkTable(name: String) = {
-    val partitionField = BQField("partitionDate", StandardSQLTypeName.DATE, Mode.REQUIRED)
+    val partitionField = BQField("partitionDate", BQField.Type.DATE, BQField.Mode.REQUIRED)
 
     BQTableDef.Table(
       BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("foo"), "bar"), name),
-      BQSchema.of(partitionField, BQField("num", StandardSQLTypeName.FLOAT64, Mode.REQUIRED)),
+      BQSchema.of(partitionField, BQField("num", BQField.Type.FLOAT64, BQField.Mode.REQUIRED)),
       BQPartitionType.DatePartitioned(partitionField.ident)
     )
   }

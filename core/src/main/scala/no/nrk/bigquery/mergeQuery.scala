@@ -1,7 +1,6 @@
 package no.nrk.bigquery
 
 import no.nrk.bigquery.syntax._
-import com.google.cloud.bigquery.Field
 
 import scala.annotation.tailrec
 
@@ -80,7 +79,7 @@ object mergeQuery {
         case current :: tail =>
           fields.find(_.name == current) match {
             case Some(field) =>
-              if (field.mode == Field.Mode.NULLABLE) true
+              if (field.mode == BQField.Mode.NULLABLE) true
               else go(field.subFields, tail)
             case None =>
               sys.error(

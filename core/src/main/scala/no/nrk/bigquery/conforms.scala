@@ -1,8 +1,5 @@
 package no.nrk.bigquery
 
-import com.google.cloud.bigquery.Field.Mode
-import com.google.cloud.bigquery.StandardSQLTypeName
-
 /** Comparisons of schemas and bigquery types. This is order dependant instead of names, because that's how we
   * originally wrote all the BQ integration code. Not decided if that is for better or worse still.
   */
@@ -27,7 +24,7 @@ object conforms {
       field.copy(name = Anon, subFields = field.subFields.map(anonymize))
 
     val givenSchema = asAnonField(givenType) match {
-      case BQField(_, StandardSQLTypeName.STRUCT, _, _, subFields, Nil) =>
+      case BQField(_, BQField.Type.STRUCT, _, _, subFields, Nil) =>
         BQSchema(subFields.toList)
       case other => BQSchema.of(other)
     }
@@ -55,7 +52,7 @@ object conforms {
 
     // the _ can cause issues when we only have one type!
     val givenSchema = asField("_", givenType) match {
-      case BQField(_, StandardSQLTypeName.STRUCT, _, _, subFields, Nil) =>
+      case BQField(_, BQField.Type.STRUCT, _, _, subFields, Nil) =>
         BQSchema(subFields)
       case other => BQSchema.of(other)
     }
@@ -86,7 +83,8 @@ object conforms {
             reasonsBuilder += s"Expected ${render(actualField)}, got ${render(givenField)}"
           case Some(givenField) if givenField.tpe != actualField.tpe =>
             reasonsBuilder += s"Expected ${render(actualField)} to have type ${actualField.tpe}, got ${givenField.tpe}"
-          case Some(givenField) if (givenField.mode == Mode.REPEATED) != (actualField.mode == Mode.REPEATED) =>
+          case Some(givenField)
+              if (givenField.mode == BQField.Mode.REPEATED) != (actualField.mode == BQField.Mode.REPEATED) =>
             reasonsBuilder += s"Expected ${render(actualField)} to have mode ${actualField.mode}, got ${givenField.mode}"
           case Some(givenField) if givenField.subFields.nonEmpty =>
             go(givenField :: path, actualField.subFields, givenField.subFields)
@@ -127,7 +125,8 @@ object conforms {
         givenFieldOpt match {
           case Some(givenField) if givenField.tpe != actualField.tpe =>
             reasonsBuilder += s"Expected ${render(actualField)} to have type ${actualField.tpe}, got ${givenField.tpe}"
-          case Some(givenField) if (givenField.mode == Mode.REPEATED) != (actualField.mode == Mode.REPEATED) =>
+          case Some(givenField)
+              if (givenField.mode == BQField.Mode.REPEATED) != (actualField.mode == BQField.Mode.REPEATED) =>
             reasonsBuilder += s"Expected ${render(actualField)} to have mode ${actualField.mode}, got ${givenField.mode}"
           case Some(givenField) if givenField.subFields.nonEmpty =>
             go(givenField :: path, actualField.subFields, givenField.subFields)

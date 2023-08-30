@@ -4,6 +4,7 @@ import com.google.cloud.bigquery.{Option => _, _}
 import no.nrk.bigquery._
 
 import scala.jdk.CollectionConverters._
+import GoogleTypeHelper._
 
 object TableUpdateOperation {
 
@@ -21,20 +22,20 @@ object TableUpdateOperation {
                 localTableDef: BQTableDef.Table[Any],
                 remoteTableDef: StandardTableDefinition
               ) =>
-            BQPartitionType.from(remoteTableDef) match {
+            PartitionTypeHelper.from(remoteTableDef) match {
               case Right(remotePartitionType) if remotePartitionType == localTableDef.partitionType =>
                 val remoteAsTableDef = BQTableDef.Table(
-                  tableId = BQTableId.unsafeFromGoogle(
+                  tableId = unsafeTableIdFromGoogle(
                     localTableDef.tableId.dataset,
                     existingRemoteTable.getTableId
                   ),
-                  schema = BQSchema.fromSchema(remoteTableDef.getSchema),
+                  schema = SchemaHelper.fromSchema(remoteTableDef.getSchema),
                   partitionType = remotePartitionType,
                   description = Option(existingRemoteTable.getDescription),
                   clustering = Option(remoteTableDef.getClustering).toList
                     .flatMap(_.getFields.asScala)
                     .map(Ident.apply),
-                  labels = TableLabels.fromTableInfo(existingRemoteTable),
+                  labels = GoogleTypeHelper.tableLabelsfromTableInfo(existingRemoteTable),
                   tableOptions = TableOptions.fromTableInfo(existingRemoteTable)
                 )
 
@@ -70,12 +71,12 @@ object TableUpdateOperation {
                       existingRemoteTable.toBuilder
                         .setDefinition {
                           StandardTableDefinition.newBuilder
-                            .setSchema(schema.toSchema)
+                            .setSchema(SchemaHelper.toSchema(schema))
                             .setTimePartitioning(
-                              partitioning.timePartitioning.orNull
+                              PartitionTypeHelper.timePartitioned(partitioning).orNull
                             )
                             .setRangePartitioning(
-                              partitioning.rangePartitioning.orNull
+                              PartitionTypeHelper.rangepartitioned(partitioning).orNull
                             )
                             .setClustering(clusteringFrom(clustering).orNull)
                             .build()
@@ -118,9 +119,9 @@ object TableUpdateOperation {
               tableId = tableDef.tableId,
               partitionType = localTableDef.partitionType,
               query = BQSqlFrag(remoteViewDef.getQuery),
-              schema = BQSchema.fromSchema(remoteViewDef.getSchema),
+              schema = SchemaHelper.fromSchema(remoteViewDef.getSchema),
               description = Option(existingRemoteTable.getDescription),
-              labels = TableLabels.fromTableInfo(existingRemoteTable)
+              labels = GoogleTypeHelper.tableLabelsfromTableInfo(existingRemoteTable)
             )
 
             if (localTableDef == remoteAsTableDef)
@@ -146,16 +147,16 @@ object TableUpdateOperation {
                 localTableDef: BQTableDef.MaterializedView[Any],
                 remoteMVDef: MaterializedViewDefinition
               ) =>
-            BQPartitionType.from(remoteMVDef) match {
+            PartitionTypeHelper.from(remoteMVDef) match {
               case Right(remotePartitionType) if remotePartitionType == localTableDef.partitionType =>
                 val remoteAsTableDef = BQTableDef.MaterializedView(
-                  tableId = BQTableId.unsafeFromGoogle(
+                  tableId = unsafeTableIdFromGoogle(
                     localTableDef.tableId.dataset,
                     existingRemoteTable.getTableId
                   ),
                   partitionType = remotePartitionType,
                   query = BQSqlFrag(remoteMVDef.getQuery),
-                  schema = BQSchema.fromSchema(remoteMVDef.getSchema),
+                  schema = SchemaHelper.fromSchema(remoteMVDef.getSchema),
                   enableRefresh = remoteMVDef.getEnableRefresh,
                   refreshIntervalMs = remoteMVDef.getRefreshIntervalMs,
                   description = Option(existingRemoteTable.getDescription),
@@ -167,7 +168,7 @@ object TableUpdateOperation {
 
                 def outline(field: BQField): BQField =
                   field.copy(
-                    mode = Field.Mode.NULLABLE,
+                    mode = BQField.Mode.NULLABLE,
                     description = None,
                     subFields = field.subFields.map(outline)
                   )
@@ -243,7 +244,7 @@ object TableUpdateOperation {
               withoutSchema
                 .getDefinition[ViewDefinition]
                 .toBuilder
-                .setSchema(schema.toSchema)
+                .setSchema(SchemaHelper.toSchema(schema))
                 .build()
             )
             .build()
@@ -263,9 +264,9 @@ object TableUpdateOperation {
           newTable(
             tableId.underlying,
             StandardTableDefinition.newBuilder
-              .setSchema(schema.toSchema)
-              .setTimePartitioning(partitionType.timePartitioning.orNull)
-              .setRangePartitioning(partitionType.rangePartitioning.orNull)
+              .setSchema(SchemaHelper.toSchema(schema))
+              .setTimePartitioning(PartitionTypeHelper.timePartitioned(partitionType).orNull)
+              .setRangePartitioning(PartitionTypeHelper.rangepartitioned(partitionType).orNull)
               .setClustering(clusteringFrom(clustering).orNull)
               .build,
             tableOptions,
@@ -293,8 +294,8 @@ object TableUpdateOperation {
               .setEnableRefresh(enableRefresh)
               // .setSchema(schema.toSchema)  // not possible for now
               .setRefreshIntervalMs(refreshIntervalMs)
-              .setTimePartitioning(partitionType.timePartitioning.orNull)
-              .setRangePartitioning(partitionType.rangePartitioning.orNull)
+              .setTimePartitioning(PartitionTypeHelper.timePartitioned(partitionType).orNull)
+              .setRangePartitioning(PartitionTypeHelper.rangepartitioned(partitionType).orNull)
               .build(),
             tableOptions,
             description,

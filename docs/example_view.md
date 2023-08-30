@@ -7,8 +7,6 @@ To start of we need to define some tables we can query. The schema DSL is inspir
 Here we have to tables, `my-gcp-project.prod.user_log` and `my-gcp-project.prod.users`
 
 ```scala mdoc
-import com.google.cloud.bigquery.Field.Mode
-import com.google.cloud.bigquery.StandardSQLTypeName
 import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
 import java.time.LocalDate
@@ -16,16 +14,16 @@ import java.time.LocalDate
 object Schemas {
 
   object UserEventSchema {
-    private val timestamp: BQField = BQField("timestamp", StandardSQLTypeName.TIMESTAMP, Mode.REQUIRED)
+    private val timestamp: BQField = BQField("timestamp", BQField.Type.TIMESTAMP, BQField.Mode.REQUIRED)
     val tableDef: BQTableDef.Table[LocalDate] = BQTableDef.Table(
       BQTableId(BQDataset(ProjectId("my-gcp-project"), "prod", Some(LocationId("eu"))), "user_log"),
       BQSchema.of(
-        BQField("eventId", StandardSQLTypeName.STRING, Mode.REQUIRED),
+        BQField("eventId", BQField.Type.STRING, BQField.Mode.REQUIRED),
         timestamp,
-        BQField("userId", StandardSQLTypeName.STRING, Mode.REQUIRED),
-        BQField.struct("activity", Mode.REQUIRED)(
-          BQField("type", StandardSQLTypeName.INT64, Mode.REQUIRED),
-          BQField("value", StandardSQLTypeName.STRING, Mode.NULLABLE)
+        BQField("userId", BQField.Type.STRING, BQField.Mode.REQUIRED),
+        BQField.struct("activity", BQField.Mode.REQUIRED)(
+          BQField("type", BQField.Type.INT64, BQField.Mode.REQUIRED),
+          BQField("value", BQField.Type.STRING, BQField.Mode.NULLABLE)
         )
       ),
       BQPartitionType.DatePartitioned(timestamp.ident)
@@ -33,15 +31,15 @@ object Schemas {
   }
 
   object UserSchema {
-    private val namesStruct: BQField = BQField.struct("names", Mode.REQUIRED)(
-      BQField("firstName", StandardSQLTypeName.INT64, Mode.REQUIRED),
-      BQField("middleName", StandardSQLTypeName.STRING, Mode.NULLABLE),
-      BQField("lastName", StandardSQLTypeName.STRING, Mode.REQUIRED)
+    private val namesStruct: BQField = BQField.struct("names", BQField.Mode.REQUIRED)(
+      BQField("firstName", BQField.Type.INT64, BQField.Mode.REQUIRED),
+      BQField("middleName", BQField.Type.STRING, BQField.Mode.NULLABLE),
+      BQField("lastName", BQField.Type.STRING, BQField.Mode.REQUIRED)
     )
     val tableDef: BQTableDef.Table[Unit] = BQTableDef.Table(
       BQTableId(BQDataset(ProjectId("my-gcp-project"), "prod", Some(LocationId("eu"))), "users"),
       BQSchema.of(
-        BQField("userId", StandardSQLTypeName.STRING, Mode.REQUIRED),
+        BQField("userId", BQField.Type.STRING, BQField.Mode.REQUIRED),
         namesStruct
       ),
       BQPartitionType.NotPartitioned
@@ -69,8 +67,6 @@ In this example we join in the user names and normalize the struct values.
 ```scala mdoc
 import no.nrk.bigquery._
 import Schemas._
-import com.google.cloud.bigquery.Field.Mode
-import com.google.cloud.bigquery.StandardSQLTypeName
 import no.nrk.bigquery.syntax._
 
 object UserEventView {
@@ -87,7 +83,7 @@ object UserEventView {
            |where event.activity.value is not null
            |""".stripMargin
 
-  private val timestamp: BQField = BQField("timestamp", StandardSQLTypeName.TIMESTAMP, Mode.REQUIRED)
+  private val timestamp: BQField = BQField("timestamp", BQField.Type.TIMESTAMP, BQField.Mode.REQUIRED)
 
   val viewDef: BQTableDef.View[LocalDate] = BQTableDef.View(
     BQTableId(BQDataset(ProjectId("my-gcp-project"), "prod", Some(LocationId("eu"))), "user_activity_view"),
@@ -95,10 +91,10 @@ object UserEventView {
     query,
     BQSchema.of(
       timestamp,
-      BQField("userId", StandardSQLTypeName.STRING, Mode.REQUIRED),
-      BQField("fullName", StandardSQLTypeName.STRING, Mode.REQUIRED),
-      BQField("activityType", StandardSQLTypeName.INT64, Mode.REQUIRED),
-      BQField("activityValue", StandardSQLTypeName.STRING, Mode.REQUIRED)
+      BQField("userId", BQField.Type.STRING, BQField.Mode.REQUIRED),
+      BQField("fullName", BQField.Type.STRING, BQField.Mode.REQUIRED),
+      BQField("activityType", BQField.Type.INT64, BQField.Mode.REQUIRED),
+      BQField("activityValue", BQField.Type.STRING, BQField.Mode.REQUIRED)
     )
   )
 

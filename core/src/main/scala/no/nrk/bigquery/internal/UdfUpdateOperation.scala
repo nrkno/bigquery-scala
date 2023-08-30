@@ -2,7 +2,7 @@ package no.nrk.bigquery.internal
 
 import com.google.cloud.bigquery.{Option => _, _}
 import no.nrk.bigquery.UDF.Body
-import no.nrk.bigquery.{BQType, UDF, UdfOperationMeta, UpdateOperation}
+import no.nrk.bigquery.{BQField, BQType, UDF, UdfOperationMeta, UpdateOperation}
 
 import scala.jdk.CollectionConverters._
 
@@ -77,10 +77,10 @@ object UdfUpdateOperation {
 
   private def toSqlDataType(bqType: BQType): StandardSQLDataType = {
     val dataType =
-      if (bqType.tpe == StandardSQLTypeName.STRUCT)
+      if (bqType.tpe == BQField.Type.STRUCT)
         StandardSQLDataType
           .newBuilder()
-          .setTypeKind(StandardSQLTypeName.STRUCT.name)
+          .setTypeKind(BQField.Type.STRUCT.name)
           .setStructType(
             StandardSQLStructType
               .newBuilder()
@@ -89,12 +89,12 @@ object UdfUpdateOperation {
               }.asJava)
               .build())
           .build()
-      else StandardSQLDataType.newBuilder().setTypeKind(bqType.tpe.name()).build()
+      else StandardSQLDataType.newBuilder().setTypeKind(bqType.tpe.name).build()
 
-    if (bqType.mode == Field.Mode.REPEATED)
+    if (bqType.mode == BQField.Mode.REPEATED)
       StandardSQLDataType
         .newBuilder()
-        .setTypeKind(StandardSQLTypeName.ARRAY.name())
+        .setTypeKind(BQField.Type.STRUCT.name)
         .setArrayElementType(dataType)
         .build()
     else dataType

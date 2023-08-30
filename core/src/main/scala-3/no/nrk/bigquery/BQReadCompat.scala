@@ -2,8 +2,6 @@ package no.nrk.bigquery
 
 import org.apache.avro
 import org.apache.avro.generic.GenericRecord
-import com.google.cloud.bigquery.Field
-import com.google.cloud.bigquery.StandardSQLTypeName
 import magnolia1.{CaseClass, ProductDerivation}
 import scala.deriving.Mirror
 
@@ -16,8 +14,8 @@ private[bigquery] trait BQReadCompat extends ProductDerivation[BQRead] {
     new BQRead[T] {
       override val bqType: BQType =
         BQType(
-          Field.Mode.REQUIRED,
-          StandardSQLTypeName.STRUCT,
+          BQField.Mode.REQUIRED,
+          BQField.Type.STRUCT,
           ctx.params.map(param => param.label -> param.typeclass.bqType).toList
         )
 
