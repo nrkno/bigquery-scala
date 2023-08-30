@@ -6,7 +6,6 @@ import no.nrk.bigquery.{BQDataset, BQTableId, TableLabels}
 
 import scala.jdk.CollectionConverters._
 
-
 object GoogleTypeHelper {
 
   def toDatasetGoogle(ds: BQDataset): DatasetId = DatasetId.of(ds.project.value, ds.id)
@@ -28,7 +27,6 @@ object GoogleTypeHelper {
   implicit class BQDatasetOps(val ds: BQDataset) extends AnyVal {
     def underlying: DatasetId = toDatasetGoogle(ds)
   }
-
 
   def tableLabelsfromTableInfo(tableInfo: TableInfo): TableLabels =
     Option(tableInfo.getLabels) match {

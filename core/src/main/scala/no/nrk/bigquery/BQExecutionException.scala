@@ -13,7 +13,6 @@ case class BQExecutionException(
       show"Error while executing job $jobId: $main, details: ${details.show}"
     )
 
-
 private object BQExecutionExceptionInstances {
   implicit val showJobId: Show[JobId] = Show.show(Jsonify.jobId)
   implicit val showBigQueryError: Show[BigQueryError] = Show.show(Jsonify.error)
