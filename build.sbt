@@ -56,7 +56,7 @@ val commonSettings = Seq(
     if (scalaVersion.value.startsWith("3")) {
       Seq("-source:3.2-migration")
     } else {
-      Seq("-feature", "-language:implicitConversions")
+      Seq("-feature", "-language:implicitConversions", "-language:experimental.macros")
     }
   },
   sonatypeProfileName := "no.nrk"
