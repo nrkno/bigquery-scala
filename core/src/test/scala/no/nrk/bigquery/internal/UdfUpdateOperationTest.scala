@@ -12,6 +12,7 @@ import no.nrk.bigquery.UpdateOperation.{CreatePersistentUdf, Illegal, UpdatePers
 import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.util.nat._
+import no.nrk.bigquery.Routines.{Param, Params}
 
 class UdfUpdateOperationTest extends FunSuite {
 
@@ -19,7 +20,7 @@ class UdfUpdateOperationTest extends FunSuite {
     UDF.persistent(
       ident"foo",
       BQDataset(ProjectId("p1"), "ds1", None),
-      UDF.Params.empty,
+      Params.empty,
       UDF.Body.Sql(bqfr"(1)"),
       Some(BQType.INT64))
   private val routineId: RoutineId = RoutineId.of("p1", "ds1", "foo")
@@ -39,7 +40,7 @@ class UdfUpdateOperationTest extends FunSuite {
     }
 
     UdfUpdateOperation.from(
-      udf.copy(params = UDF.Params(UDF.Param(ident"foo", Some(BQType.INT64)))),
+      udf.copy(params = Params(Param(ident"foo", Some(BQType.INT64)))),
       Some(existingRoutine)
     ) match {
       case UpdatePersistentUdf(newUdf, newRoutine) =>
@@ -66,12 +67,11 @@ class UdfUpdateOperationTest extends FunSuite {
       UDF.persistent(
         ident"foo",
         BQDataset(ProjectId("p1"), "ds1", None),
-        UDF.Params(
-          UDF
-            .Param(
-              "segments",
-              BQType.fromField(
-                BQField.repeatedStruct("segments")(BQField("foo", BQField.Type.STRING, BQField.Mode.REQUIRED))))),
+        Params(
+          Param(
+            "segments",
+            BQType.fromField(
+              BQField.repeatedStruct("segments")(BQField("foo", BQField.Type.STRING, BQField.Mode.REQUIRED))))),
         UDF.Body.Sql(bqfr"(1)"),
         Some(BQType.INT64)
       )

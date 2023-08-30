@@ -8,7 +8,7 @@ package no.nrk.bigquery.internal
 
 import com.google.cloud.bigquery.{Option => _, _}
 import no.nrk.bigquery.UDF.Body
-import no.nrk.bigquery.{BQField, BQType, UDF, UdfOperationMeta, UpdateOperation}
+import no.nrk.bigquery.{BQField, BQType, UDF, UdfOperationMeta, UpdateOperation, Routines}
 
 import scala.jdk.CollectionConverters._
 
@@ -65,7 +65,7 @@ object UdfUpdateOperation {
   private def toRoutineId(udfId: UDF.UDFId.PersistentId) =
     RoutineId.of(udfId.dataset.project.value, udfId.dataset.id, udfId.name.value)
 
-  private def toRoutineArgs(param: UDF.Param): RoutineArgument =
+  private def toRoutineArgs(param: Routines.Param): RoutineArgument =
     param.maybeType match {
       case Some(value) =>
         RoutineArgument

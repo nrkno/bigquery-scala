@@ -12,7 +12,7 @@ import cats.Show
 import no.nrk.bigquery.UDF._
 import no.nrk.bigquery.UDF.UDFId._
 import no.nrk.bigquery.syntax._
-import no.nrk.bigquery.util.{IndexSeqSizedBuilder, Nat, Sized}
+import no.nrk.bigquery.util.{Nat, Sized}
 
 /** The UDF has an apply method rendering a BQSqlFrag that matches the size of `params`.
   *
@@ -31,20 +31,16 @@ import no.nrk.bigquery.util.{IndexSeqSizedBuilder, Nat, Sized}
   */
 sealed trait UDF[+A <: UDFId, N <: Nat] {
   def name: A
-  def params: Sized[IndexedSeq[UDF.Param], N]
+  def params: Sized[IndexedSeq[Routines.Param], N]
   def returnType: Option[BQType]
 
   def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]) = BQSqlFrag.Call(this, args.unsized.toList.map(_.frag))
 }
 object UDF {
 
-  type Params[N <: Nat] = Sized[IndexedSeq[Param], N]
-
-  object Params extends IndexSeqSizedBuilder[UDF.Param]
-
   case class Temporary[N <: Nat](
       name: TemporaryId,
-      params: Params[N],
+      params: Routines.Params[N],
       body: UDF.Body,
       returnType: Option[BQType]
   ) extends UDF[UDFId.TemporaryId, N] {
@@ -64,7 +60,7 @@ object UDF {
 
   case class Persistent[N <: Nat](
       name: PersistentId,
-      params: Params[N],
+      params: Routines.Params[N],
       body: UDF.Body,
       returnType: Option[BQType]
   ) extends UDF[UDFId.PersistentId, N] {
@@ -74,13 +70,21 @@ object UDF {
 
   case class Reference[N <: Nat](
       name: UDFId,
-      params: Params[N],
+      params: Routines.Params[N],
       returnType: Option[BQType]
   ) extends UDF[UDFId, N]
 
   def temporary[N <: Nat](
       name: Ident,
-      params: Params[N],
+      params: Routines.Params[N],
+      body: BQSqlFrag,
+      returnType: Option[BQType]
+  ): Temporary[N] =
+    Temporary(UDFId.TemporaryId(name), params, UDF.Body.Sql(body), returnType)
+
+  def temporary[N <: Nat](
+      name: Ident,
+      params: Routines.Params[N],
       body: UDF.Body,
       returnType: Option[BQType]
   ): Temporary[N] =
@@ -89,7 +93,7 @@ object UDF {
   def persistent[N <: Nat](
       name: Ident,
       dataset: BQDataset,
-      params: Params[N],
+      params: Routines.Params[N],
       body: UDF.Body,
       returnType: Option[BQType]
   ): Persistent[N] =
@@ -98,7 +102,7 @@ object UDF {
   def reference[N <: Nat](
       name: Ident,
       dataset: BQDataset,
-      params: Params[N],
+      params: Routines.Params[N],
       returnType: Option[BQType]
   ): Reference[N] =
     Reference(UDFId.PersistentId(dataset, name), params, returnType)
@@ -129,24 +133,6 @@ object UDF {
 
     implicit val bqShow: BQShow[UDFId] = _.asFragment
     implicit val show: Show[UDFId] = _.asString
-  }
-
-  case class Param(name: Ident, maybeType: Option[BQType]) {
-    def definition: BQSqlFrag =
-      maybeType match {
-        case Some(tpe) => bqfr"$name $tpe"
-        case None => bqfr"$name ANY TYPE"
-      }
-  }
-  object Param {
-    def apply(name: String, tpe: BQType): Param =
-      Param(Ident(name), Some(tpe))
-
-    def untyped(name: String): Param =
-      Param(Ident(name), None)
-
-    def fromField(field: BQField): Param =
-      Param(Ident(field.name), Some(BQType.fromField(field)))
   }
 
   sealed trait Body {

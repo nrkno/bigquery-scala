@@ -9,6 +9,7 @@ package no.nrk.bigquery
 import munit.FunSuite
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.util.nat._0
+import no.nrk.bigquery.Routines.{Param, Params}
 
 class UDFTest extends FunSuite {
 
@@ -17,7 +18,7 @@ class UDFTest extends FunSuite {
       UDF
         .temporary(
           ident"foo",
-          UDF.Params(UDF.Param("n", BQType.FLOAT64)),
+          Params(Param("n", BQType.FLOAT64)),
           UDF.Body.Sql(bqfr"""(n + 1)"""),
           Some(BQType.FLOAT64)
         )
@@ -32,7 +33,7 @@ class UDFTest extends FunSuite {
       UDF
         .temporary(
           ident"foo",
-          UDF.Params.empty,
+          Routines.Params.empty,
           UDF.Body.Sql(bqfr"""(n + 1)"""),
           Some(BQType.FLOAT64)
         )
@@ -46,7 +47,7 @@ class UDFTest extends FunSuite {
     val foo: UDF.Temporary[_0] = UDF
       .temporary(
         ident"foo",
-        UDF.Params.empty,
+        Params.empty,
         UDF.Body.Sql(bqfr"""(n + 1)"""),
         Some(BQType.FLOAT64)
       )
@@ -62,7 +63,7 @@ class UDFTest extends FunSuite {
       UDF
         .temporary(
           ident"foo",
-          UDF.Params(UDF.Param("n", BQType.FLOAT64)),
+          Params(Param("n", BQType.FLOAT64)),
           UDF.Body.Js("return n + 1", List.empty),
           Some(BQType.FLOAT64)
         )
@@ -79,7 +80,7 @@ class UDFTest extends FunSuite {
       UDF
         .temporary(
           ident"foo",
-          UDF.Params(UDF.Param("n", BQType.FLOAT64)),
+          Params(Param("n", BQType.FLOAT64)),
           UDF.Body.Js("return n + 1", List("bucket/foo.js")),
           Some(BQType.FLOAT64)
         )
@@ -96,7 +97,7 @@ class UDFTest extends FunSuite {
     val udf = UDF
       .temporary(
         ident"fnName",
-        UDF.Params(UDF.Param("n", BQType.FLOAT64)),
+        Params(Param("n", BQType.FLOAT64)),
         UDF.Body.Js("return n + 1", List("bucket/foo.js")),
         Some(BQType.FLOAT64)
       )
@@ -108,7 +109,7 @@ class UDFTest extends FunSuite {
       .persistent(
         ident"fnName",
         BQDataset(ProjectId("p1"), "ds1", None),
-        UDF.Params(UDF.Param("n", BQType.FLOAT64)),
+        Params(Param("n", BQType.FLOAT64)),
         UDF.Body.Js("return n + 1", List("bucket/foo.js")),
         Some(BQType.FLOAT64)
       )
@@ -120,7 +121,7 @@ class UDFTest extends FunSuite {
     val udf = UDF.reference(
       ident"fnName",
       BQDataset(ProjectId("p1"), "ds1", None),
-      UDF.Params(UDF.Param("n", BQType.FLOAT64)),
+      Params(Param("n", BQType.FLOAT64)),
       Some(BQType.FLOAT64)
     )
 
