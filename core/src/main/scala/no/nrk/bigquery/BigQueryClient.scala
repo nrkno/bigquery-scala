@@ -1,5 +1,6 @@
 package no.nrk.bigquery
 
+import cats.Show
 import cats.effect.implicits._
 import cats.effect.kernel.Outcome
 import cats.effect.{Async, Resource}
@@ -16,7 +17,6 @@ import com.google.cloud.bigquery.{Option => _, _}
 import com.google.cloud.http.HttpTransportOptions
 import fs2.{Chunk, Stream}
 import io.circe.Encoder
-import no.nrk.bigquery.syntax.showJob
 import no.nrk.bigquery.internal.{PartitionTypeHelper, SchemaHelper, TableUpdateOperation}
 import no.nrk.bigquery.internal.GoogleTypeHelper._
 import no.nrk.bigquery.metrics.{BQMetrics, MetricsOps}
@@ -39,6 +39,7 @@ class BigQueryClient[F[_]](
     val metricOps: MetricsOps[F]
 )(implicit F: Async[F], lf: LoggerFactory[F]) {
   private val logger = lf.getLogger
+  private implicit def showJob[J <: JobInfo]: Show[J] = Show.show(Jsonify.job)
 
   def underlying: BigQuery = bigQuery
 
