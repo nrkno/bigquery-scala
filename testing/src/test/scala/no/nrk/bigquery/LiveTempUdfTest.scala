@@ -6,7 +6,7 @@
 
 package no.nrk.bigquery
 
-import no.nrk.bigquery.Routines.{Param, Params}
+import no.nrk.bigquery.Routine.{Param, Params}
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.testing.{BQSmokeTest, BigQueryTestClient}
 

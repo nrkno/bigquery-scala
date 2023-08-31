@@ -8,30 +8,64 @@ package no.nrk.bigquery.internal
 
 import com.google.cloud.bigquery.{Option => _, _}
 import no.nrk.bigquery.UDF.Body
-import no.nrk.bigquery.{BQField, BQType, UDF, UdfOperationMeta, UpdateOperation, Routines}
+import no.nrk.bigquery.{BQField, BQType, PersistentRoutine, PersistentRoutineOperationMeta, Routine, TVF, UDF, UpdateOperation}
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 object UdfUpdateOperation {
 
   private val UdfRoutineType = "SCALAR_FUNCTION"
+  private val TvfRoutineType = "TABLE_VALUED_FUNCTION"
 
   def from(
-      udf: UDF.Persistent[_],
+      routine: PersistentRoutine,
       maybeExisting: Option[RoutineInfo]
   ): UpdateOperation = maybeExisting match {
     case None =>
-      UpdateOperation.CreatePersistentUdf(udf, createRoutineInfo(udf))
+      routine match {
+        case tvf: TVF[Any] =>
+          UpdateOperation.CreateTvf(tvf, createTvfRoutineInfo(tvf))
+        case udf: UDF.Persistent[_] =>
+          UpdateOperation.CreatePersistentUdf(udf, createUdfRoutineInfo(udf))
+      }
     case Some(value) =>
-      val recreated = recreateRoutine(value)
-      val routineFromUdf = createRoutineInfo(udf)
-      if (value.getRoutineType != UdfRoutineType)
-        UpdateOperation.Illegal(UdfOperationMeta(value, udf), s"Routine type ${value.getRoutineType} not supported")
-      else if (recreated == routineFromUdf) UpdateOperation.Noop(UdfOperationMeta(value, udf))
-      else UpdateOperation.UpdatePersistentUdf(udf, routineFromUdf)
+      val tpe = routine match {
+        case _: TVF[Any] => TvfRoutineType
+        case _: UDF.Persistent[_] => UdfRoutineType
+      }
+      if (value.getRoutineType != tpe)
+        UpdateOperation.Illegal(
+          PersistentRoutineOperationMeta(value, routine),
+          s"Routine type ${value.getRoutineType} did not match expected routine $tpe")
+      else {
+        val recreated = recreateRoutine(value)
+        val routineInfo = routine match {
+          case tvf: TVF[Any] => createTvfRoutineInfo(tvf)
+          case udf: UDF.Persistent[_] => createUdfRoutineInfo(udf)
+        }
+        if (recreated == routineInfo)
+          UpdateOperation.Noop(PersistentRoutineOperationMeta(value, routine))
+        else {
+          routine match {
+            case tvf: TVF[Any] => UpdateOperation.UpdateTvf(tvf, routineInfo)
+            case udf: UDF.Persistent[_] => UpdateOperation.UpdatePersistentUdf(udf, routineInfo)
+          }
+        }
+      }
   }
 
-  private def createRoutineInfo(udf: UDF.Persistent[_]) = {
+  private def createTvfRoutineInfo(tvf: TVF[Any]) =
+    RoutineInfo
+      .newBuilder(toRoutineId(tvf.name))
+      .setRoutineType(TvfRoutineType)
+      .setArguments(tvf.params.map(toRoutineArgs).asJava)
+      .setLanguage("SQL")
+      .setBody(tvf.query.asString)
+      // function not public in Builder: .setDescription(tvf.description.orNull)
+      // TODO .setReturnTableType(tvf.schema.???)
+      .build()
+
+  private def createUdfRoutineInfo(udf: UDF.Persistent[_]) = {
     val baseBuilder = RoutineInfo
       .newBuilder(toRoutineId(udf.name))
       .setRoutineType(UdfRoutineType)
@@ -62,10 +96,10 @@ object UdfUpdateOperation {
       .setImportedLibraries(r.getImportedLibraries)
       .build()
 
-  private def toRoutineId(udfId: UDF.UDFId.PersistentId) =
-    RoutineId.of(udfId.dataset.project.value, udfId.dataset.id, udfId.name.value)
+  private def toRoutineId(id: PersistentRoutine.PersistentRoutineId) =
+    RoutineId.of(id.dataset.project.value, id.dataset.id, id.name.value)
 
-  private def toRoutineArgs(param: Routines.Param): RoutineArgument =
+  private def toRoutineArgs(param: Routine.Param): RoutineArgument =
     param.maybeType match {
       case Some(value) =>
         RoutineArgument

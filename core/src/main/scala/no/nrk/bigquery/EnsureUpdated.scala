@@ -21,11 +21,11 @@ case class TableDefOperationMeta(
 ) extends OperationMeta {
   def identifier: String = existingRemoteTable.getTableId.toString
 }
-case class UdfOperationMeta(
+case class PersistentRoutineOperationMeta(
     routine: RoutineInfo,
-    persistentUdf: UDF.Persistent[_]
+    persistentRoutine: PersistentRoutine
 ) extends OperationMeta {
-  override def identifier: String = persistentUdf.name.asString
+  override def identifier: String = persistentRoutine.name.asString
 }
 
 sealed trait UpdateOperation
@@ -53,6 +53,16 @@ object UpdateOperation {
       existingRemoteTable: TableInfo,
       localTableDef: BQTableDef.ViewLike[Any],
       create: CreateTable
+  ) extends Success
+
+  case class CreateTvf(
+      tvf: TVF[Any],
+      routine: RoutineInfo
+  ) extends Success
+
+  case class UpdateTvf(
+      tvf: TVF[Any],
+      routine: RoutineInfo
   ) extends Success
 
   case class CreatePersistentUdf(
@@ -89,9 +99,10 @@ class EnsureUpdated[F[_]](
       TableUpdateOperation.from(template, maybeExisting)
     }
 
-  def check(persistentUdf: UDF.Persistent[_]): F[UpdateOperation] =
-    bqClient.getRoutine(persistentUdf.name).map { maybeExisting =>
-      UdfUpdateOperation.from(persistentUdf, maybeExisting)
+
+  def check(persistentRoutine: PersistentRoutine): F[UpdateOperation] =
+    bqClient.getRoutine(persistentRoutine.name).map { maybeExisting =>
+      UdfUpdateOperation.from(persistentRoutine, maybeExisting)
     }
 
   def perform(updateOperation: UpdateOperation): F[Unit] =
@@ -113,6 +124,18 @@ class EnsureUpdated[F[_]](
         val msg =
           show"Updating ${table.getTableId} of type ${to.getClass.getSimpleName} from ${from.toString}, to ${to.toString}"
         logger.warn(msg) >> bqClient.update(table).void
+
+      case UpdateOperation.CreateTvf(tvf, routine) =>
+        for {
+          _ <- logger.warn(show"Creating ${tvf.name.asString} of type Tvf")
+          _ <- bqClient.create(routine)
+        } yield ()
+
+      case UpdateOperation.UpdateTvf(tvf, routine) =>
+        for {
+          _ <- logger.warn(show"Updating ${tvf.name.asString} of type Tvf")
+          _ <- bqClient.update(routine)
+        } yield ()
 
       case UpdateOperation.CreatePersistentUdf(udf, routine) =>
         for {

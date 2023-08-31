@@ -12,7 +12,7 @@ import no.nrk.bigquery.UpdateOperation.{CreatePersistentUdf, Illegal, UpdatePers
 import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.util.nat._
-import no.nrk.bigquery.Routines.{Param, Params}
+import no.nrk.bigquery.Routine.{Param, Params}
 
 class UdfUpdateOperationTest extends FunSuite {
 
