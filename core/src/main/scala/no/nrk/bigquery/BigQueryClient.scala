@@ -195,7 +195,7 @@ class BigQueryClient[F[_]](
 
           while (!decoder.isEnd)
             b += datumReader.read(null, decoder)
-          Stream.chunk(Chunk.vector(b.result()))
+          Stream.chunk(Chunk.from(b.result()))
         }
 
     for {
