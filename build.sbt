@@ -17,6 +17,7 @@ ThisBuild / developers := List(
 )
 ThisBuild / tlCiHeaderCheck := false
 ThisBuild / tlCiScalafmtCheck := true
+ThisBuild / tlSonatypeUseLegacyHost := true
 
 // publish website from this branch
 //ThisBuild / tlSitePublishBranch := Some("main")
