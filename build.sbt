@@ -15,7 +15,7 @@ ThisBuild / developers := List(
   tlGitHubDev("ingararb", "Ingar Abrahamsen"),
   tlGitHubDev("hamnis", "Erlend Hamnaberg")
 )
-ThisBuild / tlCiHeaderCheck := false
+ThisBuild / tlCiHeaderCheck := true
 ThisBuild / tlCiScalafmtCheck := true
 ThisBuild / tlSonatypeUseLegacyHost := true
 
@@ -49,8 +49,7 @@ ThisBuild / tlVersionIntroduced := Map(
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11"))
 
 val commonSettings = Seq(
-  Compile / headerSources := Nil,
-  Test / headerSources := Nil,
+  headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
   scalacOptions -= "-source:3.0-migration",
   scalacOptions ++= {
     val compilerWarnings =

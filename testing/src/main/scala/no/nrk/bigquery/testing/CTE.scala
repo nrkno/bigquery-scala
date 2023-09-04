@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 NRK
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package no.nrk.bigquery.testing
 
 import no.nrk.bigquery._
