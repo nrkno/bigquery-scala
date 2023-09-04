@@ -77,8 +77,6 @@ lazy val core = crossProject(JVMPlatform)
   .settings(commonSettings)
   .settings(
     name := "bigquery-core",
-    Compile / headerSources := Nil,
-    Test / headerSources := Nil,
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "2.10.0",
       "org.typelevel" %% "cats-effect" % "3.5.1",
@@ -111,10 +109,10 @@ lazy val core = crossProject(JVMPlatform)
         )
       }
     },
-    mimaBinaryIssueFilters ++= List(
-      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.BQDataset.of"),
-      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.BQDataset.unsafeOf")
-    )
+    Compile / doc / scalacOptions ++= Seq(
+      "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
+    ),
+    mimaBinaryIssueFilters := Nil
   )
 
 lazy val prometheus = crossProject(JVMPlatform)
@@ -158,7 +156,7 @@ lazy val testing = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
-    mimaBinaryIssueFilters ++= Nil
+    mimaBinaryIssueFilters := Nil
   )
 
 lazy val docs = project
