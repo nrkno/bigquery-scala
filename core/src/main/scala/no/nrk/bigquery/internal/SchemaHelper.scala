@@ -23,10 +23,12 @@ object SchemaHelper {
     val b = Field.newBuilder(field.name, fromType(field.tpe), field.subFields.map(toField): _*)
     b.setMode(fromMode(field.mode))
     field.description.foreach(b.setDescription)
-    if (field.policyTags.nonEmpty)
+    if (field.policyTags.nonEmpty) {
       b.setPolicyTags(
         PolicyTags.newBuilder().setNames(field.policyTags.asJava).build()
       )
+      ()
+    }
     b.build()
   }
 
