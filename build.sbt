@@ -120,8 +120,8 @@ lazy val core = crossProject(JVMPlatform)
       "org.apache.avro" % "avro" % "1.11.2",
       "com.lihaoyi" %% "sourcecode" % "0.3.0",
       "org.typelevel" %% "log4cats-slf4j" % "2.6.0",
-      "io.circe" %% "circe-generic" % "0.14.5",
-      "io.circe" %% "circe-parser" % "0.14.5",
+      "io.circe" %% "circe-generic" % "0.14.6",
+      "io.circe" %% "circe-parser" % "0.14.6",
       "co.fs2" %% "fs2-core" % "3.9.1",
       "co.fs2" %% "fs2-io" % "3.9.1",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0"
@@ -134,7 +134,7 @@ lazy val core = crossProject(JVMPlatform)
       } else {
         // scala2
         Seq(
-          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.4",
+          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.6",
           "org.scala-lang" % "scala-reflect" % scalaVersion.value
         )
       }
