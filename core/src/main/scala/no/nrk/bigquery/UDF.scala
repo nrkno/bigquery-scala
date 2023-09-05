@@ -133,7 +133,6 @@ object UDF {
   }
   object Body {
     case class Sql(body: BQSqlFrag) extends Body {
-      require(body.asString.startsWith("(") && body.asString.endsWith(")"))
       val languageFragment: BQSqlFrag = BQSqlFrag("")
       override def bodyFragment: BQSqlFrag = bqfr"($body)"
 
