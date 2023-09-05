@@ -27,7 +27,12 @@ object UDF {
         case Some(returnType) => bqfr" RETURNS $returnType"
         case None => BQSqlFrag.Empty
       }
-      bqfr"CREATE TEMP FUNCTION ${name}${params.map(_.definition).mkFragment("(", ", ", ")")}$returning${body.languageFragment} AS ${body.bodyFragment};"
+      val language = body match {
+        case _: Body.Sql => bqsql""
+        case _: Body.Js => bqsql" LANGUAGE js"
+      }
+
+      bqfr"CREATE TEMP FUNCTION ${name}${params.map(_.definition).mkFragment("(", ", ", ")")}$returning${language} AS ${body.asFragment};"
     }
   }
 
@@ -128,18 +133,14 @@ object UDF {
   }
 
   sealed trait Body {
-    def bodyFragment: BQSqlFrag
-    def languageFragment: BQSqlFrag
+    def asFragment: BQSqlFrag
   }
   object Body {
     case class Sql(body: BQSqlFrag) extends Body {
-      val languageFragment: BQSqlFrag = BQSqlFrag("")
-      override def bodyFragment: BQSqlFrag = bqfr"($body)"
-
+      override val asFragment: BQSqlFrag = bqfr"($body)"
     }
     case class Js(javascriptSnippet: String, gsLibraryPath: List[String]) extends Body {
-      val languageFragment: BQSqlFrag = BQSqlFrag(" LANGUAGE js")
-      override def bodyFragment: BQSqlFrag = {
+      override def asFragment: BQSqlFrag = {
         val jsBody =
           bqfr"""|'''
                  |${BQSqlFrag(javascriptSnippet)}

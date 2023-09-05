@@ -33,10 +33,10 @@ object UdfUpdateOperation {
       .setReturnType(udf.returnType.map(toSqlDataType).orNull)
 
     (udf.body match {
-      case s @ Body.Sql(_) =>
+      case s: Body.Sql =>
         baseBuilder
           .setLanguage("SQL")
-          .setBody(s.bodyFragment.asString)
+          .setBody(s.asFragment.asString)
       case Body.Js(javascriptSnippet, gsLibraryPath) =>
         baseBuilder
           .setLanguage("JAVASCRIPT")
