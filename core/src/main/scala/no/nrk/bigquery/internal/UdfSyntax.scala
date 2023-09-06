@@ -1,7 +1,7 @@
 package no.nrk.bigquery.internal
 
 import no.nrk.bigquery.{BQSqlFrag, UDF}
-import shapeless.nat._
+import no.nrk.bigquery.internal.nat._
 
 trait UdfSyntax {
   implicit def bqUdfOps0(udf: UDF[UDF.UDFId, _0]): UdfOps0 = new UdfOps0(udf)

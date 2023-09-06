@@ -12,8 +12,8 @@ import cats.Show
 import no.nrk.bigquery.UDF._
 import no.nrk.bigquery.UDF.UDFId._
 import no.nrk.bigquery.syntax._
-import shapeless.{Nat, Sized, SizedBuilder}
-import shapeless.nat. _0
+import no.nrk.bigquery.internal.{Nat, Sized, SizedBuilder}
+import no.nrk.bigquery.internal.nat._0
 
 /** The UDF has an apply method rendering a BQSqlFrag that matches the size of `params`.
   *
