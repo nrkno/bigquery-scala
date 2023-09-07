@@ -1,6 +1,12 @@
+/*
+ * Copyright 2020 NRK
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package no.nrk.bigquery.internal
 
-final class Sized[+Repr, N <: Nat] (val unsized : Repr) {
+final class Sized[+Repr, N <: Nat](val unsized: Repr) {
   override def toString = unsized.toString
 
   override def equals(other: Any): Boolean =
@@ -12,11 +18,9 @@ final class Sized[+Repr, N <: Nat] (val unsized : Repr) {
   override def hashCode: Int = unsized.hashCode
 }
 
-
 object Sized {
 
   def apply[CC[_]] = new SizedBuilder[CC]
-
 
   def wrap[Repr, L <: Nat](r: Repr): Sized[Repr, L] =
     new Sized[Repr, L](r)

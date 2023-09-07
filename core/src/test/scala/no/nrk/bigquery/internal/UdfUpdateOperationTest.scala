@@ -11,7 +11,7 @@ import munit.FunSuite
 import no.nrk.bigquery.UpdateOperation.{CreatePersistentUdf, Illegal, UpdatePersistentUdf}
 import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
-import shapeless._0
+import no.nrk.bigquery.internal.nat._0
 
 class UdfUpdateOperationTest extends FunSuite {
 
