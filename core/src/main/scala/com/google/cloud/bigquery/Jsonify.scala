@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 NRK
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.google.cloud.bigquery
 
 import com.google.api.client.json.gson.GsonFactory
@@ -13,13 +19,16 @@ object Jsonify {
     if (pb.getStatistics != null && pb.getStatistics.getQuery != null) {
       pb.getStatistics.getQuery.setQueryPlan(null)
       pb.getStatistics.getQuery.setTimeline(null)
+      ()
     }
 
     // also shorten very long queries
-    if (pb.getConfiguration != null && pb.getConfiguration.getQuery != null)
+    if (pb.getConfiguration != null && pb.getConfiguration.getQuery != null) {
       pb.getConfiguration.getQuery.setQuery(
         shorten(1000)(pb.getConfiguration.getQuery.getQuery)
       )
+      ()
+    }
 
     factory.toString(pb)
   }

@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 NRK
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package no.nrk.bigquery
 package internal
 
@@ -9,7 +15,9 @@ import com.google.cloud.bigquery.{
 }
 
 object PartitionTypeHelper {
-  def timePartitioned(bqtype: BQPartitionType[Any]) =
+  private def assertIsUsed(a: Any*): Unit = (a, ())._2
+
+  def timePartitioned(bqtype: BQPartitionType[Any]): Option[TimePartitioning] =
     bqtype match {
       case BQPartitionType.DatePartitioned(field) =>
         Some(
@@ -30,8 +38,10 @@ object PartitionTypeHelper {
       case _: BQPartitionType.NotPartitioned => None
     }
 
-  def rangepartitioned(bqtype: BQPartitionType[Any]): Option[RangePartitioning] =
+  def rangepartitioned(bqtype: BQPartitionType[Any]): Option[RangePartitioning] = {
+    assertIsUsed(bqtype)
     None
+  }
 
   def from(
       actual: StandardTableDefinition

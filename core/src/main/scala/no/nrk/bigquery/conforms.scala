@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 NRK
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package no.nrk.bigquery
 
 /** Comparisons of schemas and bigquery types. This is order dependant instead of names, because that's how we

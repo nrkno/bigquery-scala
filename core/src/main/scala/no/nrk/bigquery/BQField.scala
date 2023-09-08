@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 NRK
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package no.nrk.bigquery
 
 /** This is isomorphic to `Field` (can translate back and forth without data lass)

@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 NRK
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package no.nrk.bigquery.internal
 
 import com.google.cloud.bigquery.{Field, FieldList, PolicyTags, Schema, StandardSQLTypeName}
@@ -23,10 +29,12 @@ object SchemaHelper {
     val b = Field.newBuilder(field.name, fromType(field.tpe), field.subFields.map(toField): _*)
     b.setMode(fromMode(field.mode))
     field.description.foreach(b.setDescription)
-    if (field.policyTags.nonEmpty)
+    if (field.policyTags.nonEmpty) {
       b.setPolicyTags(
         PolicyTags.newBuilder().setNames(field.policyTags.asJava).build()
       )
+      ()
+    }
     b.build()
   }
 
