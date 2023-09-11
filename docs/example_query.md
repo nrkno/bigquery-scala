@@ -15,7 +15,7 @@ object Schemas {
   object UserEventSchema {
     private val timestamp: BQField = BQField("timestamp", BQField.Type.TIMESTAMP, BQField.Mode.REQUIRED)
     val tableDef: BQTableDef.Table[LocalDate] = BQTableDef.Table(
-      BQTableId(BQDataset(ProjectId("my-gcp-project"), "prod", Some(LocationId("eu"))), "user_log"),
+      BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId.unsafeFromString("my-gcp-project"), "prod", Some(LocationId.EU)), "user_log"),
       BQSchema.of(
         BQField("eventId", BQField.Type.STRING, BQField.Mode.REQUIRED),
         timestamp,
@@ -36,7 +36,7 @@ object Schemas {
       BQField("lastName", BQField.Type.STRING, BQField.Mode.REQUIRED)
     )
     val tableDef: BQTableDef.Table[Unit] = BQTableDef.Table(
-      BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("my-gcp-project"), "prod").withLocation(LocationId("eu")), "users"),
+      BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId.unsafeFromString("my-gcp-project"), "prod").withLocation(LocationId.EU), "users"),
       BQSchema.of(
         BQField("userId", BQField.Type.STRING, BQField.Mode.REQUIRED),
         namesStruct
@@ -151,7 +151,7 @@ run all tests without getting in to issues like api quotas or cost issued.
 
 Note that we can create illegal queries using `BQSqlFrag`s so it's essential that we write tests for them.
 
-```scala mdoc
+```scala
 import no.nrk.bigquery.testing.{BQSmokeTest, BigQueryTestClient}
 import java.time.LocalDate
 
