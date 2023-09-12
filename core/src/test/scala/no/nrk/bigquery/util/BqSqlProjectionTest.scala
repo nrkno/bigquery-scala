@@ -12,7 +12,7 @@ import no.nrk.bigquery.syntax._
 
 class BqSqlProjectionTest extends FunSuite {
 
-  test("project a struct".ignore) {
+  test("project a struct") {
     val structField = BQField.struct("foo", BQField.Mode.NULLABLE)(
       BQField("keep_me_1", BQField.Type.STRING, BQField.Mode.NULLABLE),
       BQField("keep_me_2", BQField.Type.STRING, BQField.Mode.NULLABLE),
