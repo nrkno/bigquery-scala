@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package no.nrk.bigquery.internal
+package no.nrk.bigquery
+package internal
 
 import com.google.cloud.bigquery.{DatasetId, TableId, TableInfo}
 import no.nrk.bigquery.TableLabels.Empty
-import no.nrk.bigquery.{BQDataset, BQTableId, TableLabels}
 
 import scala.jdk.CollectionConverters._
 
@@ -17,6 +17,10 @@ object GoogleTypeHelper {
   def toDatasetGoogle(ds: BQDataset): DatasetId = DatasetId.of(ds.project.value, ds.id)
   def toTableIdGoogle(tableId: BQTableId): TableId =
     TableId.of(tableId.dataset.project.value, tableId.dataset.id, tableId.tableName)
+
+  def toTableOptions(tableInfo: TableInfo): TableOptions = TableOptions(
+    partitionFilterRequired = Option(tableInfo.getRequirePartitionFilter).exists(_.booleanValue())
+  )
 
   def unsafeTableIdFromGoogle(dataset: BQDataset, tableId: TableId): BQTableId = {
     require(

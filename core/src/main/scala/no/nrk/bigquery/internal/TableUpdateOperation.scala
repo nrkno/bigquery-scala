@@ -23,33 +23,22 @@ object TableUpdateOperation {
         createNew(tableDef)
 
       case Some(existingRemoteTable) =>
-        (tableDef, existingRemoteTable.getDefinition[TableDefinition]) match {
-          case (
-                localTableDef: BQTableDef.Table[Any],
-                remoteTableDef: StandardTableDefinition
-              ) =>
-            PartitionTypeHelper.from(remoteTableDef) match {
-              case Right(remotePartitionType) if remotePartitionType == localTableDef.partitionType =>
-                val remoteAsTableDef = BQTableDef.Table(
-                  tableId = unsafeTableIdFromGoogle(
-                    localTableDef.tableId.dataset,
-                    existingRemoteTable.getTableId
-                  ),
-                  schema = SchemaHelper.fromSchema(remoteTableDef.getSchema),
-                  partitionType = remotePartitionType,
-                  description = Option(existingRemoteTable.getDescription),
-                  clustering = Option(remoteTableDef.getClustering).toList
-                    .flatMap(_.getFields.asScala)
-                    .map(Ident.apply),
-                  labels = GoogleTypeHelper.tableLabelsfromTableInfo(existingRemoteTable),
-                  tableOptions = TableOptions.fromTableInfo(existingRemoteTable)
-                )
-
+        SchemaHelper.fromTable(existingRemoteTable) match {
+          case Left(SchemaHelper.TableConversionError.UnsupportedPartitionType(msg)) =>
+            UpdateOperation.UnsupportedPartitioning(TableDefOperationMeta(existingRemoteTable, tableDef), msg)
+          case Left(SchemaHelper.TableConversionError.UnsupportedTableType(msg)) =>
+            UpdateOperation.Illegal(TableDefOperationMeta(existingRemoteTable, tableDef), msg)
+          case Left(SchemaHelper.TableConversionError.IllegalTableId(msg)) =>
+            UpdateOperation.Illegal(TableDefOperationMeta(existingRemoteTable, tableDef), msg)
+          case Right(remoteDef) =>
+            (tableDef -> remoteDef) match {
+              case (local: BQTableDef.Table[Any], remote: BQTableDef.Table[Any])
+                  if remote.partitionType == local.partitionType =>
                 val illegalSchemaExtension: Option[UpdateOperation.IllegalSchemaExtension] =
                   conforms
                     .onlyTypes(
-                      actualSchema = remoteAsTableDef.schema,
-                      givenSchema = localTableDef.schema
+                      actualSchema = remote.schema,
+                      givenSchema = local.schema
                     )
                     .map { reasons =>
                       UpdateOperation.IllegalSchemaExtension(
@@ -58,120 +47,34 @@ object TableUpdateOperation {
                       )
                     }
 
-                if (localTableDef == remoteAsTableDef)
-                  UpdateOperation.Noop(TableDefOperationMeta(existingRemoteTable, localTableDef))
+                if (local == remote)
+                  UpdateOperation.Noop(TableDefOperationMeta(existingRemoteTable, local))
                 else
                   illegalSchemaExtension.getOrElse {
-                    val updatedTable: TableInfo = {
-                      // unpack values from `localTableDef`. This will break compilation we add more fields, reminding us to update here
-                      val BQTableDef.Table(
-                        _,
-                        schema,
-                        partitioning,
-                        description,
-                        clustering,
-                        labels,
-                        tableOptions
-                      ) = localTableDef
-
-                      existingRemoteTable.toBuilder
-                        .setDefinition {
-                          StandardTableDefinition.newBuilder
-                            .setSchema(SchemaHelper.toSchema(schema))
-                            .setTimePartitioning(
-                              PartitionTypeHelper.timePartitioned(partitioning).orNull
-                            )
-                            .setRangePartitioning(
-                              PartitionTypeHelper.rangepartitioned(partitioning).orNull
-                            )
-                            .setClustering(clusteringFrom(clustering).orNull)
-                            .build()
-                        }
-                        .setRequirePartitionFilter(
-                          // Override partitionFilterRequired flag if the table is not partitioned.
-                          partitioning match {
-                            case BQPartitionType.DatePartitioned(_) => tableOptions.partitionFilterRequired
-                            case BQPartitionType.MonthPartitioned(_) => tableOptions.partitionFilterRequired
-                            case _ => null
-                          }
-                        )
-                        .setDescription(description.orNull)
-                        .setLabels(labels.forUpdate(Some(remoteAsTableDef)))
-                        .build()
-                    }
+                    val updatedTable: TableInfo = updateTable(existingRemoteTable, local, remote)
                     UpdateOperation.UpdateTable(
                       existingRemoteTable,
-                      localTableDef,
+                      local,
                       updatedTable
                     )
                   }
-              case Right(wrongPartitionType) =>
+              case (local: BQTableDef.Table[Any], remote: BQTableDef.Table[Any]) =>
                 UpdateOperation.UnsupportedPartitioning(
-                  TableDefOperationMeta(existingRemoteTable, localTableDef),
-                  s"Cannot change partitioning from $wrongPartitionType to ${localTableDef.partitionType}"
+                  TableDefOperationMeta(existingRemoteTable, local),
+                  s"Cannot change partitioning from ${remote.partitionType} to ${local.partitionType}"
                 )
-              case Left(unsupported) =>
-                UpdateOperation.UnsupportedPartitioning(
-                  TableDefOperationMeta(existingRemoteTable, localTableDef),
-                  unsupported
-                )
-            }
+              case (local: BQTableDef.View[Any], remote: BQTableDef.View[Any]) =>
+                if (local == remote.withTableType(local.partitionType))
+                  UpdateOperation.Noop(TableDefOperationMeta(existingRemoteTable, local))
+                else
+                  UpdateOperation.RecreateView(
+                    existingRemoteTable,
+                    local,
+                    createNew(local)
+                  )
 
-          case (
-                localTableDef: BQTableDef.View[Any],
-                remoteViewDef: ViewDefinition
-              ) =>
-            val remoteAsTableDef = BQTableDef.View(
-              tableId = tableDef.tableId,
-              partitionType = localTableDef.partitionType,
-              query = BQSqlFrag(remoteViewDef.getQuery),
-              schema = SchemaHelper.fromSchema(remoteViewDef.getSchema),
-              description = Option(existingRemoteTable.getDescription),
-              labels = GoogleTypeHelper.tableLabelsfromTableInfo(existingRemoteTable)
-            )
-
-            if (localTableDef == remoteAsTableDef)
-              UpdateOperation.Noop(TableDefOperationMeta(existingRemoteTable, localTableDef))
-            else
-              UpdateOperation.RecreateView(
-                existingRemoteTable,
-                localTableDef,
-                createNew(localTableDef)
-              )
-
-          case (
-                localTemplate: BQTableDef.View[Any],
-                _: MaterializedViewDefinition
-              ) =>
-            UpdateOperation.RecreateView(
-              existingRemoteTable = existingRemoteTable,
-              localTableDef = localTemplate,
-              createNew(localTemplate)
-            )
-
-          case (
-                localTableDef: BQTableDef.MaterializedView[Any],
-                remoteMVDef: MaterializedViewDefinition
-              ) =>
-            PartitionTypeHelper.from(remoteMVDef) match {
-              case Right(remotePartitionType) if remotePartitionType == localTableDef.partitionType =>
-                val remoteAsTableDef = BQTableDef.MaterializedView(
-                  tableId = unsafeTableIdFromGoogle(
-                    localTableDef.tableId.dataset,
-                    existingRemoteTable.getTableId
-                  ),
-                  partitionType = remotePartitionType,
-                  query = BQSqlFrag(remoteMVDef.getQuery),
-                  schema = SchemaHelper.fromSchema(remoteMVDef.getSchema),
-                  enableRefresh = remoteMVDef.getEnableRefresh,
-                  refreshIntervalMs = remoteMVDef.getRefreshIntervalMs,
-                  description = Option(existingRemoteTable.getDescription),
-                  // note: we decided to not sync labels to BQ for MVs.
-                  // this is because we have to recompute the whole thing on any label change.
-                  labels = localTableDef.labels, // TableLabels.fromTableInfo(existingRemoteTable)
-                  tableOptions = TableOptions.fromTableInfo(existingRemoteTable)
-                )
-
+              case (local: BQTableDef.MaterializedView[Any], remote: BQTableDef.MaterializedView[Any])
+                  if local.partitionType == remote.partitionType =>
                 def outline(field: BQField): BQField =
                   field.copy(
                     mode = BQField.Mode.NULLABLE,
@@ -180,56 +83,78 @@ object TableUpdateOperation {
                   )
 
                 val patchedLocalMVDef =
-                  localTableDef.copy(
+                  local.copy(
                     // Materialized views are given a schema, but we cant affect it in any way.
-                    schema = BQSchema(localTableDef.schema.fields.map(outline)),
+                    schema = BQSchema(local.schema.fields.map(outline)),
                     // Override partitionFilterRequired flag if the view is not partitioned.
-                    tableOptions = localTableDef.partitionType match {
-                      case BQPartitionType.DatePartitioned(_) => localTableDef.tableOptions
-                      case BQPartitionType.MonthPartitioned(_) => localTableDef.tableOptions
-                      case _ => localTableDef.tableOptions.copy(partitionFilterRequired = false)
+                    tableOptions = local.partitionType match {
+                      case BQPartitionType.DatePartitioned(_) => local.tableOptions
+                      case BQPartitionType.MonthPartitioned(_) => local.tableOptions
+                      case _ => local.tableOptions.copy(partitionFilterRequired = false)
                     }
                   )
 
-                if (patchedLocalMVDef == remoteAsTableDef)
-                  UpdateOperation.Noop(TableDefOperationMeta(existingRemoteTable, localTableDef))
+                if (patchedLocalMVDef == remote)
+                  UpdateOperation.Noop(TableDefOperationMeta(existingRemoteTable, local))
                 else
                   UpdateOperation.RecreateView(
                     existingRemoteTable,
-                    localTableDef,
-                    createNew(localTableDef)
+                    local,
+                    createNew(local)
                   )
 
-              case Right(wrongPartitionType) =>
+              case (local: BQTableDef.MaterializedView[Any], remote: BQTableDef.MaterializedView[Any]) =>
                 val reason =
-                  s"Cannot change partitioning from $wrongPartitionType to ${localTableDef.partitionType}"
-                UpdateOperation.UnsupportedPartitioning(
-                  TableDefOperationMeta(existingRemoteTable, localTableDef),
-                  reason
-                )
-              case Left(unsupported) =>
-                UpdateOperation.UnsupportedPartitioning(
-                  TableDefOperationMeta(existingRemoteTable, localTableDef),
-                  unsupported
-                )
+                  s"Cannot change partitioning from ${remote.partitionType} to ${local.partitionType}"
+                UpdateOperation.UnsupportedPartitioning(TableDefOperationMeta(existingRemoteTable, local), reason)
+              case (_, _) =>
+                val reason =
+                  s"cannot update a ${existingRemoteTable.getDefinition[TableDefinition].getType.name()} to ${tableDef.getClass.getSimpleName}"
+                UpdateOperation.Illegal(TableDefOperationMeta(existingRemoteTable, tableDef), reason)
             }
-
-          case (
-                localTableDef: BQTableDef.MaterializedView[Any],
-                _: ViewDefinition
-              ) =>
-            UpdateOperation.RecreateView(
-              existingRemoteTable,
-              localTableDef,
-              createNew(localTableDef)
-            )
-
-          case (localTableDef, otherDef) =>
-            val reason =
-              s"cannot update a ${otherDef.getType.name()} to ${localTableDef.getClass.getSimpleName}"
-            UpdateOperation.Illegal(TableDefOperationMeta(existingRemoteTable, localTableDef), reason)
         }
     }
+
+  private def updateTable(
+      existingRemoteTable: TableInfo,
+      local: BQTableDef.Table[Any],
+      remote: BQTableDef.Table[Any]) = {
+    // unpack values from `localTableDef`. This will break compilation we add more fields, reminding us to update here
+    val BQTableDef.Table(
+      _,
+      schema,
+      partitioning,
+      description,
+      clustering,
+      labels,
+      tableOptions
+    ) = local
+
+    existingRemoteTable.toBuilder
+      .setDefinition {
+        StandardTableDefinition.newBuilder
+          .setSchema(SchemaHelper.toSchema(schema))
+          .setTimePartitioning(
+            PartitionTypeHelper.timePartitioned(partitioning).orNull
+          )
+          .setRangePartitioning(
+            PartitionTypeHelper.rangepartitioned(partitioning).orNull
+          )
+          .setClustering(clusteringFrom(clustering).orNull)
+          .build()
+      }
+      .setRequirePartitionFilter(
+        // Override partitionFilterRequired flag if the table is not partitioned.
+        partitioning match {
+          case BQPartitionType.DatePartitioned(_) => tableOptions.partitionFilterRequired
+          case BQPartitionType.MonthPartitioned(_) => tableOptions.partitionFilterRequired
+          case _ => null
+        }
+      )
+      .setDescription(description.orNull)
+      .setLabels(labels.forUpdate(Some(remote)))
+      .build()
+  }
 
   def createNew(localTableDef: BQTableDef[Any]): UpdateOperation.CreateTable =
     localTableDef match {
