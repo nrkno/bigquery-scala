@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package no.nrk.bigquery.internal
+package no.nrk.bigquery
+package internal
 
-import com.google.cloud.bigquery.{Field, FieldList, PolicyTags, Schema, StandardSQLTypeName}
+import com.google.cloud.bigquery.{Option => _, _}
 
 import scala.jdk.CollectionConverters._
-import no.nrk.bigquery.{BQField, BQSchema, BQType}
 
 object SchemaHelper {
   def fromType(typ: BQField.Type): StandardSQLTypeName = StandardSQLTypeName.valueOf(typ.name)
@@ -17,6 +17,75 @@ object SchemaHelper {
 
   def toSchema(schema: BQSchema): Schema =
     Schema.of(schema.fields.map(toField): _*)
+
+  sealed trait TableConversionError
+  object TableConversionError {
+    final case class IllegalTableId(msg: String) extends TableConversionError
+    final case class UnsupportedPartitionType(msg: String) extends TableConversionError
+    final case class UnsupportedTableType(msg: String) extends TableConversionError
+  }
+
+  def fromTable(table: TableInfo): Either[TableConversionError, BQTableDef[Any]] = {
+    val id = List(
+      Option(table.getTableId.getProject),
+      Option(table.getTableId.getDataset),
+      Option(table.getTableId.getTable)).flatten.mkString(".")
+    val parsedId = BQTableId.fromString(id).left.map(msg => TableConversionError.IllegalTableId(msg))
+
+    table.getDefinition[TableDefinition] match {
+      case st: StandardTableDefinition =>
+        for {
+          typ <- PartitionTypeHelper.from(st).left.map(msg => TableConversionError.UnsupportedPartitionType(msg))
+          tableId <- parsedId
+        } yield BQTableDef.Table(
+          tableId = tableId,
+          schema = fromSchema(st.getSchema),
+          partitionType = typ,
+          description = Option(table.getDescription),
+          clustering = Option(st.getClustering).toList
+            .flatMap(_.getFields.asScala)
+            .map(Ident.apply),
+          labels = GoogleTypeHelper.tableLabelsfromTableInfo(table),
+          tableOptions = GoogleTypeHelper.toTableOptions(table)
+        )
+
+      case v: ViewDefinition =>
+        parsedId.map(tableId =>
+          BQTableDef.View(
+            tableId = tableId,
+            schema = fromSchema(v.getSchema),
+            partitionType = BQPartitionType.NotPartitioned,
+            description = Option(table.getDescription),
+            labels = GoogleTypeHelper.tableLabelsfromTableInfo(table),
+            query = BQSqlFrag.Frag(v.getQuery)
+          ))
+
+      case v: MaterializedViewDefinition =>
+        for {
+          typ <- PartitionTypeHelper.from(v).left.map(msg => TableConversionError.UnsupportedPartitionType(msg))
+          tableId <- parsedId
+
+        } yield BQTableDef.MaterializedView(
+          tableId = tableId,
+          schema = fromSchema(v.getSchema),
+          partitionType = typ,
+          description = Option(table.getDescription),
+          enableRefresh = Option(v.getEnableRefresh).forall(_.booleanValue()),
+          refreshIntervalMs = Option(v.getRefreshIntervalMs).map(_.longValue()).getOrElse(1800000L),
+          /*
+          TODO: Add clustering to BQTableDef.MaterializedView
+
+          clustering = Option(st.getClustering).toList
+                .flatMap(_.getFields.asScala)
+                .map(Ident.apply),*/
+          labels = GoogleTypeHelper.tableLabelsfromTableInfo(table),
+          query = BQSqlFrag.Frag(v.getQuery),
+          tableOptions = GoogleTypeHelper.toTableOptions(table)
+        )
+
+      case s => Left(TableConversionError.UnsupportedTableType(s"${s.getType.name()} is not supported here"))
+    }
+  }
 
   def fromSchema(schema: Schema): BQSchema =
     schema match {
