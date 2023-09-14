@@ -32,7 +32,7 @@ class BQSqlFragTest extends FunSuite {
 
   test("collect nested UDFs") {
     val udfIdents = bqfr"select ${udfToString(udfAddOne(bqfr"1"))}"
-      .collect { case BQSqlFrag.Call(udf, _) => udf }
+      .collect { case BQSqlFrag.Call(udf: UDF[_, _], _) => udf }
       .map(_.name)
       .sortBy(_.show)
 
@@ -58,7 +58,7 @@ class BQSqlFragTest extends FunSuite {
     )
 
     val udfIdents = bqsql"select ${outerUdf(1)}"
-      .collect { case BQSqlFrag.Call(udf, _) => udf }
+      .collect { case BQSqlFrag.Call(udf: UDF[_, _], _) => udf }
       .map(_.name)
 
     assertEquals(udfIdents, innerUdf1.name :: innerUdf2.name :: outerUdf.name :: Nil)
@@ -110,7 +110,7 @@ class BQSqlFragTest extends FunSuite {
     )
 
     val udfIdents = fill1.query
-      .collect { case BQSqlFrag.Call(udf, _) => udf }
+      .collect { case BQSqlFrag.Call(udf: UDF[_, _], _) => udf }
       .map(_.name)
 
     assertEquals(udfIdents, outerUdf1.name :: Nil)

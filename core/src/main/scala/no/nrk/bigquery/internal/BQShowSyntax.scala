@@ -12,7 +12,7 @@ import cats.syntax.all._
 
 import java.time.LocalDate
 
-trait BQShowSyntax extends UdfSyntax {
+trait BQShowSyntax extends RoutineSyntax {
 
   implicit def bqShowInterpolator(sc: StringContext): BQShow.BQShowInterpolator = new BQShow.BQShowInterpolator(sc)
   implicit def bqShowOps[A](a: A): BQShowOps[A] = new BQShowOps[A](a)

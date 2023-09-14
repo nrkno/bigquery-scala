@@ -6,85 +6,85 @@
 
 package no.nrk.bigquery.internal
 
-import no.nrk.bigquery.{BQSqlFrag, UDF}
+import no.nrk.bigquery.{BQSqlFrag, Routine}
 import no.nrk.bigquery.util.nat.*
 import no.nrk.bigquery.util.IndexSeqSizedBuilder
 
-trait UdfSyntax {
-  implicit def bqUdfOps0(udf: UDF[UDF.UDFId, _0]): UdfOps0 = new UdfOps0(udf)
-  implicit def bqUdfOps1(udf: UDF[UDF.UDFId, _1]): UdfOps1 = new UdfOps1(udf)
-  implicit def bqUdfOps2(udf: UDF[UDF.UDFId, _2]): UdfOps2 = new UdfOps2(udf)
-  implicit def bqUdfOps3(udf: UDF[UDF.UDFId, _3]): UdfOps3 = new UdfOps3(udf)
-  implicit def bqUdfOps4(udf: UDF[UDF.UDFId, _4]): UdfOps4 = new UdfOps4(udf)
-  implicit def bqUdfOps5(udf: UDF[UDF.UDFId, _5]): UdfOps5 = new UdfOps5(udf)
-  implicit def bqUdfOps6(udf: UDF[UDF.UDFId, _6]): UdfOps6 = new UdfOps6(udf)
-  implicit def bqUdfOps7(udf: UDF[UDF.UDFId, _7]): UdfOps7 = new UdfOps7(udf)
-  implicit def bqUdfOps8(udf: UDF[UDF.UDFId, _8]): UdfOps8 = new UdfOps8(udf)
-  implicit def bqUdfOps9(udf: UDF[UDF.UDFId, _9]): UdfOps9 = new UdfOps9(udf)
-  implicit def bqUdfOps10(udf: UDF[UDF.UDFId, _10]): UdfOps10 = new UdfOps10(udf)
-  implicit def bqUdfOps11(udf: UDF[UDF.UDFId, _11]): UdfOps11 = new UdfOps11(udf)
-  implicit def bqUdfOps12(udf: UDF[UDF.UDFId, _12]): UdfOps12 = new UdfOps12(udf)
-  implicit def bqUdfOps13(udf: UDF[UDF.UDFId, _13]): UdfOps13 = new UdfOps13(udf)
-  implicit def bqUdfOps14(udf: UDF[UDF.UDFId, _14]): UdfOps14 = new UdfOps14(udf)
-  implicit def bqUdfOps15(udf: UDF[UDF.UDFId, _15]): UdfOps15 = new UdfOps15(udf)
-  implicit def bqUdfOps16(udf: UDF[UDF.UDFId, _16]): UdfOps16 = new UdfOps16(udf)
-  implicit def bqUdfOps17(udf: UDF[UDF.UDFId, _17]): UdfOps17 = new UdfOps17(udf)
-  implicit def bqUdfOps18(udf: UDF[UDF.UDFId, _18]): UdfOps18 = new UdfOps18(udf)
-  implicit def bqUdfOps19(udf: UDF[UDF.UDFId, _19]): UdfOps19 = new UdfOps19(udf)
-  implicit def bqUdfOps20(udf: UDF[UDF.UDFId, _20]): UdfOps20 = new UdfOps20(udf)
-  implicit def bqUdfOps21(udf: UDF[UDF.UDFId, _21]): UdfOps21 = new UdfOps21(udf)
-  implicit def bqUdfOps22(udf: UDF[UDF.UDFId, _22]): UdfOps22 = new UdfOps22(udf)
+trait RoutineSyntax {
+  implicit def bqRoutineOps0(routine: Routine[_0]): RoutineOps0 = new RoutineOps0(routine)
+  implicit def bqRoutineOps1(routine: Routine[_1]): RoutineOps1 = new RoutineOps1(routine)
+  implicit def bqRoutineOps2(routine: Routine[_2]): RoutineOps2 = new RoutineOps2(routine)
+  implicit def bqRoutineOps3(routine: Routine[_3]): RoutineOps3 = new RoutineOps3(routine)
+  implicit def bqRoutineOps4(routine: Routine[_4]): RoutineOps4 = new RoutineOps4(routine)
+  implicit def bqRoutineOps5(routine: Routine[_5]): RoutineOps5 = new RoutineOps5(routine)
+  implicit def bqRoutineOps6(routine: Routine[_6]): RoutineOps6 = new RoutineOps6(routine)
+  implicit def bqRoutineOps7(routine: Routine[_7]): RoutineOps7 = new RoutineOps7(routine)
+  implicit def bqRoutineOps8(routine: Routine[_8]): RoutineOps8 = new RoutineOps8(routine)
+  implicit def bqRoutineOps9(routine: Routine[_9]): RoutineOps9 = new RoutineOps9(routine)
+  implicit def bqRoutineOps10(routine: Routine[_10]): RoutineOps10 = new RoutineOps10(routine)
+  implicit def bqRoutineOps11(routine: Routine[_11]): RoutineOps11 = new RoutineOps11(routine)
+  implicit def bqRoutineOps12(routine: Routine[_12]): RoutineOps12 = new RoutineOps12(routine)
+  implicit def bqRoutineOps13(routine: Routine[_13]): RoutineOps13 = new RoutineOps13(routine)
+  implicit def bqRoutineOps14(routine: Routine[_14]): RoutineOps14 = new RoutineOps14(routine)
+  implicit def bqRoutineOps15(routine: Routine[_15]): RoutineOps15 = new RoutineOps15(routine)
+  implicit def bqRoutineOps16(routine: Routine[_16]): RoutineOps16 = new RoutineOps16(routine)
+  implicit def bqRoutineOps17(routine: Routine[_17]): RoutineOps17 = new RoutineOps17(routine)
+  implicit def bqRoutineOps18(routine: Routine[_18]): RoutineOps18 = new RoutineOps18(routine)
+  implicit def bqRoutineOps19(routine: Routine[_19]): RoutineOps19 = new RoutineOps19(routine)
+  implicit def bqRoutineOps20(routine: Routine[_20]): RoutineOps20 = new RoutineOps20(routine)
+  implicit def bqRoutineOps21(routine: Routine[_21]): RoutineOps21 = new RoutineOps21(routine)
+  implicit def bqRoutineOps22(routine: Routine[_22]): RoutineOps22 = new RoutineOps22(routine)
 }
 
-object UdfSyntax {
+object RoutineSyntax {
   private[internal] val builder = new IndexSeqSizedBuilder[BQSqlFrag.Magnet]
 }
 
-class UdfOps0(udf: UDF[UDF.UDFId, _0]) {
-  def apply(): BQSqlFrag.Call = BQSqlFrag.Call(udf, List.empty)
+class RoutineOps0(routine: Routine[_0]) {
+  def apply(): BQSqlFrag.Call = BQSqlFrag.Call(routine, List.empty)
 }
 
-class UdfOps1(udf: UDF[UDF.UDFId, _1]) {
+class RoutineOps1(routine: Routine[_1]) {
   def apply(
       m1: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1))
+  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1))
 }
 
-class UdfOps2(udf: UDF[UDF.UDFId, _2]) {
+class RoutineOps2(routine: Routine[_2]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2))
+  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2))
 }
 
-class UdfOps3(udf: UDF[UDF.UDFId, _3]) {
+class RoutineOps3(routine: Routine[_3]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
       m3: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3))
+  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3))
 }
 
-class UdfOps4(udf: UDF[UDF.UDFId, _4]) {
+class RoutineOps4(routine: Routine[_4]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
       m3: BQSqlFrag.Magnet,
       m4: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4))
+  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4))
 }
 
-class UdfOps5(udf: UDF[UDF.UDFId, _5]) {
+class RoutineOps5(routine: Routine[_5]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
       m3: BQSqlFrag.Magnet,
       m4: BQSqlFrag.Magnet,
       m5: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5))
+  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5))
 }
 
-class UdfOps6(udf: UDF[UDF.UDFId, _6]) {
+class RoutineOps6(routine: Routine[_6]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -92,10 +92,10 @@ class UdfOps6(udf: UDF[UDF.UDFId, _6]) {
       m4: BQSqlFrag.Magnet,
       m5: BQSqlFrag.Magnet,
       m6: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6))
+  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6))
 }
 
-class UdfOps7(udf: UDF[UDF.UDFId, _7]) {
+class RoutineOps7(routine: Routine[_7]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -104,10 +104,10 @@ class UdfOps7(udf: UDF[UDF.UDFId, _7]) {
       m5: BQSqlFrag.Magnet,
       m6: BQSqlFrag.Magnet,
       m7: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7))
+  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7))
 }
 
-class UdfOps8(udf: UDF[UDF.UDFId, _8]) {
+class RoutineOps8(routine: Routine[_8]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -117,10 +117,10 @@ class UdfOps8(udf: UDF[UDF.UDFId, _8]) {
       m6: BQSqlFrag.Magnet,
       m7: BQSqlFrag.Magnet,
       m8: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8))
+  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8))
 }
 
-class UdfOps9(udf: UDF[UDF.UDFId, _9]) {
+class RoutineOps9(routine: Routine[_9]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -131,10 +131,10 @@ class UdfOps9(udf: UDF[UDF.UDFId, _9]) {
       m7: BQSqlFrag.Magnet,
       m8: BQSqlFrag.Magnet,
       m9: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9))
+  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9))
 }
 
-class UdfOps10(udf: UDF[UDF.UDFId, _10]) {
+class RoutineOps10(routine: Routine[_10]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -146,10 +146,10 @@ class UdfOps10(udf: UDF[UDF.UDFId, _10]) {
       m8: BQSqlFrag.Magnet,
       m9: BQSqlFrag.Magnet,
       m10: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10))
+  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10))
 }
 
-class UdfOps11(udf: UDF[UDF.UDFId, _11]) {
+class RoutineOps11(routine: Routine[_11]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -162,10 +162,10 @@ class UdfOps11(udf: UDF[UDF.UDFId, _11]) {
       m9: BQSqlFrag.Magnet,
       m10: BQSqlFrag.Magnet,
       m11: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11))
+  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11))
 }
 
-class UdfOps12(udf: UDF[UDF.UDFId, _12]) {
+class RoutineOps12(routine: Routine[_12]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -179,10 +179,10 @@ class UdfOps12(udf: UDF[UDF.UDFId, _12]) {
       m10: BQSqlFrag.Magnet,
       m11: BQSqlFrag.Magnet,
       m12: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12))
+  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12))
 }
 
-class UdfOps13(udf: UDF[UDF.UDFId, _13]) {
+class RoutineOps13(routine: Routine[_13]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -197,10 +197,10 @@ class UdfOps13(udf: UDF[UDF.UDFId, _13]) {
       m11: BQSqlFrag.Magnet,
       m12: BQSqlFrag.Magnet,
       m13: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13))
+  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13))
 }
 
-class UdfOps14(udf: UDF[UDF.UDFId, _14]) {
+class RoutineOps14(routine: Routine[_14]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -216,10 +216,10 @@ class UdfOps14(udf: UDF[UDF.UDFId, _14]) {
       m12: BQSqlFrag.Magnet,
       m13: BQSqlFrag.Magnet,
       m14: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14))
+  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14))
 }
 
-class UdfOps15(udf: UDF[UDF.UDFId, _15]) {
+class RoutineOps15(routine: Routine[_15]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -237,10 +237,10 @@ class UdfOps15(udf: UDF[UDF.UDFId, _15]) {
       m14: BQSqlFrag.Magnet,
       m15: BQSqlFrag.Magnet
   ): BQSqlFrag.Call =
-    udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15))
+    routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15))
 }
 
-class UdfOps16(udf: UDF[UDF.UDFId, _16]) {
+class RoutineOps16(routine: Routine[_16]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -259,10 +259,10 @@ class UdfOps16(udf: UDF[UDF.UDFId, _16]) {
       m15: BQSqlFrag.Magnet,
       m16: BQSqlFrag.Magnet
   ): BQSqlFrag.Call =
-    udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16))
+    routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16))
 }
 
-class UdfOps17(udf: UDF[UDF.UDFId, _17]) {
+class RoutineOps17(routine: Routine[_17]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -282,10 +282,10 @@ class UdfOps17(udf: UDF[UDF.UDFId, _17]) {
       m16: BQSqlFrag.Magnet,
       m17: BQSqlFrag.Magnet
   ): BQSqlFrag.Call =
-    udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17))
+    routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17))
 }
 
-class UdfOps18(udf: UDF[UDF.UDFId, _18]) {
+class RoutineOps18(routine: Routine[_18]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -306,10 +306,10 @@ class UdfOps18(udf: UDF[UDF.UDFId, _18]) {
       m17: BQSqlFrag.Magnet,
       m18: BQSqlFrag.Magnet
   ): BQSqlFrag.Call =
-    udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18))
+    routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18))
 }
 
-class UdfOps19(udf: UDF[UDF.UDFId, _19]) {
+class RoutineOps19(routine: Routine[_19]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -330,11 +330,11 @@ class UdfOps19(udf: UDF[UDF.UDFId, _19]) {
       m17: BQSqlFrag.Magnet,
       m18: BQSqlFrag.Magnet,
       m19: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(
-    UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19))
+  ): BQSqlFrag.Call = routine.call(
+    RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19))
 }
 
-class UdfOps20(udf: UDF[UDF.UDFId, _20]) {
+class RoutineOps20(routine: Routine[_20]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -356,11 +356,11 @@ class UdfOps20(udf: UDF[UDF.UDFId, _20]) {
       m18: BQSqlFrag.Magnet,
       m19: BQSqlFrag.Magnet,
       m20: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(
-    UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20))
+  ): BQSqlFrag.Call = routine.call(
+    RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20))
 }
 
-class UdfOps21(udf: UDF[UDF.UDFId, _21]) {
+class RoutineOps21(routine: Routine[_21]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -383,12 +383,12 @@ class UdfOps21(udf: UDF[UDF.UDFId, _21]) {
       m19: BQSqlFrag.Magnet,
       m20: BQSqlFrag.Magnet,
       m21: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(
-    UdfSyntax.builder
+  ): BQSqlFrag.Call = routine.call(
+    RoutineSyntax.builder
       .apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20, m21))
 }
 
-class UdfOps22(udf: UDF[UDF.UDFId, _22]) {
+class RoutineOps22(routine: Routine[_22]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -412,7 +412,7 @@ class UdfOps22(udf: UDF[UDF.UDFId, _22]) {
       m20: BQSqlFrag.Magnet,
       m21: BQSqlFrag.Magnet,
       m22: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = udf.call(
-    UdfSyntax.builder
+  ): BQSqlFrag.Call = routine.call(
+    RoutineSyntax.builder
       .apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20, m21, m22))
 }

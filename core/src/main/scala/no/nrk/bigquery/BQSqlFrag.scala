@@ -43,8 +43,12 @@ sealed trait BQSqlFrag {
     this match {
       case BQSqlFrag.Frag(string) =>
         string
-      case BQSqlFrag.Call(udf, args) =>
-        args.mkFragment(bqfr"${udf.name}(", bqfr", ", bqfr")").asString
+      case BQSqlFrag.Call(routine, args) =>
+        val name = routine match {
+          case tvf: TVF[_, _] => tvf.name.asFragment
+          case udf: UDF[_, _] => udf.name.asFragment
+        }
+        args.mkFragment(bqfr"${name}(", bqfr", ", bqfr")").asString
 
       case BQSqlFrag.Combined(values) =>
         val partitions = values.collect {
@@ -162,7 +166,7 @@ sealed trait BQSqlFrag {
       .filterNot(pid => pid.wholeTable.isInstanceOf[BQTableDef.View[_]])
 
   final def allReferencedUDFs: Seq[UDF[UDF.UDFId, _]] =
-    this.collect { case BQSqlFrag.Call(udf, _) => udf }.distinct
+    this.collect { case BQSqlFrag.Call(udf: UDF[_, _], _) => udf }.distinct
 
   override def toString: String = asString
 }
@@ -172,10 +176,15 @@ object BQSqlFrag {
   def backticks(string: String): BQSqlFrag = Frag("`" + string + "`")
 
   case class Frag(string: String) extends BQSqlFrag
-  case class Call(udf: UDF[UDF.UDFId, _], args: List[BQSqlFrag]) extends BQSqlFrag {
+  case class Call(routine: Routine[_], args: List[BQSqlFrag]) extends BQSqlFrag {
     require(
-      udf.params.length == args.length,
-      show"UDF ${udf.name}: Expected ${udf.params.length} arguments, got ${args.length}"
+      routine.params.length == args.length, {
+        val name = routine match {
+          case tvf: TVF[_, _] => tvf.name.asString
+          case udf: UDF[_, _] => udf.name.asString
+        }
+        show"Routine ${name}: Expected ${routine.params.length} arguments, got ${args.length}"
+      }
     )
   }
   case class Combined(values: Seq[BQSqlFrag]) extends BQSqlFrag

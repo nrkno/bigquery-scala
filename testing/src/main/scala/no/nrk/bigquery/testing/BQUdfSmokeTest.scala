@@ -15,7 +15,6 @@ import io.circe.parser.decode
 import io.circe.syntax._
 import munit.{CatsEffectSuite, Location}
 import no.nrk.bigquery.syntax._
-import no.nrk.bigquery.UDF._
 import org.typelevel.log4cats.slf4j._
 
 import java.nio.charset.StandardCharsets
@@ -38,16 +37,19 @@ abstract class BQUdfSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) exte
       testName: String,
       call: BQSqlFrag.Call,
       expected: Json
-  )(implicit loc: Location): Unit = {
-    val longerTestName = show"${call.udf.name} - $testName"
+  )(implicit loc: Location): Unit =
+    call.routine match {
+      case tvf: TVF[_, _] => fail(s"does not support TVF: ${tvf.name.asString}") // todo implement TVF check call!
+      case udf: UDF[_, _] =>
+        val longerTestName = show"${udf.name} - $testName"
 
-    test(s"bqCheck UDF: $longerTestName") {
-      BQUdfSmokeTest
-        .bqEvaluateCall(longerTestName, call)
-        .apply(bqClient())
-        .map(actual => assertEquals(actual, expected))
+        test(s"bqCheck UDF: $longerTestName") {
+          BQUdfSmokeTest
+            .bqEvaluateCall(longerTestName, call)
+            .apply(bqClient())
+            .map(actual => assertEquals(actual, expected))
+        }
     }
-  }
 }
 
 object BQUdfSmokeTest {
@@ -61,12 +63,16 @@ object BQUdfSmokeTest {
       testName: String,
       call: BQSqlFrag.Call
   ): BigQueryClient[IO] => IO[Json] = { bqClient =>
-    val temporaryUdfCall =
-      call.copy(udf = call.udf match {
-        case tUdf: Temporary[_] => tUdf
-        case pUdf: Persistent[_] => pUdf.convertToTemporary
-        case ref: Reference[_] => ref
-      })
+    call.routine match {
+      case tvf: TVF[_, _] =>
+        IO.raiseError[Json](new IllegalStateException("Does not support TVF")) // todo implement TVF call evaluation!
+      case _: UDF.Temporary[_] => evalInlineableCall(testName, bqClient, call)
+      case _: UDF.Reference[_] => evalInlineableCall(testName, bqClient, call)
+      case udf: UDF.Persistent[_] => evalInlineableCall(testName, bqClient, call.copy(routine = udf.convertToTemporary))
+    }
+  }
+
+  private def evalInlineableCall(testName: String, bqClient: BigQueryClient[IO], temporaryUdfCall: BQSqlFrag.Call) = {
     val query = bqfr"SELECT TO_JSON_STRING($temporaryUdfCall)"
     val cachedQuery = CachedQuery(query)
 
@@ -90,6 +96,7 @@ object BQUdfSmokeTest {
             .flatTap(cachedQuery.writeRow)
 
           log *> run
+          IO.raiseError[Json](new IllegalStateException("Foo"))
       }
   }
 

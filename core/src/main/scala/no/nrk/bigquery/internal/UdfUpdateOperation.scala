@@ -27,7 +27,7 @@ object UdfUpdateOperation {
   private val TvfRoutineType = "TABLE_VALUED_FUNCTION"
 
   def from(
-      routine: PersistentRoutine,
+      routine: PersistentRoutine[_],
       maybeExisting: Option[RoutineInfo]
   ): UpdateOperation = maybeExisting match {
     case None =>
