@@ -16,7 +16,7 @@ class TVFTest extends FunSuite {
     val tvf = TVF(
       TVF.TVFId(BQDataset.unsafeOf(ProjectId.unsafeFromString("my-test-project"), "my_cool_ds"), ident"tada"),
       BQPartitionType.NotPartitioned,
-      Routine.Params(Routine.Param(ident"name", Some(BQType.STRING))),
+      BQRoutine.Params(BQRoutine.Param(ident"name", Some(BQType.STRING))),
       bqfr"select name",
       BQSchema.of(BQField("name", BQField.Type.STRING, BQField.Mode.NULLABLE))
     )

@@ -48,7 +48,7 @@ object Schemas {
 
     val fullNameUdf: UDF.Temporary[_1] = UDF.temporary(
       ident"toFullName",
-      Routine.Params(Routine.Param.fromField(namesStruct)),
+      BQRoutine.Params(BQRoutine.Param.fromField(namesStruct)),
       UDF.Body.Sql(
         bqfr"""(names.firstName || ' ' || coalesce(names.middleName || ' ', '') || names.lastName)""".stripMargin
       ),

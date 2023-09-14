@@ -23,7 +23,7 @@ case class TableDefOperationMeta(
 }
 case class PersistentRoutineOperationMeta(
     routine: RoutineInfo,
-    persistentRoutine: PersistentRoutine[_]
+    persistentRoutine: BQPersistentRoutine[_]
 ) extends OperationMeta {
   override def identifier: String = persistentRoutine.name.asString
 }
@@ -99,7 +99,7 @@ class EnsureUpdated[F[_]](
       TableUpdateOperation.from(template, maybeExisting)
     }
 
-  def check(persistentRoutine: PersistentRoutine[_]): F[UpdateOperation] =
+  def check(persistentRoutine: BQPersistentRoutine[_]): F[UpdateOperation] =
     bqClient.getRoutine(persistentRoutine.name).map { maybeExisting =>
       UdfUpdateOperation.from(persistentRoutine, maybeExisting)
     }

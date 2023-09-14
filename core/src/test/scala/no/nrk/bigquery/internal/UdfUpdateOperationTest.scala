@@ -10,9 +10,9 @@ import com.google.cloud.bigquery.{RoutineId, RoutineInfo}
 import munit.FunSuite
 import no.nrk.bigquery.UpdateOperation.{CreatePersistentUdf, Illegal, UpdatePersistentUdf}
 import no.nrk.bigquery._
+import no.nrk.bigquery.BQRoutine.{Param, Params}
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.util.nat._
-import no.nrk.bigquery.Routine.{Param, Params}
 
 class UdfUpdateOperationTest extends FunSuite {
 

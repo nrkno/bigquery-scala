@@ -15,24 +15,25 @@ import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.util.IndexSeqSizedBuilder
 import no.nrk.bigquery.util.{Nat, Sized}
 
-sealed trait Routine[N <: Nat] {
-  def params: Routine.Params[N]
-  def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]) = BQSqlFrag.Call(this, args.unsized.toList.map(_.frag))
+sealed trait BQRoutine[N <: Nat] {
+  def params: BQRoutine.Params[N]
+  def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]): BQSqlFrag.Call =
+    BQSqlFrag.Call(this, args.unsized.toList.map(_.frag))
 }
 
-sealed trait PersistentRoutine[N <: Nat] extends Routine[N] {
-  def name: PersistentRoutine.PersistentRoutineId
+sealed trait BQPersistentRoutine[N <: Nat] extends BQRoutine[N] {
+  def name: BQPersistentRoutine.Id
 }
 
-object PersistentRoutine {
-  trait PersistentRoutineId {
+object BQPersistentRoutine {
+  trait Id {
     def dataset: BQDataset
     def name: Ident
     def asString: String
   }
 }
 
-object Routine {
+object BQRoutine {
   type Params[N <: Nat] = Sized[IndexedSeq[Param], N]
   object Params extends IndexSeqSizedBuilder[Param]
 
@@ -60,14 +61,14 @@ case class TVF[+P, N <: Nat](
     name: TVF.TVFId,
     // this doesn't exist physically, only in a sense when querying
     partitionType: BQPartitionType[P],
-    params: Routine.Params[N],
+    params: BQRoutine.Params[N],
     query: BQSqlFrag,
     schema: BQSchema,
     description: Option[String] = None
-) extends PersistentRoutine[N]
+) extends BQPersistentRoutine[N]
 
 object TVF {
-  case class TVFId(dataset: BQDataset, name: Ident) extends PersistentRoutine.PersistentRoutineId {
+  case class TVFId(dataset: BQDataset, name: Ident) extends BQPersistentRoutine.Id {
     override def asString: String = show"${dataset.project.value}.${dataset.id}.$name"
     def asFragment: BQSqlFrag = BQSqlFrag.backticks(asString)
   }
@@ -93,9 +94,9 @@ object TVF {
   * bqfr"\${myUdf(ident"bar1", ident"bar")}" // compile error
   * }}}
   */
-sealed trait UDF[+A <: UDFId, N <: Nat] extends Routine[N] {
+sealed trait UDF[+A <: UDFId, N <: Nat] extends BQRoutine[N] {
   def name: A
-  def params: Routine.Params[N]
+  def params: BQRoutine.Params[N]
   def returnType: Option[BQType]
 }
 
@@ -103,7 +104,7 @@ object UDF {
 
   case class Temporary[N <: Nat](
       name: TemporaryId,
-      params: Routine.Params[N],
+      params: BQRoutine.Params[N],
       body: UDF.Body,
       returnType: Option[BQType]
   ) extends UDF[UDFId.TemporaryId, N] {
@@ -123,24 +124,24 @@ object UDF {
 
   case class Persistent[N <: Nat](
       name: PersistentId,
-      params: Routine.Params[N],
+      params: BQRoutine.Params[N],
       body: UDF.Body,
       returnType: Option[BQType]
   ) extends UDF[UDFId.PersistentId, N]
-      with PersistentRoutine[N] {
+      with BQPersistentRoutine[N] {
     def convertToTemporary: Temporary[N] =
       Temporary(TemporaryId(name.name), params, body, returnType)
   }
 
   case class Reference[N <: Nat](
       name: UDFId,
-      params: Routine.Params[N],
+      params: BQRoutine.Params[N],
       returnType: Option[BQType]
   ) extends UDF[UDFId, N]
 
   def temporary[N <: Nat](
       name: Ident,
-      params: Routine.Params[N],
+      params: BQRoutine.Params[N],
       body: BQSqlFrag,
       returnType: Option[BQType]
   ): Temporary[N] =
@@ -148,7 +149,7 @@ object UDF {
 
   def temporary[N <: Nat](
       name: Ident,
-      params: Routine.Params[N],
+      params: BQRoutine.Params[N],
       body: UDF.Body,
       returnType: Option[BQType]
   ): Temporary[N] =
@@ -157,7 +158,7 @@ object UDF {
   def persistent[N <: Nat](
       name: Ident,
       dataset: BQDataset,
-      params: Routine.Params[N],
+      params: BQRoutine.Params[N],
       body: UDF.Body,
       returnType: Option[BQType]
   ): Persistent[N] =
@@ -166,7 +167,7 @@ object UDF {
   def reference[N <: Nat](
       name: Ident,
       dataset: BQDataset,
-      params: Routine.Params[N],
+      params: BQRoutine.Params[N],
       returnType: Option[BQType]
   ): Reference[N] =
     Reference(UDFId.PersistentId(dataset, name), params, returnType)
@@ -186,7 +187,7 @@ object UDF {
       implicit val bqShows: BQShow[TemporaryId] = _.asFragment
     }
 
-    case class PersistentId(dataset: BQDataset, name: Ident) extends UDFId with PersistentRoutine.PersistentRoutineId {
+    case class PersistentId(dataset: BQDataset, name: Ident) extends UDFId with BQPersistentRoutine.Id {
       override def asString: String = show"${dataset.project.value}.${dataset.id}.$name"
       override def asFragment: BQSqlFrag = BQSqlFrag.backticks(asString)
     }

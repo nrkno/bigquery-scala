@@ -64,7 +64,7 @@ object BQUdfSmokeTest {
       call: BQSqlFrag.Call
   ): BigQueryClient[IO] => IO[Json] = { bqClient =>
     call.routine match {
-      case tvf: TVF[_, _] =>
+      case _: TVF[_, _] =>
         IO.raiseError[Json](new IllegalStateException("Does not support TVF")) // todo implement TVF call evaluation!
       case _: UDF.Temporary[_] => evalInlineableCall(testName, bqClient, call)
       case _: UDF.Reference[_] => evalInlineableCall(testName, bqClient, call)

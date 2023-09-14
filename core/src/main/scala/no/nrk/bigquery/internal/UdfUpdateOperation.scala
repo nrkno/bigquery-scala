@@ -10,10 +10,10 @@ import com.google.cloud.bigquery.{Option => _, _}
 import no.nrk.bigquery.UDF.Body
 import no.nrk.bigquery.{
   BQField,
+  BQPersistentRoutine,
+  BQRoutine,
   BQType,
-  PersistentRoutine,
   PersistentRoutineOperationMeta,
-  Routine,
   TVF,
   UDF,
   UpdateOperation
@@ -27,7 +27,7 @@ object UdfUpdateOperation {
   private val TvfRoutineType = "TABLE_VALUED_FUNCTION"
 
   def from(
-      routine: PersistentRoutine[_],
+      routine: BQPersistentRoutine[_],
       maybeExisting: Option[RoutineInfo]
   ): UpdateOperation = maybeExisting match {
     case None =>
@@ -105,10 +105,10 @@ object UdfUpdateOperation {
       .setImportedLibraries(r.getImportedLibraries)
       .build()
 
-  private def toRoutineId(id: PersistentRoutine.PersistentRoutineId) =
+  private def toRoutineId(id: BQPersistentRoutine.Id) =
     RoutineId.of(id.dataset.project.value, id.dataset.id, id.name.value)
 
-  private def toRoutineArgs(param: Routine.Param): RoutineArgument =
+  private def toRoutineArgs(param: BQRoutine.Param): RoutineArgument =
     param.maybeType match {
       case Some(value) =>
         RoutineArgument

@@ -9,7 +9,7 @@ package no.nrk.bigquery
 import munit.FunSuite
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.util.nat._0
-import no.nrk.bigquery.Routine.{Param, Params}
+import no.nrk.bigquery.BQRoutine.{Param, Params}
 
 class UDFTest extends FunSuite {
 
@@ -33,7 +33,7 @@ class UDFTest extends FunSuite {
       UDF
         .temporary(
           ident"foo",
-          Routine.Params.empty,
+          BQRoutine.Params.empty,
           UDF.Body.Sql(bqfr"""(n + 1)"""),
           Some(BQType.FLOAT64)
         )

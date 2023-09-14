@@ -534,7 +534,7 @@ class BigQueryClient[F[_]](
         }
     }
 
-  def getRoutine(persistentId: PersistentRoutine.PersistentRoutineId): F[Option[Routine]] =
+  def getRoutine(persistentId: BQPersistentRoutine.Id): F[Option[Routine]] =
     F.interruptible {
       val routineId = RoutineId.of(persistentId.dataset.project.value, persistentId.dataset.id, persistentId.name.value)
       Option(bigQuery.getRoutine(routineId)).filter(_.exists())

@@ -176,7 +176,7 @@ object BQSqlFrag {
   def backticks(string: String): BQSqlFrag = Frag("`" + string + "`")
 
   case class Frag(string: String) extends BQSqlFrag
-  case class Call(routine: Routine[_], args: List[BQSqlFrag]) extends BQSqlFrag {
+  case class Call(routine: BQRoutine[_], args: List[BQSqlFrag]) extends BQSqlFrag {
     require(
       routine.params.length == args.length, {
         val name = routine match {
