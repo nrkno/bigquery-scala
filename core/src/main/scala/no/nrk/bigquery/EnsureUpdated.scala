@@ -56,12 +56,12 @@ object UpdateOperation {
   ) extends Success
 
   case class CreateTvf(
-      tvf: TVF[Any],
+      tvf: TVF[Any, _],
       routine: RoutineInfo
   ) extends Success
 
   case class UpdateTvf(
-      tvf: TVF[Any],
+      tvf: TVF[Any, _],
       routine: RoutineInfo
   ) extends Success
 
@@ -98,7 +98,6 @@ class EnsureUpdated[F[_]](
     bqClient.getTable(template.tableId).map { maybeExisting =>
       TableUpdateOperation.from(template, maybeExisting)
     }
-
 
   def check(persistentRoutine: PersistentRoutine): F[UpdateOperation] =
     bqClient.getRoutine(persistentRoutine.name).map { maybeExisting =>

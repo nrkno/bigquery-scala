@@ -53,11 +53,11 @@ object Routine {
 
 }
 
-case class TVF[+P](
+case class TVF[+P, N <: Nat](
     name: TVF.TVFId,
     // this doesn't exist physically, only in a sense when querying
     partitionType: BQPartitionType[P],
-    params: List[Routine.Param],
+    params: Routine.Params[N],
     query: BQSqlFrag,
     schema: BQSchema,
     description: Option[String] = None

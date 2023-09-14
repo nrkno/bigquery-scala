@@ -8,7 +8,16 @@ package no.nrk.bigquery.internal
 
 import com.google.cloud.bigquery.{Option => _, _}
 import no.nrk.bigquery.UDF.Body
-import no.nrk.bigquery.{BQField, BQType, PersistentRoutine, PersistentRoutineOperationMeta, Routine, TVF, UDF, UpdateOperation}
+import no.nrk.bigquery.{
+  BQField,
+  BQType,
+  PersistentRoutine,
+  PersistentRoutineOperationMeta,
+  Routine,
+  TVF,
+  UDF,
+  UpdateOperation
+}
 
 import scala.jdk.CollectionConverters.*
 
@@ -23,14 +32,14 @@ object UdfUpdateOperation {
   ): UpdateOperation = maybeExisting match {
     case None =>
       routine match {
-        case tvf: TVF[Any] =>
+        case tvf: TVF[Any, _] =>
           UpdateOperation.CreateTvf(tvf, createTvfRoutineInfo(tvf))
         case udf: UDF.Persistent[_] =>
           UpdateOperation.CreatePersistentUdf(udf, createUdfRoutineInfo(udf))
       }
     case Some(value) =>
       val tpe = routine match {
-        case _: TVF[Any] => TvfRoutineType
+        case _: TVF[Any, _] => TvfRoutineType
         case _: UDF.Persistent[_] => UdfRoutineType
       }
       if (value.getRoutineType != tpe)
@@ -40,25 +49,25 @@ object UdfUpdateOperation {
       else {
         val recreated = recreateRoutine(value)
         val routineInfo = routine match {
-          case tvf: TVF[Any] => createTvfRoutineInfo(tvf)
+          case tvf: TVF[Any, _] => createTvfRoutineInfo(tvf)
           case udf: UDF.Persistent[_] => createUdfRoutineInfo(udf)
         }
         if (recreated == routineInfo)
           UpdateOperation.Noop(PersistentRoutineOperationMeta(value, routine))
         else {
           routine match {
-            case tvf: TVF[Any] => UpdateOperation.UpdateTvf(tvf, routineInfo)
+            case tvf: TVF[Any, _] => UpdateOperation.UpdateTvf(tvf, routineInfo)
             case udf: UDF.Persistent[_] => UpdateOperation.UpdatePersistentUdf(udf, routineInfo)
           }
         }
       }
   }
 
-  private def createTvfRoutineInfo(tvf: TVF[Any]) =
+  private def createTvfRoutineInfo(tvf: TVF[Any, _]) =
     RoutineInfo
       .newBuilder(toRoutineId(tvf.name))
       .setRoutineType(TvfRoutineType)
-      .setArguments(tvf.params.map(toRoutineArgs).asJava)
+      .setArguments(tvf.params.unsized.toList.map(toRoutineArgs).asJava)
       .setLanguage("SQL")
       .setBody(tvf.query.asString)
       // function not public in Builder: .setDescription(tvf.description.orNull)
