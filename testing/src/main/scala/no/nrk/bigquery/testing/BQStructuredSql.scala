@@ -61,7 +61,7 @@ object BQStructuredSql {
 
     val functions: List[UserDefinedFunction] = {
       val fs1 = fullQuery.allReferencedUDFs
-        .collect { case udf: Temporary => UserDefinedFunction.inline(udf.definition.asString) }
+        .collect { case udf: Temporary[_] => UserDefinedFunction.inline(udf.definition.asString) }
       val fs2 = functionSegmentLists.map(segmentList => UserDefinedFunction.inline(segmentList.asString + ";"))
       fs1.toList ++ fs2
     }

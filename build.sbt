@@ -12,12 +12,13 @@ ThisBuild / developers := List(
   tlGitHubDev("oyvindberg", "Øyvind Raddum Berg"),
   tlGitHubDev("lysebraate", "Alfred Sandvik Lysebraate"),
   tlGitHubDev("HenningKoller", "Henning Grimeland Koller"),
-  tlGitHubDev("ingararb", "Ingar Abrahamsen"),
+  tlGitHubDev("ingarabr", "Ingar Abrahamsen"),
   tlGitHubDev("hamnis", "Erlend Hamnaberg")
 )
 ThisBuild / tlCiHeaderCheck := true
 ThisBuild / tlCiScalafmtCheck := true
 ThisBuild / tlSonatypeUseLegacyHost := true
+ThisBuild / Test / fork := true
 
 // publish website from this branch
 //ThisBuild / tlSitePublishBranch := Some("main")

@@ -76,7 +76,7 @@ sealed trait BQSqlFrag {
     }
 
   final lazy val asStringWithUDFs: String = {
-    val udfs = allReferencedUDFs.collect { case udf: UDF.Temporary => udf.definition.asString }
+    val udfs = allReferencedUDFs.collect { case udf: UDF.Temporary[_] => udf.definition.asString }
     val udfsAsString = udfs.mkString("\n\n") + (if (udfs.nonEmpty) "\n\n" else "")
     udfsAsString + asString
   }
@@ -161,7 +161,7 @@ sealed trait BQSqlFrag {
     allReferencedAsPartitions(expandAndExcludeViews = true)
       .filterNot(pid => pid.wholeTable.isInstanceOf[BQTableDef.View[_]])
 
-  final def allReferencedUDFs: Seq[UDF[UDF.UDFId]] =
+  final def allReferencedUDFs: Seq[UDF[UDF.UDFId, _]] =
     this.collect { case BQSqlFrag.Call(udf, _) => udf }.distinct
 
   override def toString: String = asString
@@ -172,7 +172,7 @@ object BQSqlFrag {
   def backticks(string: String): BQSqlFrag = Frag("`" + string + "`")
 
   case class Frag(string: String) extends BQSqlFrag
-  case class Call(udf: UDF[UDF.UDFId], args: List[BQSqlFrag]) extends BQSqlFrag {
+  case class Call(udf: UDF[UDF.UDFId, _], args: List[BQSqlFrag]) extends BQSqlFrag {
     require(
       udf.params.length == args.length,
       show"UDF ${udf.name}: Expected ${udf.params.length} arguments, got ${args.length}"

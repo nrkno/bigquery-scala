@@ -12,11 +12,13 @@ import cats.syntax.all._
 
 import java.time.LocalDate
 
-trait BQShowSyntax {
+trait BQShowSyntax extends UdfSyntax {
 
   implicit def bqShowInterpolator(sc: StringContext): BQShow.BQShowInterpolator = new BQShow.BQShowInterpolator(sc)
   implicit def bqShowOps[A](a: A): BQShowOps[A] = new BQShowOps[A](a)
   implicit def bqFragmentsOps[S[_]: Foldable, A](values: S[A]): FragmentsOps[S, A] = new FragmentsOps(values)
+  implicit def bqFragmentsOpsIndexedSeq[A](values: IndexedSeq[A]): FragmentsOps[IndexedSeq, A] = new FragmentsOps(
+    values.toVector)
   implicit def bqFilledTableLocalDateOps(fill: BQFilledTable[LocalDate]): BQFilledTableLocalDateOps =
     new BQFilledTableLocalDateOps(fill)
 
@@ -30,7 +32,7 @@ class BQShowOps[A](a: A) {
 
 /** A way to flatten a list of fragments. The `S` just means it works for any collection data structure
   */
-class FragmentsOps[S[_]: Foldable, A](private val values: S[A]) {
+class FragmentsOps[+S[_]: Foldable, A](private val values: S[A]) {
   def mkFragment(sep: String)(implicit T: BQShow[A]): BQSqlFrag =
     mkFragment(BQSqlFrag(sep))
 

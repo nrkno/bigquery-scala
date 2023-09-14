@@ -10,20 +10,19 @@ Let's start with the source struct we want to rewrite from:
 import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.util.BqSqlProjection
-import com.google.cloud.bigquery.Field.Mode
 import com.google.cloud.bigquery.StandardSQLTypeName
 
-val originalStruct: BQField = BQField.struct("foo", Mode.NULLABLE)(
-  BQField("keep_me", StandardSQLTypeName.STRING, Mode.NULLABLE),
-  BQField("drop_me", StandardSQLTypeName.STRING, Mode.NULLABLE),
-  BQField("rename_me", StandardSQLTypeName.STRING, Mode.NULLABLE),
-  BQField.struct("keep_original_struct", Mode.NULLABLE)(
-    BQField("one", StandardSQLTypeName.STRING, Mode.NULLABLE),
-    BQField("two", StandardSQLTypeName.STRING, Mode.NULLABLE)
+val originalStruct: BQField = BQField.struct("foo", BQField.Mode.NULLABLE)(
+  BQField("keep_me", BQField.Type.STRING, BQField.Mode.NULLABLE),
+  BQField("drop_me", BQField.Type.STRING, BQField.Mode.NULLABLE),
+  BQField("rename_me", BQField.Type.STRING, BQField.Mode.NULLABLE),
+  BQField.struct("keep_original_struct", BQField.Mode.NULLABLE)(
+    BQField("one", BQField.Type.STRING, BQField.Mode.NULLABLE),
+    BQField("two", BQField.Type.STRING, BQField.Mode.NULLABLE)
   ),
-  BQField.struct("flatten_struct", Mode.NULLABLE)(
-    BQField("one", StandardSQLTypeName.STRING, Mode.NULLABLE),
-    BQField("two", StandardSQLTypeName.STRING, Mode.NULLABLE)
+  BQField.struct("flatten_struct", BQField.Mode.NULLABLE)(
+    BQField("one", BQField.Type.STRING, BQField.Mode.NULLABLE),
+    BQField("two", BQField.Type.STRING, BQField.Mode.NULLABLE)
   )
 )
 ```
@@ -32,15 +31,15 @@ In this example we have named them based on the action we want to project on the
 struct should be:
 
 ```scala mdoc
-val projectedStruct: BQField = BQField.struct("foo", Mode.NULLABLE)(
-  BQField("keep_me", StandardSQLTypeName.STRING, Mode.NULLABLE),
-  BQField("renamed", StandardSQLTypeName.STRING, Mode.NULLABLE),
-  BQField.struct("keep_original_struct", Mode.NULLABLE)(
-    BQField("one", StandardSQLTypeName.STRING, Mode.NULLABLE),
-    BQField("two", StandardSQLTypeName.STRING, Mode.NULLABLE)
+val projectedStruct: BQField = BQField.struct("foo", BQField.Mode.NULLABLE)(
+  BQField("keep_me", BQField.Type.STRING, BQField.Mode.NULLABLE),
+  BQField("renamed", BQField.Type.STRING, BQField.Mode.NULLABLE),
+  BQField.struct("keep_original_struct", BQField.Mode.NULLABLE)(
+    BQField("one", BQField.Type.STRING, BQField.Mode.NULLABLE),
+    BQField("two", BQField.Type.STRING, BQField.Mode.NULLABLE)
   ),
-  BQField("barOne", StandardSQLTypeName.STRING, Mode.NULLABLE),
-  BQField("barTwo", StandardSQLTypeName.STRING, Mode.NULLABLE)
+  BQField("barOne", BQField.Type.STRING, BQField.Mode.NULLABLE),
+  BQField("barTwo", BQField.Type.STRING, BQField.Mode.NULLABLE)
 )
 ```
 
@@ -63,7 +62,7 @@ Let's start with the source table:
 ```scala mdoc
 val originTable: BQTableDef.Table[Unit] =
   BQTableDef.Table(
-    BQTableId(BQDataset(ProjectId("p1"), "d1", None), "table_1"),
+    BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId.unsafeFromString("example-project"), "d1", None), "table_1"),
     BQSchema.of(originalStruct),
     BQPartitionType.NotPartitioned
   )
@@ -84,12 +83,14 @@ import no.nrk.bigquery.testing.{BQSmokeTest, BigQueryTestClient}
 
 val view1: BQTableDef.View[Unit] =
   BQTableDef.View(
-    BQTableId(BQDataset(ProjectId("p1"), "d1", None), "view_1"),
+    BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId.unsafeFromString("example-project"), "d1", None), "view_1"),
     BQPartitionType.NotPartitioned,
     query,
     BQSchema.of(projectedStruct)
   )
+```
 
+```scala
 class View1Test extends BQSmokeTest(BigQueryTestClient.testClient) {
   bqCheckViewTest("project a struct 2", view1)
 }

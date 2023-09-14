@@ -12,22 +12,46 @@ import cats.Show
 import no.nrk.bigquery.UDF._
 import no.nrk.bigquery.UDF.UDFId._
 import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.internal.{Nat, Sized, SizedBuilder}
+import no.nrk.bigquery.internal.nat._0
 
-sealed trait UDF[+A <: UDFId] {
+/** The UDF has an apply method rendering a BQSqlFrag that matches the size of `params`.
+  *
+  * {{{
+  * val myUdf =
+  *   UDF.temporary(
+  *     ident"myUdf",
+  *     UDF.Params.of(UDF.Param("foo", BQType.STRING)),
+  *     UDF.Body.SQL(bqfr"(foo)"),
+  *     Some(BQType.STRING)
+  *   )
+  * bqfr"\${myUdf(ident"bar")}" // ok
+  * bqfr"\${myUdf()}" // compile error
+  * bqfr"\${myUdf(ident"bar1", ident"bar")}" // compile error
+  * }}}
+  */
+sealed trait UDF[+A <: UDFId, N <: Nat] {
   def name: A
-  def params: List[UDF.Param]
+  def params: Sized[IndexedSeq[UDF.Param], N]
   def returnType: Option[BQType]
-  def apply(args: BQSqlFrag.Magnet*): BQSqlFrag.Call =
-    BQSqlFrag.Call(this, args.toList.map(_.frag))
 }
 object UDF {
 
-  case class Temporary(
+  type Params[N <: Nat] = Sized[IndexedSeq[Param], N]
+
+  object Params {
+    val empty: Sized[IndexedSeq[UDF.Param], _0] = Sized.wrap[IndexedSeq[UDF.Param], _0](IndexedSeq.empty[UDF.Param])
+    // todo: figure out why we need to explicit call apply. Might be related to the type alias
+    def apply = new SizedBuilder[IndexedSeq]()
+    def of = new SizedBuilder[IndexedSeq]()
+  }
+
+  case class Temporary[N <: Nat](
       name: TemporaryId,
-      params: List[UDF.Param],
+      params: Params[N],
       body: UDF.Body,
       returnType: Option[BQType]
-  ) extends UDF[UDFId.TemporaryId] {
+  ) extends UDF[UDFId.TemporaryId, N] {
     lazy val definition: BQSqlFrag = {
       val returning = returnType match {
         case Some(returnType) => bqfr" RETURNS $returnType"
@@ -38,58 +62,49 @@ object UDF {
         case _: Body.Js => bqsql" LANGUAGE js"
       }
 
-      bqfr"CREATE TEMP FUNCTION ${name}${params.map(_.definition).mkFragment("(", ", ", ")")}$returning${language} AS ${body.asFragment};"
+      bqfr"CREATE TEMP FUNCTION ${name}${params.unsized.map(_.definition).mkFragment("(", ", ", ")")}$returning${language} AS ${body.asFragment};"
     }
   }
 
-  case class Persistent(
+  case class Persistent[N <: Nat](
       name: PersistentId,
-      params: List[UDF.Param],
+      params: Params[N],
       body: UDF.Body,
       returnType: Option[BQType]
-  ) extends UDF[UDFId.PersistentId] {
-    def convertToTemporary: Temporary =
+  ) extends UDF[UDFId.PersistentId, N] {
+    def convertToTemporary: Temporary[N] =
       Temporary(TemporaryId(name.name), params, body, returnType)
   }
 
-  case class Reference(
+  case class Reference[N <: Nat](
       name: UDFId,
-      params: List[UDF.Param],
+      params: Params[N],
       returnType: Option[BQType]
-  ) extends UDF[UDFId]
+  ) extends UDF[UDFId, N]
 
-  @deprecated("use UDF.temporary constructor", "0.5")
-  def apply(
+  def temporary[N <: Nat](
       name: Ident,
-      params: Seq[UDF.Param],
-      body: BQSqlFrag,
-      returnType: Option[BQType]
-  ): Temporary =
-    Temporary(UDFId.TemporaryId(name), params.toList, UDF.Body.Sql(body), returnType)
-
-  def temporary(
-      name: Ident,
-      params: List[UDF.Param],
+      params: Params[N],
       body: UDF.Body,
       returnType: Option[BQType]
-  ): Temporary =
+  ): Temporary[N] =
     Temporary(UDFId.TemporaryId(name), params, body, returnType)
 
-  def persistent(
+  def persistent[N <: Nat](
       name: Ident,
       dataset: BQDataset,
-      params: List[UDF.Param],
+      params: Params[N],
       body: UDF.Body,
       returnType: Option[BQType]
-  ): Persistent =
+  ): Persistent[N] =
     Persistent(UDFId.PersistentId(dataset, name), params, body, returnType)
 
-  def reference(
+  def reference[N <: Nat](
       name: Ident,
       dataset: BQDataset,
-      params: List[UDF.Param],
+      params: Params[N],
       returnType: Option[BQType]
-  ): Reference =
+  ): Reference[N] =
     Reference(UDFId.PersistentId(dataset, name), params, returnType)
 
   sealed trait UDFId {

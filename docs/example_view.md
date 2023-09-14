@@ -9,6 +9,7 @@ Here we have to tables, `my-gcp-project.prod.user_log` and `my-gcp-project.prod.
 ```scala mdoc
 import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.internal.nat._1
 import java.time.LocalDate
 
 object Schemas {
@@ -16,7 +17,7 @@ object Schemas {
   object UserEventSchema {
     private val timestamp: BQField = BQField("timestamp", BQField.Type.TIMESTAMP, BQField.Mode.REQUIRED)
     val tableDef: BQTableDef.Table[LocalDate] = BQTableDef.Table(
-      BQTableId(BQDataset(ProjectId("my-gcp-project"), "prod", Some(LocationId("eu"))), "user_log"),
+      BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId.unsafeFromString("my-gcp-project"), "prod", Some(LocationId.EU)), "user_log"),
       BQSchema.of(
         BQField("eventId", BQField.Type.STRING, BQField.Mode.REQUIRED),
         timestamp,
@@ -37,7 +38,7 @@ object Schemas {
       BQField("lastName", BQField.Type.STRING, BQField.Mode.REQUIRED)
     )
     val tableDef: BQTableDef.Table[Unit] = BQTableDef.Table(
-      BQTableId(BQDataset(ProjectId("my-gcp-project"), "prod", Some(LocationId("eu"))), "users"),
+      BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId.unsafeFromString("my-gcp-project"), "prod", Some(LocationId.EU)), "users"),
       BQSchema.of(
         BQField("userId", BQField.Type.STRING, BQField.Mode.REQUIRED),
         namesStruct
@@ -45,9 +46,9 @@ object Schemas {
       BQPartitionType.NotPartitioned
     )
 
-    val fullNameUdf: UDF.Temporary = UDF.temporary(
+    val fullNameUdf: UDF.Temporary[_1] = UDF.temporary(
       ident"toFullName",
-      UDF.Param.fromField(namesStruct) :: Nil,
+      UDF.Params.of(UDF.Param.fromField(namesStruct)),
       UDF.Body.Sql(
         bqfr"""(names.firstName || ' ' || coalesce(names.middleName || ' ', '') || names.lastName)""".stripMargin
       ),
@@ -86,7 +87,7 @@ object UserEventView {
   private val timestamp: BQField = BQField("timestamp", BQField.Type.TIMESTAMP, BQField.Mode.REQUIRED)
 
   val viewDef: BQTableDef.View[LocalDate] = BQTableDef.View(
-    BQTableId(BQDataset(ProjectId("my-gcp-project"), "prod", Some(LocationId("eu"))), "user_activity_view"),
+    BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId.unsafeFromString("my-gcp-project"), "prod", Some(LocationId.EU)), "user_activity_view"),
     BQPartitionType.DatePartitioned(timestamp.ident),
     query,
     BQSchema.of(
@@ -110,7 +111,7 @@ will be cached in a `generated` folder that should be checked into version contr
 version against the generated folder to determine the test it need to rerun using BigQuery. This make it possible to quickly
 run all tests without getting in to issues like api quotas or cost issued.
 
-```scala mdoc
+```scala
 import no.nrk.bigquery.testing.{BQSmokeTest, BigQueryTestClient}
 
 class UserEventViewTest extends BQSmokeTest(BigQueryTestClient.testClient) {

@@ -63,9 +63,9 @@ object BQUdfSmokeTest {
   ): BigQueryClient[IO] => IO[Json] = { bqClient =>
     val temporaryUdfCall =
       call.copy(udf = call.udf match {
-        case tUdf: Temporary => tUdf
-        case pUdf: Persistent => pUdf.convertToTemporary
-        case ref: Reference => ref
+        case tUdf: Temporary[_] => tUdf
+        case pUdf: Persistent[_] => pUdf.convertToTemporary
+        case ref: Reference[_] => ref
       })
     val query = bqfr"SELECT TO_JSON_STRING($temporaryUdfCall)"
     val cachedQuery = CachedQuery(query)
