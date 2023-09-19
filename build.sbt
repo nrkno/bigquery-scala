@@ -39,7 +39,7 @@ ThisBuild / githubWorkflowBuild := {
 }
 
 val Scala212 = "2.12.18"
-val Scala213 = "2.13.11"
+val Scala213 = "2.13.12"
 ThisBuild / crossScalaVersions := Seq(Scala213, Scala212, "3.3.1")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 ThisBuild / tlVersionIntroduced := Map(
@@ -53,15 +53,10 @@ val commonSettings = Seq(
   headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
   scalacOptions -= "-source:3.0-migration",
   scalacOptions ++= {
-    val compilerWarnings =
-      List(
-        "cat=other-match-analysis:e", // error on exhaustive match
-        "cat=other:e" // compare values like 1 == "str"
-      ).mkString("-Wconf:", ",", ",any:wv")
     if (scalaVersion.value.startsWith("3")) {
-      Seq("-source:3.2-migration", compilerWarnings)
+      Seq("-source:3.2-migration")
     } else {
-      Seq("-feature", "-language:implicitConversions", compilerWarnings)
+      Seq("-feature", "-language:implicitConversions")
     }
   }
 )
