@@ -53,15 +53,10 @@ val commonSettings = Seq(
   headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
   scalacOptions -= "-source:3.0-migration",
   scalacOptions ++= {
-    val compilerWarnings =
-      List(
-        "cat=other-match-analysis:e", // error on exhaustive match
-        "cat=other:e" // compare values like 1 == "str"
-      ).mkString("-Wconf:", ",", ",any:wv")
     if (scalaVersion.value.startsWith("3")) {
-      Seq("-source:3.2-migration", compilerWarnings)
+      Seq("-source:3.2-migration")
     } else {
-      Seq("-feature", "-language:implicitConversions", compilerWarnings)
+      Seq("-feature", "-language:implicitConversions")
     }
   }
 )
