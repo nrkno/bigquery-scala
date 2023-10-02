@@ -1,7 +1,7 @@
 /*
  * Copyright 2020 NRK
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
  */
 
 package no.nrk.bigquery.internal

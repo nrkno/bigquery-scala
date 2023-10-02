@@ -7,7 +7,7 @@ ThisBuild / organization := "no.nrk.bigquery"
 ThisBuild / organizationName := "NRK"
 ThisBuild / organizationHomepage := Some(new URL("https://nrk.no"))
 ThisBuild / startYear := Some(2020)
-ThisBuild / licenses := Seq(License.Apache2)
+ThisBuild / licenses := Seq(License.MIT)
 ThisBuild / developers := List(
   tlGitHubDev("oyvindberg", "Øyvind Raddum Berg"),
   tlGitHubDev("lysebraate", "Alfred Sandvik Lysebraate"),
