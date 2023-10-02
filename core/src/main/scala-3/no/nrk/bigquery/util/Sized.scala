@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package no.nrk.bigquery.internal
+package no.nrk.bigquery.util
 
 final class Sized[+Repr, N <: Nat](val unsized: Repr) {
   override def toString = unsized.toString

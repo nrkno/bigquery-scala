@@ -7,7 +7,8 @@
 package no.nrk.bigquery.internal
 
 import no.nrk.bigquery.{BQSqlFrag, UDF}
-import no.nrk.bigquery.internal.nat._
+import no.nrk.bigquery.util.nat.*
+import no.nrk.bigquery.util.IndexSeqSizedBuilder
 
 trait UdfSyntax {
   implicit def bqUdfOps0(udf: UDF[UDF.UDFId, _0]): UdfOps0 = new UdfOps0(udf)

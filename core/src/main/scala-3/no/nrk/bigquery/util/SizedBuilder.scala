@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package no.nrk.bigquery.internal
+package no.nrk.bigquery.util
 
 class SizedBuilder[CC[_]] {
   def apply[A](a1: A) = new Sized[IndexedSeq[A], nat._1](IndexedSeq(a1))
