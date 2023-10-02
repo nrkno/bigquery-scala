@@ -35,6 +35,10 @@ trait UdfSyntax {
   implicit def bqUdfOps22(udf: UDF[UDF.UDFId, _22]): UdfOps22 = new UdfOps22(udf)
 }
 
+object UdfSyntax {
+  private[internal] val builder = new IndexSeqSizedBuilder[BQSqlFrag.Magnet]
+}
+
 class UdfOps0(udf: UDF[UDF.UDFId, _0]) {
   def apply(): BQSqlFrag.Call = BQSqlFrag.Call(udf, List.empty)
 }
@@ -42,23 +46,14 @@ class UdfOps0(udf: UDF[UDF.UDFId, _0]) {
 class UdfOps1(udf: UDF[UDF.UDFId, _1]) {
   def apply(
       m1: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1))
 }
 
 class UdfOps2(udf: UDF[UDF.UDFId, _2]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2))
 }
 
 class UdfOps3(udf: UDF[UDF.UDFId, _3]) {
@@ -66,13 +61,7 @@ class UdfOps3(udf: UDF[UDF.UDFId, _3]) {
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
       m3: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3))
 }
 
 class UdfOps4(udf: UDF[UDF.UDFId, _4]) {
@@ -81,14 +70,7 @@ class UdfOps4(udf: UDF[UDF.UDFId, _4]) {
       m2: BQSqlFrag.Magnet,
       m3: BQSqlFrag.Magnet,
       m4: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4))
 }
 
 class UdfOps5(udf: UDF[UDF.UDFId, _5]) {
@@ -98,15 +80,7 @@ class UdfOps5(udf: UDF[UDF.UDFId, _5]) {
       m3: BQSqlFrag.Magnet,
       m4: BQSqlFrag.Magnet,
       m5: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5))
 }
 
 class UdfOps6(udf: UDF[UDF.UDFId, _6]) {
@@ -117,16 +91,7 @@ class UdfOps6(udf: UDF[UDF.UDFId, _6]) {
       m4: BQSqlFrag.Magnet,
       m5: BQSqlFrag.Magnet,
       m6: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6))
 }
 
 class UdfOps7(udf: UDF[UDF.UDFId, _7]) {
@@ -138,17 +103,7 @@ class UdfOps7(udf: UDF[UDF.UDFId, _7]) {
       m5: BQSqlFrag.Magnet,
       m6: BQSqlFrag.Magnet,
       m7: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7))
 }
 
 class UdfOps8(udf: UDF[UDF.UDFId, _8]) {
@@ -161,18 +116,7 @@ class UdfOps8(udf: UDF[UDF.UDFId, _8]) {
       m6: BQSqlFrag.Magnet,
       m7: BQSqlFrag.Magnet,
       m8: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8))
 }
 
 class UdfOps9(udf: UDF[UDF.UDFId, _9]) {
@@ -186,19 +130,7 @@ class UdfOps9(udf: UDF[UDF.UDFId, _9]) {
       m7: BQSqlFrag.Magnet,
       m8: BQSqlFrag.Magnet,
       m9: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8,
-      m9
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9))
 }
 
 class UdfOps10(udf: UDF[UDF.UDFId, _10]) {
@@ -213,20 +145,7 @@ class UdfOps10(udf: UDF[UDF.UDFId, _10]) {
       m8: BQSqlFrag.Magnet,
       m9: BQSqlFrag.Magnet,
       m10: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8,
-      m9,
-      m10
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10))
 }
 
 class UdfOps11(udf: UDF[UDF.UDFId, _11]) {
@@ -242,21 +161,7 @@ class UdfOps11(udf: UDF[UDF.UDFId, _11]) {
       m9: BQSqlFrag.Magnet,
       m10: BQSqlFrag.Magnet,
       m11: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8,
-      m9,
-      m10,
-      m11
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11))
 }
 
 class UdfOps12(udf: UDF[UDF.UDFId, _12]) {
@@ -273,22 +178,7 @@ class UdfOps12(udf: UDF[UDF.UDFId, _12]) {
       m10: BQSqlFrag.Magnet,
       m11: BQSqlFrag.Magnet,
       m12: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8,
-      m9,
-      m10,
-      m11,
-      m12
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12))
 }
 
 class UdfOps13(udf: UDF[UDF.UDFId, _13]) {
@@ -306,23 +196,7 @@ class UdfOps13(udf: UDF[UDF.UDFId, _13]) {
       m11: BQSqlFrag.Magnet,
       m12: BQSqlFrag.Magnet,
       m13: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8,
-      m9,
-      m10,
-      m11,
-      m12,
-      m13
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13))
 }
 
 class UdfOps14(udf: UDF[UDF.UDFId, _14]) {
@@ -341,24 +215,7 @@ class UdfOps14(udf: UDF[UDF.UDFId, _14]) {
       m12: BQSqlFrag.Magnet,
       m13: BQSqlFrag.Magnet,
       m14: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8,
-      m9,
-      m10,
-      m11,
-      m12,
-      m13,
-      m14
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14))
 }
 
 class UdfOps15(udf: UDF[UDF.UDFId, _15]) {
@@ -378,25 +235,8 @@ class UdfOps15(udf: UDF[UDF.UDFId, _15]) {
       m13: BQSqlFrag.Magnet,
       m14: BQSqlFrag.Magnet,
       m15: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8,
-      m9,
-      m10,
-      m11,
-      m12,
-      m13,
-      m14,
-      m15
-    ).map(_.frag))
+  ): BQSqlFrag.Call =
+    udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15))
 }
 
 class UdfOps16(udf: UDF[UDF.UDFId, _16]) {
@@ -417,26 +257,8 @@ class UdfOps16(udf: UDF[UDF.UDFId, _16]) {
       m14: BQSqlFrag.Magnet,
       m15: BQSqlFrag.Magnet,
       m16: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8,
-      m9,
-      m10,
-      m11,
-      m12,
-      m13,
-      m14,
-      m15,
-      m16
-    ).map(_.frag))
+  ): BQSqlFrag.Call =
+    udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16))
 }
 
 class UdfOps17(udf: UDF[UDF.UDFId, _17]) {
@@ -458,27 +280,8 @@ class UdfOps17(udf: UDF[UDF.UDFId, _17]) {
       m15: BQSqlFrag.Magnet,
       m16: BQSqlFrag.Magnet,
       m17: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8,
-      m9,
-      m10,
-      m11,
-      m12,
-      m13,
-      m14,
-      m15,
-      m16,
-      m17
-    ).map(_.frag))
+  ): BQSqlFrag.Call =
+    udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17))
 }
 
 class UdfOps18(udf: UDF[UDF.UDFId, _18]) {
@@ -501,28 +304,8 @@ class UdfOps18(udf: UDF[UDF.UDFId, _18]) {
       m16: BQSqlFrag.Magnet,
       m17: BQSqlFrag.Magnet,
       m18: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8,
-      m9,
-      m10,
-      m11,
-      m12,
-      m13,
-      m14,
-      m15,
-      m16,
-      m17,
-      m18
-    ).map(_.frag))
+  ): BQSqlFrag.Call =
+    udf.call(UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18))
 }
 
 class UdfOps19(udf: UDF[UDF.UDFId, _19]) {
@@ -546,29 +329,8 @@ class UdfOps19(udf: UDF[UDF.UDFId, _19]) {
       m17: BQSqlFrag.Magnet,
       m18: BQSqlFrag.Magnet,
       m19: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8,
-      m9,
-      m10,
-      m11,
-      m12,
-      m13,
-      m14,
-      m15,
-      m16,
-      m17,
-      m18,
-      m19
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(
+    UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19))
 }
 
 class UdfOps20(udf: UDF[UDF.UDFId, _20]) {
@@ -593,30 +355,8 @@ class UdfOps20(udf: UDF[UDF.UDFId, _20]) {
       m18: BQSqlFrag.Magnet,
       m19: BQSqlFrag.Magnet,
       m20: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8,
-      m9,
-      m10,
-      m11,
-      m12,
-      m13,
-      m14,
-      m15,
-      m16,
-      m17,
-      m18,
-      m19,
-      m20
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(
+    UdfSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20))
 }
 
 class UdfOps21(udf: UDF[UDF.UDFId, _21]) {
@@ -642,31 +382,9 @@ class UdfOps21(udf: UDF[UDF.UDFId, _21]) {
       m19: BQSqlFrag.Magnet,
       m20: BQSqlFrag.Magnet,
       m21: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8,
-      m9,
-      m10,
-      m11,
-      m12,
-      m13,
-      m14,
-      m15,
-      m16,
-      m17,
-      m18,
-      m19,
-      m20,
-      m21
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(
+    UdfSyntax.builder
+      .apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20, m21))
 }
 
 class UdfOps22(udf: UDF[UDF.UDFId, _22]) {
@@ -693,30 +411,7 @@ class UdfOps22(udf: UDF[UDF.UDFId, _22]) {
       m20: BQSqlFrag.Magnet,
       m21: BQSqlFrag.Magnet,
       m22: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = BQSqlFrag.Call(
-    udf,
-    List(
-      m1,
-      m2,
-      m3,
-      m4,
-      m5,
-      m6,
-      m7,
-      m8,
-      m9,
-      m10,
-      m11,
-      m12,
-      m13,
-      m14,
-      m15,
-      m16,
-      m17,
-      m18,
-      m19,
-      m20,
-      m21,
-      m22
-    ).map(_.frag))
+  ): BQSqlFrag.Call = udf.call(
+    UdfSyntax.builder
+      .apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20, m21, m22))
 }

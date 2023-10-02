@@ -39,7 +39,7 @@ class UdfUpdateOperationTest extends FunSuite {
     }
 
     UdfUpdateOperation.from(
-      udf.copy(params = UDF.Params.of(UDF.Param(ident"foo", Some(BQType.INT64)))),
+      udf.copy(params = UDF.Params(UDF.Param(ident"foo", Some(BQType.INT64)))),
       Some(existingRoutine)
     ) match {
       case UpdatePersistentUdf(newUdf, newRoutine) =>
