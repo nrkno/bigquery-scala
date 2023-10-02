@@ -18,7 +18,7 @@ object MyTemporarySQLUdfs {
 
   val addOneUdf = UDF.temporary(
     ident"addOneSqlUdf",
-    UDF.Params.of(UDF.Param("n", BQType.FLOAT64)),
+    UDF.Params(UDF.Param("n", BQType.FLOAT64)),
     UDF.Body.Sql(bqfr"""(n + 1)"""),
     Some(BQType.FLOAT64)
   )
@@ -36,7 +36,7 @@ object MyPersistentSQLUdfs {
   val addOneUdf = UDF.persistent(
     ident"addOneSqlUdf",
     dataset,
-    UDF.Params.of(UDF.Param("n", BQType.FLOAT64)),
+    UDF.Params(UDF.Param("n", BQType.FLOAT64)),
     UDF.Body.Sql(bqfr"""(n + 1)"""),
     Some(BQType.FLOAT64)
   )
@@ -57,7 +57,7 @@ object MyJsUdfs {
   val jsLibraryGcsPath = List.empty
   val addOneUdf = UDF.temporary(
     ident"addOneJsUdf",
-    UDF.Params.of(UDF.Param("n", BQType.FLOAT64)),
+    UDF.Params(UDF.Param("n", BQType.FLOAT64)),
     UDF.Body.Js("return n + 1", jsLibraryGcsPath),
     Some(BQType.FLOAT64)
   )

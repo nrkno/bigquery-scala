@@ -10,7 +10,6 @@ Let's start with the source struct we want to rewrite from:
 import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.util.BqSqlProjection
-import com.google.cloud.bigquery.StandardSQLTypeName
 
 val originalStruct: BQField = BQField.struct("foo", BQField.Mode.NULLABLE)(
   BQField("keep_me", BQField.Type.STRING, BQField.Mode.NULLABLE),
@@ -79,8 +78,6 @@ val query: BQSqlFrag =
 
 The view and a test case for it:
 ```scala mdoc
-import no.nrk.bigquery.testing.{BQSmokeTest, BigQueryTestClient}
-
 val view1: BQTableDef.View[Unit] =
   BQTableDef.View(
     BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId.unsafeFromString("example-project"), "d1", None), "view_1"),
@@ -91,6 +88,7 @@ val view1: BQTableDef.View[Unit] =
 ```
 
 ```scala
+import no.nrk.bigquery.testing.{BQSmokeTest, BigQueryTestClient}
 class View1Test extends BQSmokeTest(BigQueryTestClient.testClient) {
   bqCheckViewTest("project a struct 2", view1)
 }
