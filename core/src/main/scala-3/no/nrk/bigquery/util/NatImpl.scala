@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package no.nrk.bigquery.internal
+package no.nrk.bigquery.util
 
 sealed trait NatImpl
 type Nat = NatImpl

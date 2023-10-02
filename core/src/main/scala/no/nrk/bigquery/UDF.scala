@@ -12,7 +12,7 @@ import cats.Show
 import no.nrk.bigquery.UDF._
 import no.nrk.bigquery.UDF.UDFId._
 import no.nrk.bigquery.syntax._
-import no.nrk.bigquery.internal.{IndexSeqSizedBuilder, Nat, Sized}
+import no.nrk.bigquery.util.{IndexSeqSizedBuilder, Nat, Sized}
 
 /** The UDF has an apply method rendering a BQSqlFrag that matches the size of `params`.
   *

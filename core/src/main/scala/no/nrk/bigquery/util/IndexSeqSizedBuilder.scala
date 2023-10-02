@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package no.nrk.bigquery.internal
+package no.nrk.bigquery.util
 
 class IndexSeqSizedBuilder[T] {
   private val sizeBuilder = new SizedBuilder[IndexedSeq]()

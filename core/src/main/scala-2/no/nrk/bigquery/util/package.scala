@@ -6,7 +6,7 @@
 
 package no.nrk.bigquery
 
-package object internal {
+package object util {
   type Nat = shapeless.Nat
   val nat = shapeless.nat
   type Sized[+Repr, L <: shapeless.Nat] = shapeless.Sized[Repr, L]
