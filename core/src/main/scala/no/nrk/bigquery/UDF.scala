@@ -12,8 +12,7 @@ import cats.Show
 import no.nrk.bigquery.UDF._
 import no.nrk.bigquery.UDF.UDFId._
 import no.nrk.bigquery.syntax._
-import no.nrk.bigquery.internal.{Nat, Sized, SizedBuilder}
-import no.nrk.bigquery.internal.nat._0
+import no.nrk.bigquery.internal.{IndexSeqSizedBuilder, Nat, Sized}
 
 /** The UDF has an apply method rendering a BQSqlFrag that matches the size of `params`.
   *
@@ -34,17 +33,15 @@ sealed trait UDF[+A <: UDFId, N <: Nat] {
   def name: A
   def params: Sized[IndexedSeq[UDF.Param], N]
   def returnType: Option[BQType]
+
+  // todo: DO we want this?
+  def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]) = BQSqlFrag.Call(this, args.unsized.toList.map(_.frag))
 }
 object UDF {
 
   type Params[N <: Nat] = Sized[IndexedSeq[Param], N]
 
-  object Params {
-    val empty: Sized[IndexedSeq[UDF.Param], _0] = Sized.wrap[IndexedSeq[UDF.Param], _0](IndexedSeq.empty[UDF.Param])
-    // todo: figure out why we need to explicit call apply. Might be related to the type alias
-    def apply = new SizedBuilder[IndexedSeq]()
-    def of = new SizedBuilder[IndexedSeq]()
-  }
+  object Params extends IndexSeqSizedBuilder[UDF.Param]
 
   case class Temporary[N <: Nat](
       name: TemporaryId,

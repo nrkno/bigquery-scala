@@ -17,13 +17,13 @@ class BQSqlFragTest extends FunSuite {
   private val udfToString =
     UDF.temporary(
       ident"udf_toString",
-      UDF.Params.of(UDF.Param("i", BQType.INT64)),
+      UDF.Params(UDF.Param("i", BQType.INT64)),
       UDF.Body.Sql(bqfr"(string(i))"),
       Some(BQType.STRING))
   private val udfAddOne =
     UDF.temporary(
       ident"udf_add1",
-      UDF.Params.of(UDF.Param("i", BQType.INT64)),
+      UDF.Params(UDF.Param("i", BQType.INT64)),
       UDF.Body.Sql(bqfr"(i + 1)"),
       Some(BQType.INT64))
 
@@ -39,17 +39,17 @@ class BQSqlFragTest extends FunSuite {
   test("collect UDF used in body in other UDFs") {
     val innerUdf1 = UDF.temporary(
       Ident("bb"),
-      UDF.Params.of(UDF.Param("input", BQType.INT64)),
+      UDF.Params(UDF.Param("input", BQType.INT64)),
       UDF.Body.Sql(bqsql"(input + input)"),
       Some(BQType.INT64))
     val innerUdf2 = UDF.temporary(
       Ident("cc"),
-      UDF.Params.of(UDF.Param("input", BQType.INT64)),
+      UDF.Params(UDF.Param("input", BQType.INT64)),
       UDF.Body.Sql(bqsql"(input + input)"),
       Some(BQType.INT64))
     val outerUdf = UDF.temporary(
       Ident("aa"),
-      UDF.Params.of(UDF.Param("input", BQType.INT64)),
+      UDF.Params(UDF.Param("input", BQType.INT64)),
       UDF.Body.Sql(bqsql"(${innerUdf1(ident"input")} / ${innerUdf2(bqfr"2")})"),
       Some(BQType.FLOAT64)
     )
@@ -86,13 +86,13 @@ class BQSqlFragTest extends FunSuite {
 
     val outerUdf1 = UDF.temporary(
       Ident("outer1"),
-      UDF.Params.of(UDF.Param("input", BQType.INT64)),
+      UDF.Params(UDF.Param("input", BQType.INT64)),
       UDF.Body.Sql(bqsql"(2.0)"),
       Some(BQType.FLOAT64))
 
     val outerUdf2 = UDF.temporary(
       Ident("outer2"),
-      UDF.Params.of(UDF.Param("input", BQType.INT64)),
+      UDF.Params(UDF.Param("input", BQType.INT64)),
       UDF.Body.Sql(bqsql"(1.0)"),
       Some(BQType.FLOAT64))
 
