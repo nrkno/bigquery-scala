@@ -34,7 +34,6 @@ sealed trait UDF[+A <: UDFId, N <: Nat] {
   def params: Sized[IndexedSeq[UDF.Param], N]
   def returnType: Option[BQType]
 
-  // todo: DO we want this?
   def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]) = BQSqlFrag.Call(this, args.unsized.toList.map(_.frag))
 }
 object UDF {
