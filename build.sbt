@@ -58,11 +58,13 @@ val commonSettings = Seq(
     } else {
       Seq("-feature", "-language:implicitConversions")
     }
-  }
+  },
+  sonatypeProfileName := "no.nrk"
 )
 
 lazy val root = tlCrossRootProject
   .settings(name := "bigquery-scala")
+  .settings(commonSettings)
   .aggregate(core, testing, prometheus, zetasql, docs)
 
 lazy val core = crossProject(JVMPlatform)
@@ -156,6 +158,7 @@ lazy val testing = crossProject(JVMPlatform)
 
 lazy val docs = project
   .in(file("site"))
+  .settings(commonSettings)
   //  .enablePlugins(TypelevelSitePlugin)
   .enablePlugins(MdocPlugin, NoPublishPlugin)
   .dependsOn(core.jvm, testing.jvm)

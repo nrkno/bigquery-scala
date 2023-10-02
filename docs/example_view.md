@@ -9,7 +9,7 @@ Here we have to tables, `my-gcp-project.prod.user_log` and `my-gcp-project.prod.
 ```scala mdoc
 import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
-import no.nrk.bigquery.internal.nat._1
+import no.nrk.bigquery.util.nat._1
 import java.time.LocalDate
 
 object Schemas {
@@ -48,7 +48,7 @@ object Schemas {
 
     val fullNameUdf: UDF.Temporary[_1] = UDF.temporary(
       ident"toFullName",
-      UDF.Params.of(UDF.Param.fromField(namesStruct)),
+      UDF.Params(UDF.Param.fromField(namesStruct)),
       UDF.Body.Sql(
         bqfr"""(names.firstName || ' ' || coalesce(names.middleName || ' ', '') || names.lastName)""".stripMargin
       ),
