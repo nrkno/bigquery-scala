@@ -100,7 +100,7 @@ object UdfUpdateOperation {
     if (bqType.mode == BQField.Mode.REPEATED)
       StandardSQLDataType
         .newBuilder()
-        .setTypeKind(BQField.Type.STRUCT.name)
+        .setTypeKind(BQField.Type.ARRAY.name)
         .setArrayElementType(dataType)
         .build()
     else dataType
