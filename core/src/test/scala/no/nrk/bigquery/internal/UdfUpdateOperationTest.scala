@@ -11,7 +11,7 @@ import munit.FunSuite
 import no.nrk.bigquery.UpdateOperation.{CreatePersistentUdf, Illegal, UpdatePersistentUdf}
 import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
-import no.nrk.bigquery.util.nat._0
+import no.nrk.bigquery.util.nat._
 
 class UdfUpdateOperationTest extends FunSuite {
 
@@ -59,6 +59,29 @@ class UdfUpdateOperationTest extends FunSuite {
       case Illegal(_, _) =>
       case other => fail(other.toString)
     }
+  }
+
+  test("udf with repeated struct") {
+    val udf: UDF.Persistent[_1] =
+      UDF.persistent(
+        ident"foo",
+        BQDataset(ProjectId("p1"), "ds1", None),
+        UDF.Params(
+          UDF
+            .Param(
+              "segments",
+              BQType.fromField(
+                BQField.repeatedStruct("segments")(BQField("foo", BQField.Type.STRING, BQField.Mode.REQUIRED))))),
+        UDF.Body.Sql(bqfr"(1)"),
+        Some(BQType.INT64)
+      )
+
+    val existingRoutine = UdfUpdateOperation.from(udf, None) match {
+      case CreatePersistentUdf(_, routine) => routine
+      case other => fail(s"test setup failed: ${other.toString}")
+    }
+
+    assertEquals(existingRoutine.getArguments.get(0).getDataType.getTypeKind, "ARRAY")
   }
 
 }
