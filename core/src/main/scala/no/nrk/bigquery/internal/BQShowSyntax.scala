@@ -6,11 +6,9 @@
 
 package no.nrk.bigquery.internal
 
-import no.nrk.bigquery.{BQFill, BQFilledTable, BQShow, BQSqlFrag}
+import no.nrk.bigquery.{BQShow, BQSqlFrag}
 import cats.Foldable
 import cats.syntax.all._
-
-import java.time.LocalDate
 
 trait BQShowSyntax extends UdfSyntax {
 
@@ -19,9 +17,6 @@ trait BQShowSyntax extends UdfSyntax {
   implicit def bqFragmentsOps[S[_]: Foldable, A](values: S[A]): FragmentsOps[S, A] = new FragmentsOps(values)
   implicit def bqFragmentsOpsIndexedSeq[A](values: IndexedSeq[A]): FragmentsOps[IndexedSeq, A] = new FragmentsOps(
     values.toVector)
-  implicit def bqFilledTableLocalDateOps(fill: BQFilledTable[LocalDate]): BQFilledTableLocalDateOps =
-    new BQFilledTableLocalDateOps(fill)
-
 }
 
 class BQShowOps[A](a: A) {
@@ -56,10 +51,4 @@ class FragmentsOps[+S[_]: Foldable, A](private val values: S[A]) {
 
     BQSqlFrag.Combined(buf.result())
   }
-}
-
-class BQFilledTableLocalDateOps(fill: BQFilledTable[LocalDate]) {
-
-  def withDate(partitionValue: LocalDate): BQFill[LocalDate] =
-    BQFill[LocalDate](fill.jobKey, fill.tableDef, fill.query(partitionValue), partitionValue)
 }

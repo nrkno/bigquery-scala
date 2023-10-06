@@ -451,9 +451,6 @@ object BQSmokeTest {
       case BQSqlFrag.TableRef(table) =>
         recurse(table.unpartitioned.assertPartition.bqShow)
 
-      case BQSqlFrag.FilledTableRef(filledTable) =>
-        recurse(filledTable.tableDef.unpartitioned.assertPartition.bqShow)
-
       case BQSqlFrag.FillRef(fill) =>
         // we this fill as a CTE in the output query
         val cteName = tempTable(fill.destination)

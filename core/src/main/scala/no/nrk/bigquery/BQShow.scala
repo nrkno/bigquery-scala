@@ -93,9 +93,6 @@ trait BQShowInstances {
   implicit def bqShowFill[Fill <: BQFill[Any]]: BQShow[Fill] =
     BQSqlFrag.FillRef.apply
 
-  implicit def bqShowBQFilledTable[Fill <: BQFilledTable[Any]]: BQShow[Fill] =
-    BQSqlFrag.FilledTableRef.apply
-
   implicit def bqShowFills[
       I[t] <: Iterable[t],
       Fill <: BQFill[Any]

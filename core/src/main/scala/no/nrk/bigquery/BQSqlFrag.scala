@@ -23,7 +23,6 @@ sealed trait BQSqlFrag {
         BQSqlFrag.Call(udf, args.map(_.stripMargin))
       case x @ BQSqlFrag.PartitionRef(_) => x
       case x @ BQSqlFrag.FillRef(_) => x
-      case x @ BQSqlFrag.FilledTableRef(_) => x
       case x @ BQSqlFrag.TableRef(_) => x
     }
 
@@ -57,11 +56,6 @@ sealed trait BQSqlFrag {
       case BQSqlFrag.FillRef(fill) =>
         BQSqlFrag.PartitionRef(fill.destination).asString
 
-      case BQSqlFrag.FilledTableRef(fill) =>
-        BQSqlFrag
-          .PartitionRef(fill.tableDef.unpartitioned.assertPartition)
-          .asString
-
       case BQSqlFrag.TableRef(table) => table.tableId.asFragment.asString
 
       case BQSqlFrag.PartitionRef(partitionId) =>
@@ -89,7 +83,6 @@ sealed trait BQSqlFrag {
         case BQSqlFrag.Combined(values) => values.toList
         case BQSqlFrag.PartitionRef(_) => Nil
         case BQSqlFrag.FillRef(_) => Nil
-        case BQSqlFrag.FilledTableRef(_) => Nil
         case BQSqlFrag.TableRef(_) => Nil
       }
 
@@ -141,12 +134,6 @@ sealed trait BQSqlFrag {
         }
 
       case BQSqlFrag.FillRef(fill) => List(fill.destination)
-      case BQSqlFrag.FilledTableRef(fill) =>
-        (fill.tableDef.partitionType, outerRef) match {
-          case (partitionType: BQPartitionType.DatePartitioned, Some(partitionRef: BQPartitionId.DatePartitioned)) =>
-            List(fill.tableDef.withTableType(partitionType).assertPartition(partitionRef.partition))
-          case (_, _) => List(fill.tableDef.unpartitioned.assertPartition)
-        }
     }
 
     this.collect(pf(None)).flatten.distinct
@@ -183,7 +170,6 @@ object BQSqlFrag {
   case class PartitionRef(ref: BQPartitionId[Any]) extends BQSqlFrag
 
   case class FillRef(fill: BQFill[Any]) extends BQSqlFrag
-  case class FilledTableRef(filledTable: BQFilledTable[Any]) extends BQSqlFrag
 
   val Empty: BQSqlFrag = Frag("")
 
