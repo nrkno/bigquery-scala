@@ -6,9 +6,9 @@
 
 package no.nrk.bigquery
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.effect.Sync
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 import com.google.zetasql.{
   AnalyzerOptions,
   ParseLocationRange,
@@ -29,8 +29,8 @@ import com.google.zetasql.parser.{ASTNodes, ParseTreeVisitor}
 import com.google.zetasql.toolkit.{AnalysisException, AnalyzedStatement, ZetaSQLToolkitAnalyzer}
 
 import scala.collection.mutable.ListBuffer
-import scala.jdk.CollectionConverters._
-import scala.jdk.OptionConverters._
+import scala.jdk.CollectionConverters.*
+import scala.jdk.OptionConverters.*
 
 class ZetaSql[F[_]](implicit F: Sync[F]) {
   import ZetaSql._
@@ -56,18 +56,19 @@ class ZetaSql[F[_]](implicit F: Sync[F]) {
     def evalFragments(
         parsedTables: List[(BQTableId, ParseLocationRange)]
     ): BQSqlFrag = {
-      val asString = query
       val found = allTables
         .flatMap(table =>
           parsedTables.flatMap { case (id, range) => if (eqv(table.tableId, id)) List(table -> range) else Nil })
         .distinct
-      val (rest, aggregate) = found.foldLeft((asString, BQSqlFrag.Empty)) { case ((input, agg), (t, loc)) =>
-        val frag = agg ++ BQSqlFrag.Frag(input.substring(0, loc.start() - 1)) ++ toFragment(t)
-        val rest = input.substring(loc.end())
+      val (rest, aggregate) = found.foldLeft((0, Vector.empty[BQSqlFrag])) { case ((offset, agg), (t, loc)) =>
+        val frag =
+          agg ++ List(BQSqlFrag.Frag(query.substring(offset, loc.start() - 1)), BQSqlFrag.Frag(" "), toFragment(t))
+        val rest = loc.end()
         rest -> frag
       }
+      val str = query.substring(rest)
 
-      aggregate ++ BQSqlFrag.Frag(rest)
+      BQSqlFrag.Combined(if (str.nonEmpty) aggregate :+ BQSqlFrag.Frag(str) else aggregate)
     }
 
     parseScript(BQSqlFrag.Frag(query))
@@ -75,7 +76,7 @@ class ZetaSql[F[_]](implicit F: Sync[F]) {
       .flatMap { script =>
         val list = script.getStatementListNode.getStatementList
         if (list.size() != 1) {
-          Sync[F].raiseError[List[(no.nrk.bigquery.BQTableId, com.google.zetasql.ParseLocationRange)]](
+          Sync[F].raiseError[List[(BQTableId, ParseLocationRange)]](
             new IllegalArgumentException("Expects only one statement"))
         } else
           Sync[F].delay {
