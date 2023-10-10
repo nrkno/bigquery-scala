@@ -29,6 +29,7 @@ import com.google.zetasql.parser.{ASTNodes, ParseTreeVisitor}
 import com.google.zetasql.toolkit.{AnalysisException, AnalyzedStatement, ZetaSQLToolkitAnalyzer}
 
 import scala.collection.mutable.ListBuffer
+import scala.collection.immutable
 import scala.jdk.CollectionConverters.*
 import scala.jdk.OptionConverters.*
 
@@ -49,7 +50,7 @@ class ZetaSql[F[_]](implicit F: Sync[F]) {
 
   def parseAndBuildAnalysableFragment(
       query: String,
-      allTables: List[BQTableLike[Any]],
+      allTables: immutable.Seq[BQTableLike[Any]],
       toFragment: BQTableLike[Any] => BQSqlFrag = _.unpartitioned.bqShow,
       eqv: (BQTableId, BQTableId) => Boolean = _ == _): F[BQSqlFrag] = {
 
@@ -75,10 +76,10 @@ class ZetaSql[F[_]](implicit F: Sync[F]) {
       .flatMap { script =>
         val list = script.getStatementListNode.getStatementList
         if (list.size() != 1) {
-          Sync[F].raiseError[List[(BQTableId, ParseLocationRange)]](
+          F.raiseError[List[(BQTableId, ParseLocationRange)]](
             new IllegalArgumentException("Expects only one statement"))
         } else
-          Sync[F].delay {
+          F.delay {
             val buffer = new ListBuffer[(BQTableId, ParseLocationRange)]
             list.asScala.headOption.foreach(_.accept(new ParseTreeVisitor {
               override def visit(node: ASTNodes.ASTTablePathExpression): Unit =
