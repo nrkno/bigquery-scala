@@ -62,7 +62,7 @@ class ZetaSql[F[_]](implicit F: Sync[F]) {
         .distinct
       val (rest, aggregate) = found.foldLeft((0, Vector.empty[BQSqlFrag])) { case ((offset, agg), (t, loc)) =>
         val frag =
-          agg ++ List(BQSqlFrag.Frag(query.substring(offset, loc.start() - 1)), BQSqlFrag.Frag(" "), toFragment(t))
+          agg ++ List(BQSqlFrag.Frag(query.substring(offset, loc.start() - 1) + " "), toFragment(t))
         loc.end() -> frag
       }
       val str = query.substring(rest)
