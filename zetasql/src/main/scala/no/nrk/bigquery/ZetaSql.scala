@@ -139,26 +139,7 @@ object ZetaSql {
     catalog
   }
 
-  def fromColumnNameAndType(name: String, typ: Type): BQField = {
-    val kind = typ.getKind match {
-      case TypeKind.TYPE_BOOL => BQField.Type.BOOL
-      case TypeKind.TYPE_DATE => BQField.Type.DATE
-      case TypeKind.TYPE_DATETIME => BQField.Type.DATETIME
-      case TypeKind.TYPE_JSON => BQField.Type.JSON
-      case TypeKind.TYPE_BYTES => BQField.Type.BYTES
-      case TypeKind.TYPE_STRING => BQField.Type.STRING
-      case TypeKind.TYPE_BIGNUMERIC => BQField.Type.BIGNUMERIC
-      case TypeKind.TYPE_INT64 => BQField.Type.INT64
-      case TypeKind.TYPE_INT32 => BQField.Type.INT64
-      case TypeKind.TYPE_FLOAT => BQField.Type.FLOAT64
-      case TypeKind.TYPE_DOUBLE => BQField.Type.FLOAT64
-      case TypeKind.TYPE_TIMESTAMP => BQField.Type.TIMESTAMP
-      case TypeKind.TYPE_TIME => BQField.Type.TIME
-      case TypeKind.TYPE_GEOGRAPHY => BQField.Type.GEOGRAPHY
-      case TypeKind.TYPE_INTERVAL => BQField.Type.INTERVAL
-      case _ => throw new IllegalArgumentException(s"$name with type ${typ.debugString()} is not supported ")
-    }
-
+  def fromColumnNameAndType(name: String, typ: Type): BQField =
     if (typ.isArray) {
       val elem = fromColumnNameAndType(name, typ.asArray().getElementType)
       elem.copy(mode = BQField.Mode.REPEATED)
@@ -170,8 +151,27 @@ object ZetaSql {
           .asScala
           .map(subField => fromColumnNameAndType(subField.getName, subField.getType))
           .toList: _*)
-    } else BQField(name, kind, BQField.Mode.NULLABLE)
-  }
+    } else {
+      val kind = typ.getKind match {
+        case TypeKind.TYPE_BOOL => BQField.Type.BOOL
+        case TypeKind.TYPE_DATE => BQField.Type.DATE
+        case TypeKind.TYPE_DATETIME => BQField.Type.DATETIME
+        case TypeKind.TYPE_JSON => BQField.Type.JSON
+        case TypeKind.TYPE_BYTES => BQField.Type.BYTES
+        case TypeKind.TYPE_STRING => BQField.Type.STRING
+        case TypeKind.TYPE_BIGNUMERIC => BQField.Type.BIGNUMERIC
+        case TypeKind.TYPE_INT64 => BQField.Type.INT64
+        case TypeKind.TYPE_INT32 => BQField.Type.INT64
+        case TypeKind.TYPE_FLOAT => BQField.Type.FLOAT64
+        case TypeKind.TYPE_DOUBLE => BQField.Type.FLOAT64
+        case TypeKind.TYPE_TIMESTAMP => BQField.Type.TIMESTAMP
+        case TypeKind.TYPE_TIME => BQField.Type.TIME
+        case TypeKind.TYPE_GEOGRAPHY => BQField.Type.GEOGRAPHY
+        case TypeKind.TYPE_INTERVAL => BQField.Type.INTERVAL
+        case _ => throw new IllegalArgumentException(s"$name with type ${typ.debugString()} is not supported ")
+      }
+      BQField(name, kind, BQField.Mode.NULLABLE)
+    }
 
   def toSimpleTable(table: BQTableLike[Any]): SimpleTable = {
     def toType(field: BQField): Type = {
