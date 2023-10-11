@@ -75,11 +75,11 @@ jobs:
 
       - name: Make target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-        run: mkdir -p prometheus/.jvm/target testing/.jvm/target core/.jvm/target zetasql/.jvm/target project/target
+        run: mkdir -p examples/.jvm/target prometheus/.jvm/target testing/.jvm/target core/.jvm/target zetasql/.jvm/target project/target
 
       - name: Compress target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-        run: tar cf targets.tar prometheus/.jvm/target testing/.jvm/target core/.jvm/target zetasql/.jvm/target project/target
+        run: tar cf targets.tar examples/.jvm/target prometheus/.jvm/target testing/.jvm/target core/.jvm/target zetasql/.jvm/target project/target
 
       - name: Upload target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
@@ -200,5 +200,5 @@ jobs:
       - name: Submit Dependencies
         uses: scalacenter/sbt-dependency-submission@v2
         with:
-          modules-ignore: bigquery-scala_2.13 bigquery-scala_2.12 bigquery-scala_3 docs_2.13 docs_2.12 docs_3 bigquery-scala_2.13 bigquery-scala_2.12 bigquery-scala_3 bigquery-scala_2.13 bigquery-scala_2.12 bigquery-scala_3
+          modules-ignore: bigquery-scala_2.13 bigquery-scala_2.12 bigquery-scala_3 docs_2.13 docs_2.12 docs_3 bigquery-scala_2.13 bigquery-scala_2.12 bigquery-scala_3 bigquery-scala_2.13 bigquery-scala_2.12 bigquery-scala_3 codegentests_2.13 codegentests_2.12 codegentests_3
           configs-ignore: test scala-tool scala-doc-tool test-internal
