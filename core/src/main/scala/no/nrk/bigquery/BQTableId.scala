@@ -8,6 +8,8 @@ package no.nrk.bigquery
 
 import cats.Show
 
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import java.util.regex.Pattern
 
 /** When you create a table in BigQuery, the table name must be unique per dataset. The table name can:
@@ -27,12 +29,15 @@ final case class BQTableId private[bigquery] (dataset: BQDataset, tableName: Str
   def withDataset(ds: BQDataset) = copy(dataset = ds)
 
   def asString: String = s"${dataset.project.value}.${dataset.id}.${tableName}"
+  def asPathString: String = s"projects/${dataset.project.value}/datasets/${dataset.id}/tables/${tableName}"
   def asFragment: BQSqlFrag = BQSqlFrag.backticks(asString)
 }
 
 object BQTableId {
 
   private val regex: Pattern = "(?U)^\\w[\\w_ *$-]{1,1023}".r.pattern
+  private val PathPattern = "/?projects/(.*)/datasets/(.*)/tables/(.*)".r
+  private lazy val example = BQTableId(BQDataset(ProjectId("projectId"), "datasetId", None), "tableName")
 
   def of(dataset: BQDataset, tableName: String): Either[String, BQTableId] =
     if (regex.matcher(tableName).matches()) Right(BQTableId(dataset, tableName))
@@ -50,12 +55,21 @@ object BQTableId {
       identity
     )
 
-  def fromString(id: String): Either[String, BQTableId] =
-    id.split("\\.", 3) match {
+  def fromString(id: String): Either[String, BQTableId] = {
+    def decode(s: String) = URLDecoder.decode(s, StandardCharsets.UTF_8.name())
+
+    val fromPath = id match {
+      case PathPattern(project, dataset, tableName) =>
+        s"${decode(project)}.${decode(dataset)}.${decode(tableName)}"
+      case x => x
+    }
+
+    fromPath.split("\\.", 3) match {
       case Array(project, dataset, tableName) =>
         ProjectId.fromString(project).flatMap(BQDataset.of(_, dataset)).flatMap(of(_, tableName))
-      case _ => Left(s"Expected [projectId].[datasetId].[tableName] but got ${id}")
+      case _ => Left(s"Expected id formatted as'${example.asString}' or '${example.asPathString}' but got ${id}")
     }
+  }
 
   implicit val show: Show[BQTableId] =
     Show.show(_.asFragment.asString)

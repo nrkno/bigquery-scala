@@ -8,6 +8,9 @@ package no.nrk.bigquery
 
 import org.scalacheck.Prop
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 class BQTableIdTest extends munit.ScalaCheckSuite {
 
   val dataset = BQDataset.unsafeOf(ProjectId.unsafeFromString("com-example"), "test")
@@ -23,6 +26,17 @@ class BQTableIdTest extends munit.ScalaCheckSuite {
     Prop.forAll(Generators.validProjectIdGen, Generators.validDatasetIdGen, Generators.validTableIdGen) {
       (project: String, dataset: String, table: String) =>
         val obtained = BQTableId.fromString(s"${project}.${dataset}.${table}")
+        assertEquals(obtained, Right(BQTableId(BQDataset(ProjectId(project), dataset, None), table)))
+    }
+  }
+
+  property("fromStringUrlEncoded") {
+    Prop.forAll(Generators.validProjectIdGen, Generators.validDatasetIdGen, Generators.validTableIdGen) {
+      (project: String, dataset: String, table: String) =>
+        def encode(s: String) = URLEncoder.encode(s, StandardCharsets.UTF_8.name())
+
+        val obtained =
+          BQTableId.fromString(s"projects/${encode(project)}/datasets/${encode(dataset)}/tables/${encode(table)}")
         assertEquals(obtained, Right(BQTableId(BQDataset(ProjectId(project), dataset, None), table)))
     }
   }
