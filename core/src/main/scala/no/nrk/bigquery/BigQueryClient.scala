@@ -509,6 +509,11 @@ class BigQueryClient[F[_]](
   def delete(tableId: BQTableId): F[Boolean] =
     F.blocking(bigQuery.delete(tableId.underlying))
 
+  def datasetsInProject(project: ProjectId): F[Vector[BQDataset]] =
+    F.interruptible(
+      bigQuery.listDatasets(project.value).iterateAll().asScala.toVector
+    ).map(_.mapFilter(ds => BQDataset.of(project, ds.getDatasetId.getDataset).toOption))
+
   def tablesIn(
       dataset: BQDataset,
       datasetOptions: BigQuery.TableListOption*
