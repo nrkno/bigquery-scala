@@ -138,7 +138,8 @@ lazy val zetasql = crossProject(JVMPlatform)
       "com.google.zetasql.toolkit" % "zetasql-toolkit-bigquery" % "0.4.0",
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
-    )
+    ),
+    mimaBinaryIssueFilters := Nil
   )
 
 lazy val testing = crossProject(JVMPlatform)
