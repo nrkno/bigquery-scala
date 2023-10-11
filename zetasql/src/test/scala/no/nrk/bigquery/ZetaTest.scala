@@ -6,6 +6,7 @@
 
 package no.nrk.bigquery
 
+import cats.syntax.all._
 import cats.effect.IO
 import no.nrk.bigquery.syntax._
 import com.google.zetasql.toolkit.AnalysisException
@@ -23,6 +24,15 @@ class ZetaTest extends munit.CatsEffectSuite {
       BQField("b", BQField.Type.INT64, BQField.Mode.REQUIRED),
       BQField("c", BQField.Type.INT64, BQField.Mode.REQUIRED),
       BQField("d", BQField.Type.INT64, BQField.Mode.REQUIRED)
+    ),
+    BQPartitionType.DatePartitioned(Ident("partitionDate"))
+  )
+
+  private val table2 = BQTableDef.Table(
+    BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("com-example"), "example"), "test2"),
+    BQSchema.of(
+      BQField("partitionDate", BQField.Type.DATE, BQField.Mode.REQUIRED),
+      BQField("name", BQField.Type.STRING, BQField.Mode.REQUIRED)
     ),
     BQPartitionType.DatePartitioned(Ident("partitionDate"))
   )
@@ -92,6 +102,31 @@ class ZetaTest extends munit.CatsEffectSuite {
       .parseAndBuildAnalysableFragment(query, List(table))
       .flatMap(zetaSql.queryFields)
       .assertEquals(expected)
+  }
+
+  test("parse then build analysis multiple tables") {
+    val query =
+      """|with data as (
+         | select t1.partitionDate, t1.a, t1.b, t2.name
+         |  from `com-example.example.test` t1
+         |  JOIN `com-example.example.test2` t2 using (partitionDate)
+         |),
+         | grouped as (
+         |   select partitionDate, a, b, COUNTIF(name = "foo") as countFoo from data
+         |   group by 1, 2, 3
+         | )
+         |select * from grouped
+         |""".stripMargin
+
+    val expected =
+      (table.schema.fields.dropRight(2) ++ List(BQField("countFoo", BQField.Type.INT64, BQField.Mode.NULLABLE)))
+        .map(_.recursivelyNullable.withoutDescription)
+
+    val analysis = zetaSql
+      .parseAndBuildAnalysableFragment(query, List(table, table2))
+    analysis
+      .flatMap(fragment => zetaSql.queryFields(fragment).tupleRight(fragment.allReferencedTables.map(_.tableId)))
+      .assertEquals(expected -> List(table, table2).map(_.tableId))
   }
 
   override def munitTestTransforms: List[TestTransform] =
