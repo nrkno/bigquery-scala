@@ -32,7 +32,7 @@ object Generators {
     alpha2 <- Generators.shorterThanAlphaNum(2).filterNot(_.isEmpty)
   } yield alpha + underscore + alpha2
 
-  val validTableIdGen = for {
+  private val _validTableIdGen = for {
     first <- Gen
       .stringOfN(1, unicodeIdentifierPart)
       .map(_.replaceAll("(?U)\\W", ""))
@@ -42,4 +42,6 @@ object Generators {
       1022,
       Gen.stringOf(unicodeIdentifierPart).map(_.replaceAll("(?U)\\W", "")).filter(_.nonEmpty))
   } yield first + choose + next
+
+  val validTableIdGen = Gen.oneOf(_validTableIdGen, Gen.const("valid-id"))
 }
