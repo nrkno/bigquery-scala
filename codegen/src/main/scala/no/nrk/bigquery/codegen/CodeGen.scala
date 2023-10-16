@@ -5,7 +5,7 @@
  */
 
 package no.nrk.bigquery
-package example
+package codegen
 
 import org.apache.commons.text.translate.LookupTranslator
 

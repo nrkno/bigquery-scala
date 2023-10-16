@@ -65,7 +65,7 @@ val commonSettings = Seq(
 lazy val root = tlCrossRootProject
   .settings(name := "bigquery-scala")
   .settings(commonSettings)
-  .aggregate(core, testing, prometheus, zetasql, examples, codegenTests, docs)
+  .aggregate(core, testing, prometheus, zetasql, codegen, codegenTests, docs)
 
 lazy val core = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -156,14 +156,14 @@ lazy val testing = crossProject(JVMPlatform)
     mimaBinaryIssueFilters := Nil
   )
 
-lazy val examples = crossProject(JVMPlatform)
+lazy val codegen = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
-  .in(file("examples"))
+  .in(file("codegen"))
   .dependsOn(core, testing % Test)
   .settings(commonSettings)
   .settings(
-    name := "bigquery-examples",
+    name := "bigquery-codegen",
     libraryDependencies ++= Seq(
       "org.apache.commons" % "commons-text" % "1.10.0"
     ),

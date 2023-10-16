@@ -5,7 +5,7 @@
  */
 
 package no.nrk.bigquery
-package example
+package codegen
 
 class CodeGenTest extends munit.FunSuite with testing.GeneratedTest {
 
