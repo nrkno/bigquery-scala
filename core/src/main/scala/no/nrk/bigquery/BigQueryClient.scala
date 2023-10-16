@@ -7,6 +7,7 @@
 package no.nrk.bigquery
 
 import cats.Show
+import cats.data.OptionT
 import cats.effect.implicits._
 import cats.effect.kernel.Outcome
 import cats.effect.{Async, Resource}
@@ -477,8 +478,18 @@ class BigQueryClient[F[_]](
         .filter(_.exists())
     )
 
+  def getTableLike(tableId: BQTableId, tableOptions: TableOption*): F[Option[BQTableDef[Any]]] =
+    OptionT(getTable(tableId, tableOptions: _*)).mapFilter(t => SchemaHelper.fromTable(t).toOption).value
+
   def tableExists(tableId: BQTableId): F[Table] =
     getTable(tableId).flatMap {
+      case None =>
+        F.raiseError(new RuntimeException(s"Table $tableId does not exists"))
+      case Some(table) => F.pure(table)
+    }
+
+  def tableLikeExists(tableId: BQTableId): F[BQTableDef[Any]] =
+    getTableLike(tableId).flatMap {
       case None =>
         F.raiseError(new RuntimeException(s"Table $tableId does not exists"))
       case Some(table) => F.pure(table)
