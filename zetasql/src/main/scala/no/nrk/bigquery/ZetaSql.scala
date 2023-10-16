@@ -48,11 +48,27 @@ class ZetaSql[F[_]](implicit F: Sync[F]) {
       }
     }
 
+  @deprecated("for binary compatiblity, remove next version", "0.10.2")
+  private[bigquery] def parseAndBuildAnalysableFragment(
+      query: String,
+      allTables: List[BQTableLike[Any]],
+      toFragment: BQTableLike[Any] => BQSqlFrag,
+      eqv: (BQTableId, BQTableId) => Boolean
+  ): F[BQSqlFrag] =
+    parseAndBuildAnalysableFragmentImpl(query, allTables, toFragment, eqv)
+
   def parseAndBuildAnalysableFragment(
       query: String,
       allTables: immutable.Seq[BQTableLike[Any]],
       toFragment: BQTableLike[Any] => BQSqlFrag = _.unpartitioned.bqShow,
-      eqv: (BQTableId, BQTableId) => Boolean = _ == _): F[BQSqlFrag] = {
+      eqv: (BQTableId, BQTableId) => Boolean = _ == _): F[BQSqlFrag] =
+    parseAndBuildAnalysableFragmentImpl(query, allTables, toFragment, eqv)
+
+  private def parseAndBuildAnalysableFragmentImpl(
+      query: String,
+      allTables: immutable.Seq[BQTableLike[Any]],
+      toFragment: BQTableLike[Any] => BQSqlFrag,
+      eqv: (BQTableId, BQTableId) => Boolean): F[BQSqlFrag] = {
 
     def evalFragments(
         parsedTables: List[(BQTableId, ParseLocationRange)]
