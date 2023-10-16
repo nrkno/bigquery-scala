@@ -179,9 +179,9 @@ lazy val codegenTests = crossProject(JVMPlatform)
   .enablePlugins(NoPublishPlugin)
   .disablePlugins(HeaderPlugin)
   .settings(
+    tlFatalWarnings := false,
     tlMimaPreviousVersions := Set.empty,
-    mimaBinaryIssueFilters := Nil,
-    scalacOptions -= "-Xfatal-warning"
+    mimaBinaryIssueFilters := Nil
   )
 
 lazy val docs = project
