@@ -135,7 +135,7 @@ lazy val zetasql = crossProject(JVMPlatform)
     name := "bigquery-zetasql",
     tlMimaPreviousVersions := Set.empty,
     libraryDependencies ++= Seq(
-      "com.google.zetasql.toolkit" % "zetasql-toolkit-bigquery" % "0.4.0",
+      "com.google.zetasql.toolkit" % "zetasql-toolkit-bigquery" % "0.4.1",
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     )
