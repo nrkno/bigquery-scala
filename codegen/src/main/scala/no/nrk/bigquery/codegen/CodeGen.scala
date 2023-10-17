@@ -52,8 +52,10 @@ object Generators {
 
     val query2 = {
       val split = sql.split("\n")
-      val head = "|" + escape(split.head) + "\n"
-      head + split.tail.map(line => indent + "|" + escape(line)).mkString("\n")
+      if (split.length > 1) {
+        val head = "|" + escape(split.head) + "\n"
+        head + split.tail.map(line => indent + "|" + escape(line)).mkString("\n")
+      } else sql.trim
     }
 
     val quoted = "\"\"\""
