@@ -402,7 +402,7 @@ class TableUpdateOperationTest extends FunSuite {
       TableLabels.Empty,
       tableOptions = TableOptions(partitionFilterRequired = filter)
     )
-    def remote(filter: Boolean) = Some(
+    def remote(filter: Option[Boolean]) = Some(
       TableInfo
         .newBuilder(
           tableId.underlying,
@@ -416,25 +416,28 @@ class TableUpdateOperationTest extends FunSuite {
             )
             .build()
         )
-        .setRequirePartitionFilter(filter)
+        .setRequirePartitionFilter(filter.map(Boolean.box).orNull)
         .build()
     )
 
-    TableUpdateOperation.from(testTable(true), remote(false)) match {
+    TableUpdateOperation.from(testTable(true), remote(Some(false))) match {
       case UpdateOperation.UpdateTable(_, _, table) =>
         assert(table.getRequirePartitionFilter)
       case other => fail(other.toString)
     }
-    TableUpdateOperation.from(testTable(false), remote(true)) match {
+    TableUpdateOperation.from(testTable(false), remote(Some(true))) match {
       case UpdateOperation.UpdateTable(_, _, table) =>
         assert(!table.getRequirePartitionFilter)
       case other => fail(other.toString)
     }
-    TableUpdateOperation.from(testTable(true), remote(true)) match {
+    TableUpdateOperation.from(testTable(true), remote(Some(true))) match {
       case UpdateOperation.Noop(_) =>
       case other => fail(other.toString)
     }
-
+    TableUpdateOperation.from(testTable(false), remote(None)) match {
+      case UpdateOperation.Noop(_) =>
+      case other => fail(other.toString)
+    }
   }
 
 }
