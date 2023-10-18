@@ -38,7 +38,7 @@ object SchemaHelper {
           typ <- PartitionTypeHelper.from(st).left.map(msg => TableConversionError.UnsupportedPartitionType(msg))
           tableId <- parsedId
         } yield BQTableDef.Table(
-          tableId = tableId,
+          tableId = tableId.withLocation(Some(LocationId(st.getLocation))),
           schema = fromSchema(st.getSchema),
           partitionType = typ,
           description = Option(table.getDescription),

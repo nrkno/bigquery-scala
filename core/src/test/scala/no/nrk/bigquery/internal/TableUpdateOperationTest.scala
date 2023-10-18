@@ -20,6 +20,8 @@ class TableUpdateOperationTest extends FunSuite {
   private val c = BQField("c", BQField.Type.INT64, BQField.Mode.REQUIRED)
   private val viewId = BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset"), "view")
   private val tableId = BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset"), "table")
+  private val tableIdWithLocation =
+    BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset", Some(LocationId.EuropeNorth1)), "table")
   private val materializedViewId =
     BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset"), "mat_view")
 
@@ -173,6 +175,33 @@ class TableUpdateOperationTest extends FunSuite {
 
     TableUpdateOperation.from(givenTable, actualTable) match {
       case UpdateOperation.UpdateTable(_, _, _) => assert(cond = true)
+      case other => fail(other.toString)
+    }
+  }
+
+  test("should be a noop when no fields has changed") {
+    val givenTable = BQTableDef.Table(
+      tableIdWithLocation,
+      BQSchema.of(a, b),
+      BQPartitionType.NotPartitioned,
+      description = None,
+      clustering = Nil,
+      TableLabels.Empty
+    )
+    val actualTable = Some(
+      TableInfo
+        .newBuilder(
+          tableIdWithLocation.underlying,
+          StandardTableDefinition.newBuilder
+            .setSchema(SchemaHelper.toSchema(BQSchema.of(a, b)))
+            .setLocation(LocationId.EuropeNorth1.value)
+            .build()
+        )
+        .build()
+    )
+
+    TableUpdateOperation.from(givenTable, actualTable) match {
+      case UpdateOperation.Noop(_) => assert(cond = true)
       case other => fail(other.toString)
     }
   }
