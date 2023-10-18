@@ -135,7 +135,7 @@ object TableUpdateOperation {
         StandardTableDefinition.newBuilder
           .setSchema(SchemaHelper.toSchema(schema))
           .setTimePartitioning(
-            PartitionTypeHelper.timePartitioned(partitioning).orNull
+            PartitionTypeHelper.timePartitioned(partitioning, tableOptions).orNull
           )
           .setRangePartitioning(
             PartitionTypeHelper.rangepartitioned(partitioning).orNull
@@ -196,7 +196,7 @@ object TableUpdateOperation {
             tableId.underlying,
             StandardTableDefinition.newBuilder
               .setSchema(SchemaHelper.toSchema(schema))
-              .setTimePartitioning(PartitionTypeHelper.timePartitioned(partitionType).orNull)
+              .setTimePartitioning(PartitionTypeHelper.timePartitioned(partitionType, tableOptions).orNull)
               .setRangePartitioning(PartitionTypeHelper.rangepartitioned(partitionType).orNull)
               .setClustering(clusteringFrom(clustering).orNull)
               .build,
@@ -225,7 +225,7 @@ object TableUpdateOperation {
               .setEnableRefresh(enableRefresh)
               // .setSchema(schema.toSchema)  // not possible for now
               .setRefreshIntervalMs(refreshIntervalMs)
-              .setTimePartitioning(PartitionTypeHelper.timePartitioned(partitionType).orNull)
+              .setTimePartitioning(PartitionTypeHelper.timePartitioned(partitionType, tableOptions).orNull)
               .setRangePartitioning(PartitionTypeHelper.rangepartitioned(partitionType).orNull)
               .build(),
             tableOptions,

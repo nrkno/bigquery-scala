@@ -17,12 +17,13 @@ import com.google.cloud.bigquery.{
 object PartitionTypeHelper {
   private def assertIsUsed(a: Any*): Unit = (a, ())._2
 
-  def timePartitioned(bqtype: BQPartitionType[Any]): Option[TimePartitioning] =
+  def timePartitioned(bqtype: BQPartitionType[Any], tableOptions: TableOptions): Option[TimePartitioning] =
     bqtype match {
       case BQPartitionType.DatePartitioned(field) =>
         Some(
           TimePartitioning
             .newBuilder(TimePartitioning.Type.DAY)
+            .setExpirationMs(tableOptions.partitionExpiration.map(exp => Long.box(exp.toMillis)).orNull)
             .setField(field.value)
             .build()
         )
@@ -31,6 +32,7 @@ object PartitionTypeHelper {
         Some(
           TimePartitioning
             .newBuilder(TimePartitioning.Type.MONTH)
+            .setExpirationMs(tableOptions.partitionExpiration.map(exp => Long.box(exp.toMillis)).orNull)
             .setField(field.value)
             .build()
         )

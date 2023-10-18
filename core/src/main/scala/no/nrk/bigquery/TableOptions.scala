@@ -6,12 +6,16 @@
 
 package no.nrk.bigquery
 
+import scala.concurrent.duration.FiniteDuration
+
 case class TableOptions(
-    partitionFilterRequired: Boolean
+    partitionFilterRequired: Boolean,
+    partitionExpiration: Option[FiniteDuration]
 )
 
 object TableOptions {
   val Empty: TableOptions = TableOptions(
-    partitionFilterRequired = false
+    partitionFilterRequired = false,
+    partitionExpiration = None
   )
 }
