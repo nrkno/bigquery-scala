@@ -12,6 +12,7 @@ import munit.FunSuite
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery._
 import GoogleTypeHelper._
+import scala.concurrent.duration._
 
 class TableUpdateOperationTest extends FunSuite {
 
@@ -400,7 +401,7 @@ class TableUpdateOperationTest extends FunSuite {
       description = None,
       clustering = Nil,
       TableLabels.Empty,
-      tableOptions = TableOptions(partitionFilterRequired = filter)
+      tableOptions = TableOptions.Empty.copy(partitionFilterRequired = filter)
     )
     def remote(filter: Boolean) = Some(
       TableInfo
@@ -435,6 +436,60 @@ class TableUpdateOperationTest extends FunSuite {
       case other => fail(other.toString)
     }
 
+  }
+
+  test("updating partitionExpiration should result in update") {
+    def testTable(expiration: Option[FiniteDuration]) = BQTableDef.Table(
+      tableId,
+      BQSchema.of(a),
+      BQPartitionType.DatePartitioned(Ident("date")),
+      description = None,
+      clustering = Nil,
+      TableLabels.Empty,
+      tableOptions = TableOptions.Empty.copy(partitionExpiration = expiration)
+    )
+
+    def remote(expiration: Option[FiniteDuration]) = Some(
+      TableInfo
+        .newBuilder(
+          tableId.underlying,
+          StandardTableDefinition.newBuilder
+            .setSchema(SchemaHelper.toSchema(BQSchema.of(a)))
+            .setTimePartitioning(
+              TimePartitioning
+                .newBuilder(Type.DAY)
+                .setField("date")
+                .setExpirationMs(expiration.map(exp => Long.box(exp.toMillis)).orNull)
+                .build()
+            )
+            .build()
+        )
+        .build()
+    )
+
+    TableUpdateOperation.from(testTable(Some(1.day)), remote(None)) match {
+      case UpdateOperation.UpdateTable(_, _, table) =>
+        assert(table.getDefinition[StandardTableDefinition].getTimePartitioning.getExpirationMs == 1.day.toMillis)
+      case other => fail(other.toString)
+    }
+    TableUpdateOperation.from(testTable(None), remote(Some(1.day))) match {
+      case UpdateOperation.UpdateTable(_, _, table) =>
+        assert(Option(table.getDefinition[StandardTableDefinition].getTimePartitioning.getExpirationMs).isEmpty)
+      case other => fail(other.toString)
+    }
+    TableUpdateOperation.from(testTable(Some(2.day)), remote(Some(1.day))) match {
+      case UpdateOperation.UpdateTable(_, _, table) =>
+        assert(table.getDefinition[StandardTableDefinition].getTimePartitioning.getExpirationMs == 2.day.toMillis)
+      case other => fail(other.toString)
+    }
+    TableUpdateOperation.from(testTable(Some(2.day)), remote(Some(2.day))) match {
+      case UpdateOperation.Noop(_) =>
+      case other => fail(other.toString)
+    }
+    TableUpdateOperation.from(testTable(None), remote(None)) match {
+      case UpdateOperation.Noop(_) =>
+      case other => fail(other.toString)
+    }
   }
 
 }

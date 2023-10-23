@@ -7,9 +7,11 @@
 package no.nrk.bigquery
 package internal
 
-import com.google.cloud.bigquery.{DatasetId, TableId, TableInfo}
+import com.google.cloud.bigquery.{DatasetId, StandardTableDefinition, TableDefinition, TableId, TableInfo}
 import no.nrk.bigquery.TableLabels.Empty
 
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 
 object GoogleTypeHelper {
@@ -19,7 +21,14 @@ object GoogleTypeHelper {
     TableId.of(tableId.dataset.project.value, tableId.dataset.id, tableId.tableName)
 
   def toTableOptions(tableInfo: TableInfo): TableOptions = TableOptions(
-    partitionFilterRequired = Option(tableInfo.getRequirePartitionFilter).exists(_.booleanValue())
+    partitionFilterRequired = Option(tableInfo.getRequirePartitionFilter).exists(_.booleanValue()),
+    tableInfo.getDefinition[TableDefinition] match {
+      case definition: StandardTableDefinition =>
+        Option(definition.getTimePartitioning)
+          .flatMap(tp => Option(tp.getExpirationMs))
+          .map(expires => FiniteDuration(expires, TimeUnit.MILLISECONDS))
+      case _ => None
+    }
   )
 
   def unsafeTableIdFromGoogle(dataset: BQDataset, tableId: TableId): BQTableId = {
