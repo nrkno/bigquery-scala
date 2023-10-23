@@ -94,7 +94,7 @@ object BQType {
       case f if f.tpe == BQField.Type.STRUCT =>
         s"STRUCT<${f.subFields.map { case (name, sf) => s"$name ${format(sf)}" }.mkString(", ")}>"
       case f if f.tpe == BQField.Type.ARRAY =>
-        s"ARRAY(${format(f.subFields.head._2)})"
+        s"ARRAY<${format(f.subFields.head._2)}>"
       case other if f.mode == BQField.Mode.REPEATED =>
         s"ARRAY<${other.tpe.name}>"
       case other =>
