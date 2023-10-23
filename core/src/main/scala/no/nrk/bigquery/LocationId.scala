@@ -10,8 +10,8 @@ final case class LocationId private[bigquery] (value: String) extends AnyVal
 
 object LocationId {
   // Multi region
-  val US = LocationId("us")
-  val EU = LocationId("eu")
+  val US = LocationId("US")
+  val EU = LocationId("EU")
 
   // Americas
   val NorthAmericaNorthEast1 = LocationId("northamerica-northeast1")
