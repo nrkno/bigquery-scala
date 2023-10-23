@@ -65,7 +65,7 @@ val commonSettings = Seq(
 lazy val root = tlCrossRootProject
   .settings(name := "bigquery-scala")
   .settings(commonSettings)
-  .aggregate(core, testing, prometheus, zetasql, docs)
+  .aggregate(core, testing, prometheus, zetasql, codegen, codegenTests, docs)
 
 lazy val core = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -133,7 +133,6 @@ lazy val zetasql = crossProject(JVMPlatform)
   .dependsOn(core)
   .settings(
     name := "bigquery-zetasql",
-    tlMimaPreviousVersions := Set.empty,
     libraryDependencies ++= Seq(
       "com.google.zetasql.toolkit" % "zetasql-toolkit-bigquery" % "0.4.1",
       "org.scalameta" %% "munit" % "0.7.29",
@@ -154,6 +153,34 @@ lazy val testing = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
+    mimaBinaryIssueFilters := Nil
+  )
+
+lazy val codegen = crossProject(JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("codegen"))
+  .dependsOn(core, testing % Test)
+  .settings(commonSettings)
+  .settings(
+    name := "bigquery-codegen",
+    libraryDependencies ++= Seq(
+      "org.apache.commons" % "commons-text" % "1.10.0"
+    ),
+    tlMimaPreviousVersions := Set.empty,
+    mimaBinaryIssueFilters := Nil
+  )
+
+lazy val codegenTests = crossProject(JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("codegen-tests"))
+  .dependsOn(core)
+  .enablePlugins(NoPublishPlugin)
+  .disablePlugins(HeaderPlugin)
+  .settings(
+    tlFatalWarnings := false,
+    tlMimaPreviousVersions := Set.empty,
     mimaBinaryIssueFilters := Nil
   )
 
