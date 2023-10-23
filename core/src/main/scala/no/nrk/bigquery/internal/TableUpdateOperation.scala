@@ -11,8 +11,51 @@ import no.nrk.bigquery._
 
 import scala.jdk.CollectionConverters._
 import GoogleTypeHelper._
+import cats.Eq
+import cats.syntax.all._
 
 object TableUpdateOperation {
+
+  private implicit val tableIdEquality: Eq[BQTableId] = Eq.instance { (a, b) =>
+    ((a.dataset.location, b.dataset.location) match {
+      case (Some(aLoc), Some(bLoc)) => aLoc == bLoc
+      case _ => true
+    }) &&
+    a.dataset.project == b.dataset.project &&
+    a.dataset.id == b.dataset.id &&
+    a.tableName == b.tableName
+
+  }
+  private implicit val tableDefEquality: Eq[BQTableDef.Table[Any]] = Eq.instance { (a, b) =>
+    a.tableId === b.tableId &&
+    a.schema == b.schema &&
+    a.partitionType == b.partitionType &&
+    a.clustering == b.clustering &&
+    a.description == b.description &&
+    a.labels == b.labels &&
+    a.tableOptions == b.tableOptions
+  }
+
+  private implicit val viewDefEquality: Eq[BQTableDef.View[Any]] = Eq.instance { (a, b) =>
+    a.tableId === b.tableId &&
+    a.schema == b.schema &&
+    a.partitionType == b.partitionType &&
+    a.query == b.query &&
+    a.description == b.description &&
+    a.labels == b.labels
+  }
+
+  private implicit val materializedViewDefEquality: Eq[BQTableDef.MaterializedView[Any]] = Eq.instance { (a, b) =>
+    a.tableId === b.tableId &&
+    a.schema == b.schema &&
+    a.partitionType == b.partitionType &&
+    a.query == b.query &&
+    a.description == b.description &&
+    a.labels == b.labels &&
+    a.enableRefresh == b.enableRefresh &&
+    a.refreshIntervalMs == b.refreshIntervalMs &&
+    a.tableOptions == b.tableOptions
+  }
 
   def from(
       tableDef: BQTableDef[Any],
@@ -47,7 +90,7 @@ object TableUpdateOperation {
                       )
                     }
 
-                if (local == remote)
+                if (local === remote)
                   UpdateOperation.Noop(TableDefOperationMeta(existingRemoteTable, local))
                 else
                   illegalSchemaExtension.getOrElse {
@@ -64,7 +107,7 @@ object TableUpdateOperation {
                   s"Cannot change partitioning from ${remote.partitionType} to ${local.partitionType}"
                 )
               case (local: BQTableDef.View[Any], remote: BQTableDef.View[Any]) =>
-                if (local == remote.withTableType(local.partitionType))
+                if (local === remote.withTableType(local.partitionType))
                   UpdateOperation.Noop(TableDefOperationMeta(existingRemoteTable, local))
                 else
                   UpdateOperation.RecreateView(
@@ -94,7 +137,7 @@ object TableUpdateOperation {
                     }
                   )
 
-                if (patchedLocalMVDef == remote)
+                if (patchedLocalMVDef === remote)
                   UpdateOperation.Noop(TableDefOperationMeta(existingRemoteTable, local))
                 else
                   UpdateOperation.RecreateView(
