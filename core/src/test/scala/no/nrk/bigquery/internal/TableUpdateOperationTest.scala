@@ -21,6 +21,8 @@ class TableUpdateOperationTest extends FunSuite {
   private val c = BQField("c", BQField.Type.INT64, BQField.Mode.REQUIRED)
   private val viewId = BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset"), "view")
   private val tableId = BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset"), "table")
+  private val tableIdWithLocation =
+    BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset", Some(LocationId.EuropeNorth1)), "table")
   private val materializedViewId =
     BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset"), "mat_view")
 
@@ -174,6 +176,33 @@ class TableUpdateOperationTest extends FunSuite {
 
     TableUpdateOperation.from(givenTable, actualTable) match {
       case UpdateOperation.UpdateTable(_, _, _) => assert(cond = true)
+      case other => fail(other.toString)
+    }
+  }
+
+  test("should be a noop when no fields has changed") {
+    val givenTable = BQTableDef.Table(
+      tableIdWithLocation,
+      BQSchema.of(a, b),
+      BQPartitionType.NotPartitioned,
+      description = None,
+      clustering = Nil,
+      TableLabels.Empty
+    )
+    val actualTable = Some(
+      TableInfo
+        .newBuilder(
+          tableIdWithLocation.underlying,
+          StandardTableDefinition.newBuilder
+            .setSchema(SchemaHelper.toSchema(BQSchema.of(a, b)))
+            .setLocation(LocationId.EuropeNorth1.value)
+            .build()
+        )
+        .build()
+    )
+
+    TableUpdateOperation.from(givenTable, actualTable) match {
+      case UpdateOperation.Noop(_) => assert(cond = true)
       case other => fail(other.toString)
     }
   }
@@ -403,7 +432,7 @@ class TableUpdateOperationTest extends FunSuite {
       TableLabels.Empty,
       tableOptions = TableOptions.Empty.copy(partitionFilterRequired = filter)
     )
-    def remote(filter: Boolean) = Some(
+    def remote(filter: Option[Boolean]) = Some(
       TableInfo
         .newBuilder(
           tableId.underlying,
@@ -417,25 +446,28 @@ class TableUpdateOperationTest extends FunSuite {
             )
             .build()
         )
-        .setRequirePartitionFilter(filter)
+        .setRequirePartitionFilter(filter.map(Boolean.box).orNull)
         .build()
     )
 
-    TableUpdateOperation.from(testTable(true), remote(false)) match {
+    TableUpdateOperation.from(testTable(true), remote(Some(false))) match {
       case UpdateOperation.UpdateTable(_, _, table) =>
         assert(table.getRequirePartitionFilter)
       case other => fail(other.toString)
     }
-    TableUpdateOperation.from(testTable(false), remote(true)) match {
+    TableUpdateOperation.from(testTable(false), remote(Some(true))) match {
       case UpdateOperation.UpdateTable(_, _, table) =>
         assert(!table.getRequirePartitionFilter)
       case other => fail(other.toString)
     }
-    TableUpdateOperation.from(testTable(true), remote(true)) match {
+    TableUpdateOperation.from(testTable(true), remote(Some(true))) match {
       case UpdateOperation.Noop(_) =>
       case other => fail(other.toString)
     }
-
+    TableUpdateOperation.from(testTable(false), remote(None)) match {
+      case UpdateOperation.Noop(_) =>
+      case other => fail(other.toString)
+    }
   }
 
   test("updating partitionExpiration should result in update") {
