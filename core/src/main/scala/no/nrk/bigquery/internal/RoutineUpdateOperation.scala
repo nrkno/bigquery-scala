@@ -71,7 +71,15 @@ object RoutineUpdateOperation {
       .setLanguage("SQL")
       .setBody(tvf.query.asString)
       // function not public in Builder: .setDescription(tvf.description.orNull)
-      // TODO .setReturnTableType(tvf.schema.???)
+      .setReturnTableType(
+        StandardSQLTableType
+          .newBuilder()
+          .setColumns(
+            tvf.schema.fields
+              .map(field => StandardSQLField.newBuilder(field.name, toSqlDataType(BQType.fromField(field))).build())
+              .asJava)
+          .build()
+      )
       .build()
 
   private def createUdfRoutineInfo(udf: UDF.Persistent[_]) = {
