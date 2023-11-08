@@ -392,7 +392,7 @@ object BQSmokeTest {
         (x, Nil)
 
       case BQSqlFrag.Call(udf, args) =>
-        val (newArgs, ctes) = args.toList.map(recurse).separate
+        val (newArgs, ctes) = args.map(recurse).separate
         udf match {
           case tUdf @ UDF.Temporary(_, _, Body.Sql(body), _) =>
             val (newUdfBody, ctesFromUDF) = recurse(body)
@@ -409,7 +409,19 @@ object BQSmokeTest {
               ),
               ctesFromUDF ++ ctes.flatten
             )
-          case _ => (BQSqlFrag.Call(udf, newArgs), ctes.flatten)
+          case tvf: TVF[_, _] =>
+            val cteName = Ident(tvf.name.asString.filter(c => c.isLetterOrDigit || c == '_'))
+            val tvfParamUdf =
+              BQSqlFrag.Call(
+                UDF.temporary(Ident(cteName.value ++ "_udf"), tvf.params, bqfr"TRUE", Some(BQType.BOOL)),
+                newArgs
+              )
+            (
+              bqfr"(select * from $cteName where $tvfParamUdf)",
+              List(CTE(cteName, bqfr"(select ${exampleRow(tvf.schema)})"))
+            )
+          case _ =>
+            (BQSqlFrag.Call(udf, newArgs), ctes.flatten)
         }
 
       case BQSqlFrag.Combined(frags) =>
