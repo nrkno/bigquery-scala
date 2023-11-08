@@ -39,7 +39,7 @@ abstract class BQUdfSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) exte
       expected: Json
   )(implicit loc: Location): Unit =
     call.routine match {
-      case tvf: TVF[_, _] => fail(s"does not support TVF: ${tvf.name.asString}") // todo implement TVF check call!
+      case tvf: TVF[_, _] => fail(s"does not support TVF: ${tvf.name.asString}, Use BQSmokeTest")
       case udf: UDF[_, _] =>
         val longerTestName = show"${udf.name} - $testName"
 
@@ -65,7 +65,7 @@ object BQUdfSmokeTest {
   ): BigQueryClient[IO] => IO[Json] = { bqClient =>
     call.routine match {
       case _: TVF[_, _] =>
-        IO.raiseError[Json](new IllegalStateException("Does not support TVF")) // todo implement TVF call evaluation!
+        IO.raiseError[Json](new IllegalStateException("Does not support TVF, Use BQSmokeTest"))
       case _: UDF.Temporary[_] => evalInlineableCall(testName, bqClient, call)
       case _: UDF.Reference[_] => evalInlineableCall(testName, bqClient, call)
       case udf: UDF.Persistent[_] => evalInlineableCall(testName, bqClient, call.copy(routine = udf.convertToTemporary))

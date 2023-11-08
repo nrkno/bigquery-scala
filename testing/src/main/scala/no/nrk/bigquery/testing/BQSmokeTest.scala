@@ -22,6 +22,7 @@ import no.nrk.bigquery.internal.SchemaHelper
 import no.nrk.bigquery.testing.BQSmokeTest.{CheckType, bqCheckFragment}
 import org.typelevel.log4cats.slf4j._
 import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.util.{Nat, Sized}
 import org.typelevel.log4cats.SelfAwareStructuredLogger
 
 import java.nio.charset.StandardCharsets
@@ -221,6 +222,23 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
             )
         }
     }
+
+  protected def bqCheckTableValueFunction[N <: Nat](testName: String, tvf: TVF[_, N])(
+      args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]
+  )(implicit loc: Location): Unit = {
+    val values =
+      tvf.params.unsized
+        .zip(args.unsized)
+        .map { case (param, arg) => bqfr"declare ${param.name} default ${arg};" }
+        .mkFragment("\n")
+
+    bqCheckFragmentTest(testName)(
+      bqfr"""|$values
+             |${tvf.query}
+          """.stripMargin -> tvf.schema
+    )
+  }
+
 }
 
 object BQSmokeTest {
