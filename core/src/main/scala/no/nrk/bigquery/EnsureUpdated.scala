@@ -9,7 +9,7 @@ package no.nrk.bigquery
 import cats.{Applicative, MonadThrow, Show}
 import cats.syntax.all._
 import com.google.cloud.bigquery.{Option => _, _}
-import no.nrk.bigquery.internal.{TableUpdateOperation, UdfUpdateOperation}
+import no.nrk.bigquery.internal.{RoutineUpdateOperation, TableUpdateOperation}
 import org.typelevel.log4cats.LoggerFactory
 
 sealed trait OperationMeta {
@@ -101,7 +101,7 @@ class EnsureUpdated[F[_]](
 
   def check(persistentRoutine: BQPersistentRoutine[_]): F[UpdateOperation] =
     bqClient.getRoutine(persistentRoutine.name).map { maybeExisting =>
-      UdfUpdateOperation.from(persistentRoutine, maybeExisting)
+      RoutineUpdateOperation.from(persistentRoutine, maybeExisting)
     }
 
   def perform(updateOperation: UpdateOperation): F[Unit] =

@@ -14,7 +14,7 @@ import no.nrk.bigquery.BQRoutine.{Param, Params}
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.util.nat._
 
-class UdfUpdateOperationTest extends FunSuite {
+class RoutineUpdateOperationTest extends FunSuite {
 
   private val udf: UDF.Persistent[_0] =
     UDF.persistent(
@@ -26,7 +26,7 @@ class UdfUpdateOperationTest extends FunSuite {
   private val routineId: RoutineId = RoutineId.of("p1", "ds1", "foo")
 
   test("should create when it does not exist") {
-    UdfUpdateOperation.from(udf, None) match {
+    RoutineUpdateOperation.from(udf, None) match {
       case CreatePersistentUdf(_, routine) =>
         assertEquals(routine.getRoutineId, routineId)
       case other => fail(other.toString)
@@ -34,12 +34,12 @@ class UdfUpdateOperationTest extends FunSuite {
   }
 
   test("should update udf when changed") {
-    val existingRoutine = UdfUpdateOperation.from(udf, None) match {
+    val existingRoutine = RoutineUpdateOperation.from(udf, None) match {
       case CreatePersistentUdf(_, routine) => routine
       case other => fail(s"test setup failed: ${other.toString}")
     }
 
-    UdfUpdateOperation.from(
+    RoutineUpdateOperation.from(
       udf.copy(params = Params(Param(ident"foo", Some(BQType.INT64)))),
       Some(existingRoutine)
     ) match {
@@ -56,7 +56,7 @@ class UdfUpdateOperationTest extends FunSuite {
       .setRoutineType("PROCEDURE")
       .build()
 
-    UdfUpdateOperation.from(udf, Some(routine)) match {
+    RoutineUpdateOperation.from(udf, Some(routine)) match {
       case Illegal(_, _) =>
       case other => fail(other.toString)
     }
@@ -76,7 +76,7 @@ class UdfUpdateOperationTest extends FunSuite {
         Some(BQType.INT64)
       )
 
-    val existingRoutine = UdfUpdateOperation.from(udf, None) match {
+    val existingRoutine = RoutineUpdateOperation.from(udf, None) match {
       case CreatePersistentUdf(_, routine) => routine
       case other => fail(s"test setup failed: ${other.toString}")
     }

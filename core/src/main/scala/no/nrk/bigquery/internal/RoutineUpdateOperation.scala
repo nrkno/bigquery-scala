@@ -21,7 +21,7 @@ import no.nrk.bigquery.{
 
 import scala.jdk.CollectionConverters.*
 
-object UdfUpdateOperation {
+object RoutineUpdateOperation {
 
   private val UdfRoutineType = "SCALAR_FUNCTION"
   private val TvfRoutineType = "TABLE_VALUED_FUNCTION"
