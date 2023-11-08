@@ -53,7 +53,7 @@ private[bigquery] object PartitionLoader {
       case notPartitioned: BQPartitionType.NotPartitioned =>
         PartitionLoader
           .unpartitioned(table.withTableType[Unit](notPartitioned), client)
-          .map(Vector(_))
+          .map(_.toVector)
     }
 
   case class LongInstant(value: Instant)
@@ -312,7 +312,7 @@ private[bigquery] object PartitionLoader {
         client: BigQueryClient[F]
     )(implicit
         F: Concurrent[F]
-    ): F[(BQPartitionId.NotPartitioned, PartitionMetadata)] =
+    ): F[Option[(BQPartitionId.NotPartitioned, PartitionMetadata)]] =
       client
         .synchronousQuery(
           BQJobName.auto,
@@ -330,7 +330,7 @@ private[bigquery] object PartitionLoader {
           (partition, metadata)
         }
         .compile
-        .lastOrError
+        .last
 
     def partitionQuery(tableId: BQTableId): BQQuery[
       (Option[LongInstant], Option[LongInstant], Option[Long], Option[Long])

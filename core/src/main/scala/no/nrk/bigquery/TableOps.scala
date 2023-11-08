@@ -105,7 +105,7 @@ object TableOps {
     ): F[Vector[(BQPartitionId[Unit], PartitionMetadata)]] =
       table.partitionType match {
         case _: BQPartitionType.NotPartitioned =>
-          PartitionLoader.unpartitioned(table, client).map(Vector(_)).widen
+          PartitionLoader.unpartitioned(table, client).map(_.toVector).widen
       }
   }
 }
