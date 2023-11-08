@@ -62,7 +62,7 @@ object BQTableLike {
 
     def loadPartition[F[_]: Concurrent](
         client: BigQueryClient[F]
-    ): F[(BQPartitionId[Unit], PartitionMetadata)] =
+    ): F[Option[(BQPartitionId[Unit], PartitionMetadata)]] =
       PartitionLoader.unpartitioned(table, client).widen
   }
 }
