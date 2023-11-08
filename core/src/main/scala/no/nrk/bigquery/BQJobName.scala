@@ -19,7 +19,7 @@ object BQJobName {
   /** use a macro to automatically name a job based on the name of the context in which `auto` is called. A typical name
     * is `no_nrk_recommendations_datahub_ecommerce_ECommerceETL_bqFetchRowsForDate`
     */
-  @deprecated(message = "Use BQJobId.auto instead", since = "0.13.0")
+  @deprecated(message = "Use BQJobId.auto instead", since = "0.12.0")
   def auto(implicit enclosing: sourcecode.Enclosing): BQJobName =
     apply(enclosing.value)
 
