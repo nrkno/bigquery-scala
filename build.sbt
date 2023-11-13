@@ -82,15 +82,15 @@ lazy val core = crossProject(JVMPlatform)
       "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       "com.google.cloud" % "google-cloud-bigquery" % "2.34.2",
-      "com.google.cloud" % "google-cloud-bigquerystorage" % "2.44.1",
+      "com.google.cloud" % "google-cloud-bigquerystorage" % "2.45.0",
       "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.29.0",
       "org.apache.avro" % "avro" % "1.11.3",
       "com.lihaoyi" %% "sourcecode" % "0.3.1",
       "org.typelevel" %% "log4cats-slf4j" % "2.6.0",
       "io.circe" %% "circe-generic" % "0.14.6",
       "io.circe" %% "circe-parser" % "0.14.6",
-      "co.fs2" %% "fs2-core" % "3.9.2",
-      "co.fs2" %% "fs2-io" % "3.9.2",
+      "co.fs2" %% "fs2-core" % "3.9.3",
+      "co.fs2" %% "fs2-io" % "3.9.3",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0"
     ),
     libraryDependencies ++= {
