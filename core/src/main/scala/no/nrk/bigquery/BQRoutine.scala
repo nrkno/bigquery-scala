@@ -17,8 +17,7 @@ import no.nrk.bigquery.util.{Nat, Sized}
 
 sealed trait BQRoutine[N <: Nat] {
   def params: BQRoutine.Params[N]
-  def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]): BQSqlFrag.Call =
-    BQSqlFrag.Call(this, args.unsized.toList.map(_.frag))
+  def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]): BQSqlFrag
 }
 
 sealed trait BQPersistentRoutine[N <: Nat] extends BQRoutine[N] {
@@ -65,7 +64,10 @@ case class TVF[+P, N <: Nat](
     query: BQSqlFrag,
     schema: BQSchema,
     description: Option[String] = None
-) extends BQPersistentRoutine[N]
+) extends BQPersistentRoutine[N] {
+  def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]): BQSqlFrag =
+    BQSqlFrag.TableRef(BQAppliedTableValuedFunction(this, args.map(_.frag)))
+}
 
 object TVF {
   case class TVFId(dataset: BQDataset, name: Ident) extends BQPersistentRoutine.Id {
@@ -98,6 +100,9 @@ sealed trait UDF[+A <: UDFId, N <: Nat] extends BQRoutine[N] {
   def name: A
   def params: BQRoutine.Params[N]
   def returnType: Option[BQType]
+
+  def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]): BQSqlFrag =
+    BQSqlFrag.Call(this, args.unsized.toList.map(_.frag))
 }
 
 object UDF {

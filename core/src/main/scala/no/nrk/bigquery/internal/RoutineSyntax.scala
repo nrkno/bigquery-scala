@@ -41,20 +41,21 @@ object RoutineSyntax {
 }
 
 class RoutineOps0(routine: BQRoutine[_0]) {
-  def apply(): BQSqlFrag.Call = BQSqlFrag.Call(routine, List.empty)
+  def apply(): BQSqlFrag =
+    routine.call(RoutineSyntax.builder.empty)
 }
 
 class RoutineOps1(routine: BQRoutine[_1]) {
   def apply(
       m1: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1))
+  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1))
 }
 
 class RoutineOps2(routine: BQRoutine[_2]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2))
+  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2))
 }
 
 class RoutineOps3(routine: BQRoutine[_3]) {
@@ -62,7 +63,7 @@ class RoutineOps3(routine: BQRoutine[_3]) {
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
       m3: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3))
+  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3))
 }
 
 class RoutineOps4(routine: BQRoutine[_4]) {
@@ -71,7 +72,7 @@ class RoutineOps4(routine: BQRoutine[_4]) {
       m2: BQSqlFrag.Magnet,
       m3: BQSqlFrag.Magnet,
       m4: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4))
+  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4))
 }
 
 class RoutineOps5(routine: BQRoutine[_5]) {
@@ -81,7 +82,7 @@ class RoutineOps5(routine: BQRoutine[_5]) {
       m3: BQSqlFrag.Magnet,
       m4: BQSqlFrag.Magnet,
       m5: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5))
+  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5))
 }
 
 class RoutineOps6(routine: BQRoutine[_6]) {
@@ -92,7 +93,7 @@ class RoutineOps6(routine: BQRoutine[_6]) {
       m4: BQSqlFrag.Magnet,
       m5: BQSqlFrag.Magnet,
       m6: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6))
+  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6))
 }
 
 class RoutineOps7(routine: BQRoutine[_7]) {
@@ -104,7 +105,7 @@ class RoutineOps7(routine: BQRoutine[_7]) {
       m5: BQSqlFrag.Magnet,
       m6: BQSqlFrag.Magnet,
       m7: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7))
+  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7))
 }
 
 class RoutineOps8(routine: BQRoutine[_8]) {
@@ -117,7 +118,7 @@ class RoutineOps8(routine: BQRoutine[_8]) {
       m6: BQSqlFrag.Magnet,
       m7: BQSqlFrag.Magnet,
       m8: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8))
+  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8))
 }
 
 class RoutineOps9(routine: BQRoutine[_9]) {
@@ -131,7 +132,7 @@ class RoutineOps9(routine: BQRoutine[_9]) {
       m7: BQSqlFrag.Magnet,
       m8: BQSqlFrag.Magnet,
       m9: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9))
+  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9))
 }
 
 class RoutineOps10(routine: BQRoutine[_10]) {
@@ -146,7 +147,7 @@ class RoutineOps10(routine: BQRoutine[_10]) {
       m8: BQSqlFrag.Magnet,
       m9: BQSqlFrag.Magnet,
       m10: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10))
+  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10))
 }
 
 class RoutineOps11(routine: BQRoutine[_11]) {
@@ -162,7 +163,7 @@ class RoutineOps11(routine: BQRoutine[_11]) {
       m9: BQSqlFrag.Magnet,
       m10: BQSqlFrag.Magnet,
       m11: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11))
+  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11))
 }
 
 class RoutineOps12(routine: BQRoutine[_12]) {
@@ -179,7 +180,7 @@ class RoutineOps12(routine: BQRoutine[_12]) {
       m10: BQSqlFrag.Magnet,
       m11: BQSqlFrag.Magnet,
       m12: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12))
+  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12))
 }
 
 class RoutineOps13(routine: BQRoutine[_13]) {
@@ -197,7 +198,7 @@ class RoutineOps13(routine: BQRoutine[_13]) {
       m11: BQSqlFrag.Magnet,
       m12: BQSqlFrag.Magnet,
       m13: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13))
+  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13))
 }
 
 class RoutineOps14(routine: BQRoutine[_14]) {
@@ -216,7 +217,7 @@ class RoutineOps14(routine: BQRoutine[_14]) {
       m12: BQSqlFrag.Magnet,
       m13: BQSqlFrag.Magnet,
       m14: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call =
+  ): BQSqlFrag =
     routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14))
 }
 
@@ -237,7 +238,7 @@ class RoutineOps15(routine: BQRoutine[_15]) {
       m13: BQSqlFrag.Magnet,
       m14: BQSqlFrag.Magnet,
       m15: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call =
+  ): BQSqlFrag =
     routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15))
 }
 
@@ -259,7 +260,7 @@ class RoutineOps16(routine: BQRoutine[_16]) {
       m14: BQSqlFrag.Magnet,
       m15: BQSqlFrag.Magnet,
       m16: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call =
+  ): BQSqlFrag =
     routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16))
 }
 
@@ -282,7 +283,7 @@ class RoutineOps17(routine: BQRoutine[_17]) {
       m15: BQSqlFrag.Magnet,
       m16: BQSqlFrag.Magnet,
       m17: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call =
+  ): BQSqlFrag =
     routine.call(
       RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17))
 }
@@ -307,7 +308,7 @@ class RoutineOps18(routine: BQRoutine[_18]) {
       m16: BQSqlFrag.Magnet,
       m17: BQSqlFrag.Magnet,
       m18: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call =
+  ): BQSqlFrag =
     routine.call(
       RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18))
 }
@@ -333,7 +334,7 @@ class RoutineOps19(routine: BQRoutine[_19]) {
       m17: BQSqlFrag.Magnet,
       m18: BQSqlFrag.Magnet,
       m19: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(
+  ): BQSqlFrag = routine.call(
     RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19))
 }
 
@@ -359,7 +360,7 @@ class RoutineOps20(routine: BQRoutine[_20]) {
       m18: BQSqlFrag.Magnet,
       m19: BQSqlFrag.Magnet,
       m20: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(
+  ): BQSqlFrag = routine.call(
     RoutineSyntax.builder
       .apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20))
 }
@@ -387,7 +388,7 @@ class RoutineOps21(routine: BQRoutine[_21]) {
       m19: BQSqlFrag.Magnet,
       m20: BQSqlFrag.Magnet,
       m21: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(
+  ): BQSqlFrag = routine.call(
     RoutineSyntax.builder
       .apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20, m21))
 }
@@ -416,7 +417,7 @@ class RoutineOps22(routine: BQRoutine[_22]) {
       m20: BQSqlFrag.Magnet,
       m21: BQSqlFrag.Magnet,
       m22: BQSqlFrag.Magnet
-  ): BQSqlFrag.Call = routine.call(
+  ): BQSqlFrag = routine.call(
     RoutineSyntax.builder
       .apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20, m21, m22))
 }

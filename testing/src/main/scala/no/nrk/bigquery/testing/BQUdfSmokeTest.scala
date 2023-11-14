@@ -37,19 +37,16 @@ abstract class BQUdfSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) exte
       testName: String,
       call: BQSqlFrag.Call,
       expected: Json
-  )(implicit loc: Location): Unit =
-    call.routine match {
-      case tvf: TVF[_, _] => fail(s"does not support TVF: ${tvf.name.asString}, Use BQSmokeTest")
-      case udf: UDF[_, _] =>
-        val longerTestName = show"${udf.name} - $testName"
-
-        test(s"bqCheck UDF: $longerTestName") {
-          BQUdfSmokeTest
-            .bqEvaluateCall(longerTestName, call)
-            .apply(bqClient())
-            .map(actual => assertEquals(actual, expected))
-        }
+  )(implicit loc: Location): Unit = {
+    val longerTestName = show"${call.udf.name} - $testName"
+    test(s"bqCheck UDF: $longerTestName") {
+      BQUdfSmokeTest
+        .bqEvaluateCall(longerTestName, call)
+        .apply(bqClient())
+        .map(actual => assertEquals(actual, expected))
     }
+  }
+
 }
 
 object BQUdfSmokeTest {
@@ -63,16 +60,12 @@ object BQUdfSmokeTest {
       testName: String,
       call: BQSqlFrag.Call
   ): BigQueryClient[IO] => IO[Json] = { bqClient =>
-    call.routine match {
-      case _: TVF[_, _] =>
-        IO.raiseError[Json](new IllegalStateException("Does not support TVF, Use BQSmokeTest"))
-      case _: UDF.Temporary[_] => evalInlineableCall(testName, bqClient, call)
-      case _: UDF.Reference[_] => evalInlineableCall(testName, bqClient, call)
-      case udf: UDF.Persistent[_] => evalInlineableCall(testName, bqClient, call.copy(routine = udf.convertToTemporary))
+    val temporaryUdfCall = call.udf match {
+      case _: UDF.Temporary[_] => call
+      case _: UDF.Reference[_] => call
+      case udf: UDF.Persistent[_] => call.copy(udf = udf.convertToTemporary)
     }
-  }
 
-  private def evalInlineableCall(testName: String, bqClient: BigQueryClient[IO], temporaryUdfCall: BQSqlFrag.Call) = {
     val query = bqfr"SELECT TO_JSON_STRING($temporaryUdfCall)"
     val cachedQuery = CachedQuery(query)
 
@@ -96,7 +89,6 @@ object BQUdfSmokeTest {
             .flatTap(cachedQuery.writeRow)
 
           log *> run
-          IO.raiseError[Json](new IllegalStateException("Foo"))
       }
   }
 

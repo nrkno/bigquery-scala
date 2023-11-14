@@ -427,17 +427,6 @@ object BQSmokeTest {
               ),
               ctesFromUDF ++ ctes.flatten
             )
-          case tvf: TVF[_, _] =>
-            val cteName = Ident(tvf.name.asString.filter(c => c.isLetterOrDigit || c == '_'))
-            val tvfParamUdf =
-              BQSqlFrag.Call(
-                UDF.temporary(Ident(cteName.value ++ "_udf"), tvf.params, bqfr"TRUE", Some(BQType.BOOL)),
-                newArgs
-              )
-            (
-              bqfr"(select * from $cteName where $tvfParamUdf)",
-              List(CTE(cteName, bqfr"(select ${exampleRow(tvf.schema)})"))
-            )
           case _ =>
             (BQSqlFrag.Call(udf, newArgs), ctes.flatten)
         }
@@ -464,6 +453,7 @@ object BQSmokeTest {
         val schemaOpt: Option[BQSchema] =
           pid.wholeTable match {
             case BQTableRef(_, _, _) => None
+            case _: BQAppliedTableValuedFunction[Any] => None
             case x: BQTableDef[Any] => Some(x.schema)
           }
 

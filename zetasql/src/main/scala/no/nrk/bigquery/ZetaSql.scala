@@ -151,8 +151,21 @@ object ZetaSql {
 
   def toCatalog(tables: BQTableLike[Any]*): BasicCatalogWrapper = {
     val catalog = new BasicCatalogWrapper()
-    tables.foreach(table =>
-      catalog.register(toSimpleTable(table), CreateMode.CREATE_IF_NOT_EXISTS, CreateScope.CREATE_DEFAULT_SCOPE))
+    tables.foreach {
+      case tableDef: BQTableDef[_] =>
+        catalog.register(
+          toSimpleTable(tableDef.tableId, Some(tableDef.schema)),
+          CreateMode.CREATE_IF_NOT_EXISTS,
+          CreateScope.CREATE_DEFAULT_SCOPE)
+      case tableRef: BQTableRef[_] =>
+        catalog.register(
+          toSimpleTable(tableRef.tableId, None),
+          CreateMode.CREATE_IF_NOT_EXISTS,
+          CreateScope.CREATE_DEFAULT_SCOPE)
+      case BQAppliedTableValuedFunction(_, _) =>
+      // todo: add support for TVF
+    }
+
     catalog
   }
 
@@ -190,56 +203,51 @@ object ZetaSql {
       BQField(name, kind, BQField.Mode.NULLABLE)
     }
 
-  def toSimpleTable(table: BQTableLike[Any]): SimpleTable = {
-    def toType(field: BQField): Type = {
-      val isArray = field.mode == BQField.Mode.REPEATED
+  private def toType(field: BQField): Type = {
+    val isArray = field.mode == BQField.Mode.REPEATED
 
-      val elemType = field.tpe match {
-        case BQField.Type.BOOL => TypeFactory.createSimpleType(TypeKind.TYPE_BOOL)
-        case BQField.Type.INT64 => TypeFactory.createSimpleType(TypeKind.TYPE_INT64)
-        case BQField.Type.FLOAT64 => TypeFactory.createSimpleType(TypeKind.TYPE_FLOAT)
-        case BQField.Type.NUMERIC => TypeFactory.createSimpleType(TypeKind.TYPE_NUMERIC)
-        case BQField.Type.BIGNUMERIC => TypeFactory.createSimpleType(TypeKind.TYPE_BIGNUMERIC)
-        case BQField.Type.STRING => TypeFactory.createSimpleType(TypeKind.TYPE_STRING)
-        case BQField.Type.BYTES => TypeFactory.createSimpleType(TypeKind.TYPE_BYTES)
-        case BQField.Type.STRUCT =>
-          TypeFactory.createStructType(
-            field.subFields
-              .map(sub => new StructType.StructField(sub.name, toType(sub)))
-              .asJavaCollection
-          )
-        case BQField.Type.ARRAY =>
-          TypeFactory.createArrayType(toType(field.subFields.head))
-        case BQField.Type.TIMESTAMP => TypeFactory.createSimpleType(TypeKind.TYPE_TIMESTAMP)
-        case BQField.Type.DATE => TypeFactory.createSimpleType(TypeKind.TYPE_DATE)
-        case BQField.Type.TIME => TypeFactory.createSimpleType(TypeKind.TYPE_TIME)
-        case BQField.Type.DATETIME => TypeFactory.createSimpleType(TypeKind.TYPE_DATETIME)
-        case BQField.Type.GEOGRAPHY => TypeFactory.createSimpleType(TypeKind.TYPE_GEOGRAPHY)
-        case BQField.Type.JSON => TypeFactory.createSimpleType(TypeKind.TYPE_JSON)
-        case BQField.Type.INTERVAL => TypeFactory.createSimpleType(TypeKind.TYPE_INTERVAL)
-      }
-      if (isArray) TypeFactory.createArrayType(elemType) else elemType
+    val elemType = field.tpe match {
+      case BQField.Type.BOOL => TypeFactory.createSimpleType(TypeKind.TYPE_BOOL)
+      case BQField.Type.INT64 => TypeFactory.createSimpleType(TypeKind.TYPE_INT64)
+      case BQField.Type.FLOAT64 => TypeFactory.createSimpleType(TypeKind.TYPE_FLOAT)
+      case BQField.Type.NUMERIC => TypeFactory.createSimpleType(TypeKind.TYPE_NUMERIC)
+      case BQField.Type.BIGNUMERIC => TypeFactory.createSimpleType(TypeKind.TYPE_BIGNUMERIC)
+      case BQField.Type.STRING => TypeFactory.createSimpleType(TypeKind.TYPE_STRING)
+      case BQField.Type.BYTES => TypeFactory.createSimpleType(TypeKind.TYPE_BYTES)
+      case BQField.Type.STRUCT =>
+        TypeFactory.createStructType(
+          field.subFields
+            .map(sub => new StructType.StructField(sub.name, toType(sub)))
+            .asJavaCollection
+        )
+      case BQField.Type.ARRAY =>
+        TypeFactory.createArrayType(toType(field.subFields.head))
+      case BQField.Type.TIMESTAMP => TypeFactory.createSimpleType(TypeKind.TYPE_TIMESTAMP)
+      case BQField.Type.DATE => TypeFactory.createSimpleType(TypeKind.TYPE_DATE)
+      case BQField.Type.TIME => TypeFactory.createSimpleType(TypeKind.TYPE_TIME)
+      case BQField.Type.DATETIME => TypeFactory.createSimpleType(TypeKind.TYPE_DATETIME)
+      case BQField.Type.GEOGRAPHY => TypeFactory.createSimpleType(TypeKind.TYPE_GEOGRAPHY)
+      case BQField.Type.JSON => TypeFactory.createSimpleType(TypeKind.TYPE_JSON)
+      case BQField.Type.INTERVAL => TypeFactory.createSimpleType(TypeKind.TYPE_INTERVAL)
     }
+    if (isArray) TypeFactory.createArrayType(elemType) else elemType
+  }
+
+  def toSimpleTable(tableId: BQTableId, schema: => Option[BQSchema]): SimpleTable = {
 
     def toSimpleField(field: BQField) =
-      new SimpleColumn(table.tableId.tableName, field.name, toType(field), false, true)
+      new SimpleColumn(tableId.tableName, field.name, toType(field), false, true)
 
-    val simple = table match {
-      case BQTableRef(tableId, _, _) =>
+    val simple = schema match {
+      case None =>
         new SimpleTable(tableId.tableName)
-
-      case tbl: BQTableDef.Table[_] =>
+      case Some(s) =>
         new SimpleTable(
-          tbl.tableId.tableName,
-          new java.util.ArrayList(tbl.schema.fields.map(toSimpleField).asJavaCollection)
-        )
-      case view: BQTableDef.ViewLike[_] =>
-        new SimpleTable(
-          view.tableId.tableName,
-          new java.util.ArrayList(view.schema.fields.map(toSimpleField).asJavaCollection)
+          tableId.tableName,
+          new java.util.ArrayList(s.fields.map(toSimpleField).asJavaCollection)
         )
     }
-    simple.setFullName(table.tableId.asString)
+    simple.setFullName(tableId.asString)
     simple
   }
 }
