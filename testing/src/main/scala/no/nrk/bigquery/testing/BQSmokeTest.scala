@@ -58,12 +58,6 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
 
   override def munitFixtures = List(bqClient)
 
-  @deprecated("use bqTypeCheckTest", "0.4.6")
-  protected def bqCheckTest[A](
-      testName: String
-  )(query: BQQuery[A])(implicit loc: Location): Unit =
-    bqTypeCheckTest[A](testName)(query)
-
   protected def bqTypeCheckTest[A](
       testName: String
   )(query: BQQuery[A])(implicit loc: Location): Unit =
