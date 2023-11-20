@@ -1,7 +1,7 @@
 import com.typesafe.tools.mima.core._
 
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
-ThisBuild / tlBaseVersion := "0.13" // your current series x.y
+ThisBuild / tlBaseVersion := "0.12" // your current series x.y
 
 ThisBuild / organization := "no.nrk.bigquery"
 ThisBuild / organizationName := "NRK"
@@ -56,7 +56,7 @@ val commonSettings = Seq(
     if (scalaVersion.value.startsWith("3")) {
       Seq("-source:3.2-migration")
     } else {
-      Seq("-feature", "-language:implicitConversions")
+      Seq("-feature", "-language:implicitConversions", "-language:experimental.macros")
     }
   },
   sonatypeProfileName := "no.nrk"

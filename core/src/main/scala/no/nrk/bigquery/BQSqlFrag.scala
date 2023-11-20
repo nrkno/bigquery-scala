@@ -62,7 +62,7 @@ sealed trait BQSqlFrag {
           .PartitionRef(fill.tableDef.unpartitioned.assertPartition)
           .asString
 
-      case BQSqlFrag.TableRef(table) => table.tableId.asFragment.asString
+      case BQSqlFrag.TableRef(table) => table.asFragment.asString
 
       case BQSqlFrag.PartitionRef(partitionId) =>
         partitionId match {
@@ -130,6 +130,8 @@ sealed trait BQSqlFrag {
         partitionRef.wholeTable match {
           case tableDef: BQTableDef.View[_] if expandAndExcludeViews =>
             tableDef.query.collect(pf(Some(partitionRef))).flatten
+          case tvf: BQAppliedTableValuedFunction[_] if expandAndExcludeViews =>
+            tvf.query.collect(pf(Some(partitionRef))).flatten
           case _ => List(partitionRef)
         }
 

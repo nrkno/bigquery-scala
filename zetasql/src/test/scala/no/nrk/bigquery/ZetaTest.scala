@@ -36,6 +36,13 @@ class ZetaTest extends munit.CatsEffectSuite {
     ),
     BQPartitionType.DatePartitioned(Ident("partitionDate"))
   )
+  private val tvf = TVF(
+    TVF.TVFId(BQDataset.unsafeOf(ProjectId("com-example"), "example"), ident"tvftest"),
+    BQPartitionType.NotPartitioned,
+    BQRoutine.Params(BQRoutine.Param("d", BQType.DATE)),
+    bqfr"select a from ${table.unpartitioned} where partitionDate = d",
+    BQSchema.of(BQField("a", BQField.Type.STRING, BQField.Mode.REQUIRED))
+  )
 
   test("parses select 1") {
     zetaSql.analyzeFirst(bqsql"select 1").map(_.isRight).assertEquals(true)
@@ -99,7 +106,7 @@ class ZetaTest extends munit.CatsEffectSuite {
         .map(_.recursivelyNullable.withoutDescription)
 
     zetaSql
-      .parseAndBuildAnalysableFragment(query, List(table))
+      .parseAndBuildAnalysableFragment(query, List(table), Nil)
       .flatMap(zetaSql.queryFields)
       .assertEquals(expected)
   }
@@ -123,10 +130,37 @@ class ZetaTest extends munit.CatsEffectSuite {
         .map(_.recursivelyNullable.withoutDescription)
 
     val analysis = zetaSql
-      .parseAndBuildAnalysableFragment(query, List(table, table2))
+      .parseAndBuildAnalysableFragment(query, List(table, table2), Nil)
     analysis
       .flatMap(fragment => zetaSql.queryFields(fragment).tupleRight(fragment.allReferencedTables.map(_.tableId)))
       .assertEquals(expected -> List(table, table2).map(_.tableId))
+  }
+
+  test("parse then build analysis with tvf") {
+    val query = """select a from `com-example.example.tvftest`(current_date)"""
+
+    val expected = tvf.schema.fields.map(_.recursivelyNullable.withoutDescription)
+
+    zetaSql
+      .parseAndBuildAnalysableFragment(query, List(table), List(tvf))
+      .flatMap(fragment => zetaSql.queryFields(fragment).tupleRight(fragment.allReferencedTables.map(_.tableId)))
+      .assertEquals(expected -> List(BQTableId(tvf.name.dataset, tvf.name.name.value)))
+  }
+
+  test("parse then build analysis with tvf 2") {
+    val query = """select a from `com-example.example.tvftest`(current_date())"""
+
+    val expected = tvf.schema.fields.map(_.recursivelyNullable.withoutDescription)
+
+    zetaSql
+      .parseAndBuildAnalysableFragment(query, List(table), List(tvf))
+      .flatMap(fragment =>
+        zetaSql
+          .queryFields(fragment)
+          .tupleRight(fragment.collect { case BQSqlFrag.TableRef(atvf: BQAppliedTableValuedFunction[Any]) =>
+            atvf.name -> atvf.args
+          }))
+      .assertEquals(expected -> List((tvf.name, List(bqfr"current_date()"))))
   }
 
   override def munitTestTransforms: List[TestTransform] =

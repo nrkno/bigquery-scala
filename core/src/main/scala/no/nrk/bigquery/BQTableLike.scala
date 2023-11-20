@@ -6,8 +6,10 @@
 
 package no.nrk.bigquery
 
+import no.nrk.bigquery.syntax._
 import cats.effect.Concurrent
 import cats.syntax.all._
+import no.nrk.bigquery.util.{Nat, Sized}
 
 /** @tparam P
   *   partition specifier. typically [[java.time.LocalDate]] or [[scala.Unit]]
@@ -18,6 +20,7 @@ sealed trait BQTableLike[+P] {
   def withTableType[PP](tpe: BQPartitionType[PP]): BQTableLike[PP]
   def unpartitioned: BQTableLike[Unit]
   def wholeTable: WholeTable[P] = WholeTable(this)
+  def asFragment: BQSqlFrag
 }
 
 object BQTableLike {
@@ -90,6 +93,46 @@ case class BQTableRef[+P](
 
   override def withTableType[PP](tpe: BQPartitionType[PP]): BQTableRef[PP] =
     BQTableRef(tableId, tpe)
+
+  def asFragment: BQSqlFrag = tableId.asFragment
+}
+
+case class BQAppliedTableValuedFunction[+P](
+    name: TVF.TVFId,
+    // this doesn't exist physically, only in a sense when querying
+    partitionType: BQPartitionType[P],
+    params: List[BQRoutine.Param],
+    query: BQSqlFrag,
+    schema: BQSchema,
+    description: Option[String] = None,
+    args: List[BQSqlFrag]
+) extends BQTableLike[P] {
+  override def tableId: BQTableId =
+    BQTableId(name.dataset, name.name.value)
+
+  override def unpartitioned: BQTableLike[Unit] =
+    withTableType(BQPartitionType.ignoredPartitioning(partitionType))
+
+  override def withTableType[PP](tpe: BQPartitionType[PP]): BQTableLike[PP] =
+    BQAppliedTableValuedFunction(name, tpe, params, query, schema, description, args)
+
+  def asFragment: BQSqlFrag = tableId.asFragment ++ args.mkFragment("(", ", ", ")")
+}
+
+object BQAppliedTableValuedFunction {
+  def apply[P, N <: Nat](
+      tvf: TVF[P, N],
+      args: Sized[IndexedSeq[BQSqlFrag], N]
+  ): BQAppliedTableValuedFunction[P] =
+    BQAppliedTableValuedFunction(
+      tvf.name,
+      tvf.partitionType,
+      tvf.params.unsized.toList,
+      tvf.query,
+      tvf.schema,
+      tvf.description,
+      args.unsized.toList
+    )
 }
 
 /** Our version of a description of what a BQ table/view should look like.
@@ -99,6 +142,7 @@ sealed trait BQTableDef[+P] extends BQTableLike[P] {
   def description: Option[String]
   def schema: BQSchema
   def labels: TableLabels
+  def asFragment: BQSqlFrag = tableId.asFragment
 
   labels.verify(tableId)
 }
