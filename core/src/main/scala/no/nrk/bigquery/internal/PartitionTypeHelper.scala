@@ -85,6 +85,8 @@ object PartitionTypeHelper {
         Right(BQPartitionType.DatePartitioned(Ident(time.getField)))
       case (Some(time), None) if time.getType == TimePartitioning.Type.MONTH && time.getField != null =>
         Right(BQPartitionType.MonthPartitioned(Ident(time.getField)))
+      case (None, Some(range)) =>
+        Right(BQPartitionType.RangePartitioned(Ident(range.getField), BQRange.fromRangePartitioning(range.getRange)))
       case (time, range) =>
         Left(
           s"Need to implement support in `BQPartitionType` for ${time.orElse(range)}"

@@ -21,7 +21,7 @@ trait TableOps[P] {
   def loadPartitions[F[_]: Concurrent](
       table: BQTableLike[P],
       client: BigQueryClient[F],
-      startDate: StartPartition[P],
+      startPartition: StartPartition[P],
       requireRowNums: Boolean
   ): F[Vector[(BQPartitionId[P], PartitionMetadata)]]
 }
@@ -44,7 +44,7 @@ object TableOps {
     override def loadPartitions[F[_]: Concurrent](
         table: BQTableLike[LocalDate],
         client: BigQueryClient[F],
-        startDate: StartPartition[LocalDate],
+        startPartition: StartPartition[LocalDate],
         requireRowNums: Boolean
     ): F[Vector[(BQPartitionId[LocalDate], PartitionMetadata)]] =
       table.partitionType match {
@@ -54,12 +54,12 @@ object TableOps {
               table,
               x.field,
               client,
-              startDate,
+              startPartition,
               requireRowNums
             )
             .widen
         case _: BQPartitionType.Sharded =>
-          PartitionLoader.shard(table, client, startDate).widen
+          PartitionLoader.shard(table, client, startPartition).widen
       }
   }
 
@@ -73,7 +73,7 @@ object TableOps {
     override def loadPartitions[F[_]: Concurrent](
         table: BQTableLike[YearMonth],
         client: BigQueryClient[F],
-        startDate: StartPartition[YearMonth],
+        startPartition: StartPartition[YearMonth],
         requireRowNums: Boolean
     ): F[Vector[(BQPartitionId[YearMonth], PartitionMetadata)]] =
       table.partitionType match {
@@ -83,7 +83,37 @@ object TableOps {
               table,
               x.field,
               client,
-              startDate,
+              startPartition,
+              requireRowNums
+            )
+            .widen
+      }
+  }
+
+  implicit val range: TableOps[Long] = new TableOps[Long] {
+    override def assertPartition(
+        table: BQTableLike[Long],
+        partition: Long
+    ): BQPartitionId[Long] =
+      table.partitionType match {
+        case _: BQPartitionType.RangePartitioned =>
+          BQPartitionId.RangePartitioned(table, partition)
+      }
+
+    override def loadPartitions[F[_]: Concurrent](
+        table: BQTableLike[Long],
+        client: BigQueryClient[F],
+        startPartition: StartPartition[Long],
+        requireRowNums: Boolean
+    ): F[Vector[(BQPartitionId[Long], PartitionMetadata)]] =
+      table.partitionType match {
+        case x: BQPartitionType.RangePartitioned =>
+          PartitionLoader
+            .range(
+              table,
+              x.field,
+              client,
+              startPartition,
               requireRowNums
             )
             .widen
@@ -100,7 +130,7 @@ object TableOps {
     override def loadPartitions[F[_]: Concurrent](
         table: BQTableLike[Unit],
         client: BigQueryClient[F],
-        startDate: StartPartition[Unit],
+        startPartition: StartPartition[Unit],
         requireRowNums: Boolean
     ): F[Vector[(BQPartitionId[Unit], PartitionMetadata)]] =
       table.partitionType match {

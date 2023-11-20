@@ -24,13 +24,13 @@ object BQTableLike {
   implicit class ExtensionMethods(private val table: BQTableLike[Any]) extends AnyVal {
     def loadGenericPartitions[F[_]: Concurrent](
         client: BigQueryClient[F],
-        startDate: StartPartition[Any],
+        startPartition: StartPartition[Any],
         requireRowNums: Boolean = false
     ): F[Vector[(BQPartitionId[Any], PartitionMetadata)]] =
       PartitionLoader.loadGenericPartitions(
         table,
         client,
-        startDate,
+        startPartition,
         requireRowNums
       )
   }
