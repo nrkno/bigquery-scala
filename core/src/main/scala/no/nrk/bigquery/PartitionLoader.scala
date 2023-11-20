@@ -79,7 +79,7 @@ private[bigquery] object PartitionLoader {
         if (requireRowNums)
           client
             .synchronousQuery(
-              BQJobName.auto,
+              BQJobId.auto,
               rowCountQuery(table, field, startDate)
             )
             .compile
@@ -92,7 +92,7 @@ private[bigquery] object PartitionLoader {
           case view: BQTableDef.View[LocalDate] =>
             client
               .synchronousQuery(
-                BQJobName.auto,
+                BQJobId.auto,
                 allPartitionsQueries
                   .fromTableData[LocalDate](view.unpartitioned, field)
               )
@@ -100,7 +100,7 @@ private[bigquery] object PartitionLoader {
           case _ =>
             client
               .synchronousQuery(
-                BQJobName.auto,
+                BQJobId.auto,
                 allPartitionsQuery(table, startDate),
                 legacySql = true
               )
@@ -171,7 +171,7 @@ private[bigquery] object PartitionLoader {
         if (requireRowNums)
           client
             .synchronousQuery(
-              BQJobName.auto,
+              BQJobId.auto,
               rowCountQuery(table, field, start)
             )
             .compile
@@ -185,12 +185,12 @@ private[bigquery] object PartitionLoader {
             val query = allPartitionsQueries
               .fromTableData[YearMonth](view.unpartitioned, field)
             client
-              .synchronousQuery(BQJobName.auto, query)
+              .synchronousQuery(BQJobId.auto, query)
               .map(partitionDate => (partitionDate, None, None))
           case _ =>
             client
               .synchronousQuery(
-                BQJobName.auto,
+                BQJobId.auto,
                 allPartitionsQuery(table, start),
                 legacySql = true
               )
@@ -261,7 +261,7 @@ private[bigquery] object PartitionLoader {
     ): F[Vector[(BQPartitionId.Sharded, PartitionMetadata)]] =
       client
         .synchronousQuery(
-          BQJobName.auto,
+          BQJobId.auto,
           allPartitionsQuery(startDate, table),
           legacySql = true
         )
@@ -315,7 +315,7 @@ private[bigquery] object PartitionLoader {
     ): F[Option[(BQPartitionId.NotPartitioned, PartitionMetadata)]] =
       client
         .synchronousQuery(
-          BQJobName.auto,
+          BQJobId.auto,
           partitionQuery(table.tableId),
           legacySql = true
         )

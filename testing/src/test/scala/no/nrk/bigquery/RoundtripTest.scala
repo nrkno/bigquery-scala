@@ -26,7 +26,7 @@ class RoundtripTest extends CatsEffectSuite {
       .cachingClient(BigQueryTestClient.testClient)
       .use(
         _.synchronousQuery(
-          BQJobName.auto,
+          BQJobId.auto,
           roundtripQuery(expectedValues.toList)
         ).compile.toVector
       )
