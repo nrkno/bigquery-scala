@@ -29,6 +29,8 @@ object BQPartitionType {
 
   final case class MonthPartitioned(field: Ident) extends BQPartitionType[YearMonth]
 
+  final case class RangePartitioned(field: Ident, range: BQRange) extends BQPartitionType[Long]
+
   sealed trait Sharded extends BQPartitionType[LocalDate]
 
   // note: the reason why there are both a sealed trait and an object with the same name is to say `Sharded` sharded instead of `Sharded.type`.

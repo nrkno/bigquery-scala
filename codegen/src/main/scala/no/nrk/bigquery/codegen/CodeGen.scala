@@ -70,6 +70,9 @@ object Generators {
         s"BQPartitionType.MonthPartitioned(Ident(${lit(field)}))"
       case BQPartitionType.Sharded =>
         "BQPartitionType.Sharded"
+      case BQPartitionType.RangePartitioned(Ident(field), range) =>
+        s"BQPartitionType.RangePartitioned(Ident(${lit(
+            field)}), BQRange(start = ${range.start}, end = ${range.end}, interval = ${range.interval}))"
       case _: BQPartitionType.NotPartitioned =>
         "BQPartitionType.NotPartitioned"
     }

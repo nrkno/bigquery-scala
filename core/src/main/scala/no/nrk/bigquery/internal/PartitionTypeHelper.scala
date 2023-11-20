@@ -15,8 +15,6 @@ import com.google.cloud.bigquery.{
 }
 
 object PartitionTypeHelper {
-  private def assertIsUsed(a: Any*): Unit = (a, ())._2
-
   def timePartitioned(bqtype: BQPartitionType[Any], tableOptions: TableOptions): Option[TimePartitioning] =
     bqtype match {
       case BQPartitionType.DatePartitioned(field) =>
@@ -38,12 +36,27 @@ object PartitionTypeHelper {
         )
       case _: BQPartitionType.Sharded => None
       case _: BQPartitionType.NotPartitioned => None
+      case _: BQPartitionType.RangePartitioned => None
     }
 
-  def rangepartitioned(bqtype: BQPartitionType[Any]): Option[RangePartitioning] = {
-    assertIsUsed(bqtype)
-    None
-  }
+  def rangepartitioned(bqtype: BQPartitionType[Any]): Option[RangePartitioning] =
+    bqtype match {
+      case BQPartitionType.RangePartitioned(field, range) =>
+        Some(
+          RangePartitioning
+            .newBuilder()
+            .setRange(
+              RangePartitioning.Range
+                .newBuilder()
+                .setStart(range.start)
+                .setEnd(range.end)
+                .setInterval(range.interval)
+                .build())
+            .setField(field.value)
+            .build()
+        )
+      case _ => None
+    }
 
   def from(
       actual: StandardTableDefinition

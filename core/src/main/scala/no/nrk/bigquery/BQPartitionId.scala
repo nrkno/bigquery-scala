@@ -90,6 +90,24 @@ object BQPartitionId {
       partition.format(yearMonthNoDash)
   }
 
+  final case class RangePartitioned(
+      wholeTable: BQTableLike[Long],
+      partition: Long
+  ) extends BQPartitionId[Long] {
+    def field: Ident = wholeTable.partitionType match {
+      case BQPartitionType.RangePartitioned(field, _) => field
+      case other => sys.error(s"Unexpected $other")
+    }
+
+    def asSubQuery: BQSqlFrag =
+      bqfr"""(select * from ${wholeTable.tableId.asFragment} where $field = $partition)"""
+
+    def asTableId: BQTableId =
+      wholeTable.tableId.modifyTableName(_ + "$" + partitionString)
+
+    override def partitionString: String = partition.toString
+  }
+
   final case class Sharded(
       wholeTable: BQTableLike[LocalDate],
       partition: LocalDate

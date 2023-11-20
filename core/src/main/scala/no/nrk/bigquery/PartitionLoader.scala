@@ -50,6 +50,17 @@ private[bigquery] object PartitionLoader {
             startDate.asDate
           )
           .widen
+
+      case x: BQPartitionType.RangePartitioned =>
+        PartitionLoader
+          .range(
+            table.withTableType[Long](x),
+            x.field,
+            client,
+            startPartition = 0, //TODO startDate: StartDate[Any]
+            requireRowNums
+          )
+          .widen
       case notPartitioned: BQPartitionType.NotPartitioned =>
         PartitionLoader
           .unpartitioned(table.withTableType[Unit](notPartitioned), client)
@@ -303,6 +314,98 @@ private[bigquery] object PartitionLoader {
                |AND $inRange
                |ORDER BY 1 DESC""".stripMargin
       }(BQRead.derived)
+    }
+  }
+
+  object range {
+    def apply[F[_]](
+                     table: BQTableLike[Long],
+                     field: Ident,
+                     client: BigQueryClient[F],
+                     startPartition: Long,
+                     requireRowNums: Boolean
+                   )(implicit
+                     F: Concurrent[F]
+                   ): F[Vector[(BQPartitionId.RangePartitioned, PartitionMetadata)]] = {
+      val rowNumByInt: F[Map[Long, Long]] =
+        if (requireRowNums)
+          client
+            .synchronousQuery(
+              BQJobName.auto,
+              rowCountQuery(table, field, startPartition)
+            )
+            .compile
+            .to(Map)
+        else F.pure(Map.empty)
+
+      // views do not have metadata we can ask with partitions, so fire an actual query to get the data
+      val rowsIO: Stream[F, (Long, Option[Instant], Option[Instant])] =
+        table match {
+          case view: BQTableDef.View[Long] =>
+            client
+              .synchronousQuery(
+                BQJobName.auto,
+                allPartitionsQueries
+                  .fromTableData[Long](view.unpartitioned, field)
+              )
+              .map(partition => (partition, None, None))
+          case _ =>
+            client
+              .synchronousQuery(
+                BQJobName.auto,
+                allPartitionsQuery(table, startPartition),
+                legacySql = true
+              )
+              .map { case (partitionName, creationTime, lastModifiedTime) =>
+                (
+                  partitionName.toLong,
+                  Some(creationTime.value),
+                  Some(lastModifiedTime.value)
+                )
+              }
+        }
+
+      for {
+        rows <- rowsIO.compile.toVector
+        rowsNumByInt <- rowNumByInt
+      } yield rows.map { case (partition, l1, l2) =>
+        BQPartitionId.RangePartitioned(table, partition) -> PartitionMetadata(
+          l1,
+          l2,
+          rowCount = rowsNumByInt.get(partition),
+          None
+        )
+      }
+    }
+
+    def rowCountQuery(
+                       table: BQTableLike[Long],
+                       field: Ident,
+                       startPartition: Long
+                     ): BQQuery[(Long, Long)] = {
+      val inRange = startPartition match {
+        case 0 => bqfr"true"
+        case _ =>
+          bqfr"$field >= $startPartition"
+      }
+      allPartitionsQueries.withRowCountFromTableData(
+        table.unpartitioned,
+        inRange,
+        field
+      )
+    }
+
+    def allPartitionsQuery(
+                            table: BQTableLike[Long],
+                            startPartition: Long
+                          ): BQQuery[(String, LongInstant, LongInstant)] = {
+      val inRange = startPartition match {
+        case 0 => bqfr"true"
+        case _ =>
+          bqfr"x.partition_id >= ${StringValue(startPartition.toString)}"
+      }
+
+      allPartitionsQueries.fromMetadata(table, inRange)
     }
   }
 

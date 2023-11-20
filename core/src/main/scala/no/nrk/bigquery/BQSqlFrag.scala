@@ -68,6 +68,7 @@ sealed trait BQSqlFrag {
         partitionId match {
           case x @ BQPartitionId.MonthPartitioned(_, _) => x.asSubQuery.asString
           case x @ BQPartitionId.DatePartitioned(_, _) => x.asSubQuery.asString
+          case x @ BQPartitionId.RangePartitioned(_, _) => x.asSubQuery.asString
           case x @ BQPartitionId.Sharded(_, _) =>
             x.asTableId.asFragment.asString
           case x @ BQPartitionId.NotPartitioned(_) =>
@@ -284,11 +285,24 @@ object BQSqlFrag {
             case Nil => None
           }
 
+        val fromRangePartitioned: Option[BQSqlFrag] =
+          partitions.collect { case x: BQPartitionId.RangePartitioned =>
+            x
+          }.sorted match {
+            case partitions@(first :: _) =>
+              val in = partitions.map(_.partition).mkFragment("[", ", ", "]")
+              Some(
+                bqfr"(select * from ${first.wholeTable.tableId.asFragment} WHERE ${first.field} IN UNNEST($in))"
+              )
+            case Nil => None
+          }
+
         List(
           fromSharded.toList,
           fromNotPartitioned.toList,
           fromDatePartitioned.toList,
-          fromMonthPartitioned.toList
+          fromMonthPartitioned.toList,
+          fromRangePartitioned.toList
         ).flatten
       }
 
