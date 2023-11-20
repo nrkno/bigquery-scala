@@ -100,7 +100,12 @@ object BQPartitionId {
     }
 
     def asSubQuery: BQSqlFrag =
-      bqfr"""(select * from ${wholeTable.tableId.asFragment} where $field = $partition)"""
+      wholeTable.partitionType match {
+        case BQPartitionType.RangePartitioned(field, range) =>
+          val (rangeStart, rangeEnd) = range.calculatePartition(partition)
+          bqfr"""(select * from ${wholeTable.tableId.asFragment} where $field BETWEEN $rangeStart AND $rangeEnd)"""
+
+      }
 
     def asTableId: BQTableId =
       wholeTable.tableId.modifyTableName(_ + "$" + partitionString)
