@@ -8,6 +8,7 @@ package no.nrk.bigquery
 
 import java.time.{LocalDate, YearMonth}
 
+@deprecated("use StartPartition", "0.12.x")
 sealed trait StartDate[+T] {
   def asMonth: StartDate[YearMonth] =
     this match {

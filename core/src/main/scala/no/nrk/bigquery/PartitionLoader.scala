@@ -18,7 +18,7 @@ private[bigquery] object PartitionLoader {
   def loadGenericPartitions[F[_]: Concurrent](
       table: BQTableLike[Any],
       client: BigQueryClient[F],
-      startDate: StartDate[Any],
+      startPartition: StartPartition[Any],
       requireRowNums: Boolean = false
   ): F[Vector[(BQPartitionId[Any], PartitionMetadata)]] =
     table.partitionType match {
@@ -28,7 +28,7 @@ private[bigquery] object PartitionLoader {
             table.withTableType[LocalDate](x),
             x.field,
             client,
-            startDate.asDate,
+            startPartition.asDate,
             requireRowNums
           )
           .widen
@@ -38,7 +38,7 @@ private[bigquery] object PartitionLoader {
             table.withTableType[YearMonth](x),
             x.field,
             client,
-            startDate.asMonth,
+            startPartition.asMonth,
             requireRowNums
           )
           .widen
@@ -47,7 +47,7 @@ private[bigquery] object PartitionLoader {
           .shard(
             table.withTableType[LocalDate](sharded),
             client,
-            startDate.asDate
+            startPartition.asDate
           )
           .widen
 
@@ -57,7 +57,7 @@ private[bigquery] object PartitionLoader {
             table.withTableType[Long](x),
             x.field,
             client,
-            startPartition = 0, //TODO startDate: StartDate[Any]
+            startPartition.asRange,
             requireRowNums
           )
           .widen
@@ -81,7 +81,7 @@ private[bigquery] object PartitionLoader {
         table: BQTableLike[LocalDate],
         field: Ident,
         client: BigQueryClient[F],
-        startDate: StartDate[LocalDate],
+        startPartition: StartPartition[LocalDate],
         requireRowNums: Boolean
     )(implicit
         F: Concurrent[F]
@@ -91,7 +91,7 @@ private[bigquery] object PartitionLoader {
           client
             .synchronousQuery(
               BQJobName.auto,
-              rowCountQuery(table, field, startDate)
+              rowCountQuery(table, field, startPartition)
             )
             .compile
             .to(Map)
@@ -112,7 +112,7 @@ private[bigquery] object PartitionLoader {
             client
               .synchronousQuery(
                 BQJobName.auto,
-                allPartitionsQuery(table, startDate),
+                allPartitionsQuery(table, startPartition),
                 legacySql = true
               )
               .map { case (partitionName, creationTime, lastModifiedTime) =>
@@ -140,11 +140,11 @@ private[bigquery] object PartitionLoader {
     def rowCountQuery(
         table: BQTableLike[LocalDate],
         field: Ident,
-        startDate: StartDate[LocalDate]
+        startPartition: StartPartition[LocalDate]
     ): BQQuery[(LocalDate, Long)] = {
-      val inRange = startDate match {
-        case StartDate.All => bqfr"true"
-        case StartDate.FromDate(startInclusive) =>
+      val inRange = startPartition match {
+        case StartPartition.All => bqfr"true"
+        case StartPartition.FromDate(startInclusive) =>
           bqfr"$field >= $startInclusive"
       }
       allPartitionsQueries.withRowCountFromTableData(
@@ -156,11 +156,11 @@ private[bigquery] object PartitionLoader {
 
     def allPartitionsQuery(
         table: BQTableLike[LocalDate],
-        startDate: StartDate[LocalDate]
+        startPartition: StartPartition[LocalDate]
     ): BQQuery[(String, LongInstant, LongInstant)] = {
-      val inRange = startDate match {
-        case StartDate.All => bqfr"true"
-        case StartDate.FromDate(startInclusive) =>
+      val inRange = startPartition match {
+        case StartPartition.All => bqfr"true"
+        case StartPartition.FromDate(startInclusive) =>
           bqfr"x.partition_id >= ${StringValue(startInclusive.format(BQPartitionId.localDateNoDash))}"
       }
 
@@ -173,7 +173,7 @@ private[bigquery] object PartitionLoader {
         table: BQTableLike[YearMonth],
         field: Ident,
         client: BigQueryClient[F],
-        start: StartDate[YearMonth],
+        start: StartPartition[YearMonth],
         requireRowNums: Boolean
     )(implicit
         F: Concurrent[F]
@@ -233,11 +233,11 @@ private[bigquery] object PartitionLoader {
 
     def allPartitionsQuery(
         table: BQTableLike[YearMonth],
-        start: StartDate[YearMonth]
+        start: StartPartition[YearMonth]
     ): BQQuery[(String, LongInstant, LongInstant)] = {
       val inRange = start match {
-        case StartDate.All => bqfr"true"
-        case StartDate.FromMonth(startInclusive) =>
+        case StartPartition.All => bqfr"true"
+        case StartPartition.FromMonth(startInclusive) =>
           bqfr"x.partition_id >= ${StringValue(startInclusive.format(BQPartitionId.yearMonthNoDash))}"
       }
       allPartitionsQueries.fromMetadata(table, inRange)
@@ -246,11 +246,11 @@ private[bigquery] object PartitionLoader {
     def rowCountQuery(
         table: BQTableLike[YearMonth],
         field: Ident,
-        start: StartDate[YearMonth]
+        start: StartPartition[YearMonth]
     ): BQQuery[(YearMonth, Long)] = {
       val inRange = start match {
-        case StartDate.All => bqfr"true"
-        case StartDate.FromMonth(startInclusive) =>
+        case StartPartition.All => bqfr"true"
+        case StartPartition.FromMonth(startInclusive) =>
           bqfr"$field >= $startInclusive"
       }
 
@@ -266,14 +266,14 @@ private[bigquery] object PartitionLoader {
     def apply[F[_]](
         table: BQTableLike[LocalDate],
         client: BigQueryClient[F],
-        startDate: StartDate[LocalDate]
+        startPartition: StartPartition[LocalDate]
     )(implicit
         F: Concurrent[F]
     ): F[Vector[(BQPartitionId.Sharded, PartitionMetadata)]] =
       client
         .synchronousQuery(
           BQJobName.auto,
-          allPartitionsQuery(startDate, table),
+          allPartitionsQuery(startPartition, table),
           legacySql = true
         )
         .map { case (partitionName, l1, l2, l3, l4) =>
@@ -292,12 +292,12 @@ private[bigquery] object PartitionLoader {
         .toVector
 
     def allPartitionsQuery(
-        startDate: StartDate[LocalDate],
+        startPartition: StartPartition[LocalDate],
         table: BQTableLike[LocalDate]
     ): BQQuery[(String, LongInstant, LongInstant, Long, Long)] = {
-      val inRange = startDate match {
-        case StartDate.All => bqfr"true"
-        case StartDate.FromDate(startInclusive) =>
+      val inRange = startPartition match {
+        case StartPartition.All => bqfr"true"
+        case StartPartition.FromDate(startInclusive) =>
           bqfr"table_id >= ${StringValue(BQPartitionId.Sharded(table, startInclusive).asTableId.tableName)}"
       }
 
@@ -319,14 +319,14 @@ private[bigquery] object PartitionLoader {
 
   object range {
     def apply[F[_]](
-                     table: BQTableLike[Long],
-                     field: Ident,
-                     client: BigQueryClient[F],
-                     startPartition: Long,
-                     requireRowNums: Boolean
-                   )(implicit
-                     F: Concurrent[F]
-                   ): F[Vector[(BQPartitionId.RangePartitioned, PartitionMetadata)]] = {
+        table: BQTableLike[Long],
+        field: Ident,
+        client: BigQueryClient[F],
+        startPartition: StartPartition[Long],
+        requireRowNums: Boolean
+    )(implicit
+        F: Concurrent[F]
+    ): F[Vector[(BQPartitionId.RangePartitioned, PartitionMetadata)]] = {
       val rowNumByInt: F[Map[Long, Long]] =
         if (requireRowNums)
           client
@@ -379,14 +379,13 @@ private[bigquery] object PartitionLoader {
     }
 
     def rowCountQuery(
-                       table: BQTableLike[Long],
-                       field: Ident,
-                       startPartition: Long
-                     ): BQQuery[(Long, Long)] = {
+        table: BQTableLike[Long],
+        field: Ident,
+        startPartition: StartPartition[Long]
+    ): BQQuery[(Long, Long)] = {
       val inRange = startPartition match {
-        case 0 => bqfr"true"
-        case _ =>
-          bqfr"$field >= $startPartition"
+        case StartPartition.All => bqfr"true"
+        case StartPartition.FromRangeValue(startInclusive) => bqfr"$field >= $startInclusive"
       }
       allPartitionsQueries.withRowCountFromTableData(
         table.unpartitioned,
@@ -396,13 +395,13 @@ private[bigquery] object PartitionLoader {
     }
 
     def allPartitionsQuery(
-                            table: BQTableLike[Long],
-                            startPartition: Long
-                          ): BQQuery[(String, LongInstant, LongInstant)] = {
+        table: BQTableLike[Long],
+        startPartition: StartPartition[Long]
+    ): BQQuery[(String, LongInstant, LongInstant)] = {
       val inRange = startPartition match {
-        case 0 => bqfr"true"
-        case _ =>
-          bqfr"x.partition_id >= ${StringValue(startPartition.toString)}"
+        case StartPartition.All => bqfr"true"
+        case StartPartition.FromRangeValue(startInclusive) =>
+          bqfr"x.partition_id >= ${StringValue(startInclusive.toString)}"
       }
 
       allPartitionsQueries.fromMetadata(table, inRange)
