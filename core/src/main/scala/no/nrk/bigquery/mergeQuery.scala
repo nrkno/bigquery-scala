@@ -6,7 +6,8 @@
 
 package no.nrk.bigquery
 
-import no.nrk.bigquery.syntax._
+import cats.data.NonEmptyList
+import no.nrk.bigquery.syntax.*
 
 import scala.annotation.tailrec
 
@@ -16,10 +17,19 @@ object mergeQuery {
       target: Pid,
       primaryKey: Ident,
       morePrimaryKeys: Ident*
+  ): BQSqlFrag =
+    intoTargets(source, NonEmptyList.one(target), primaryKey, morePrimaryKeys)
+
+  def intoTargets[Pid <: BQPartitionId[Any]](
+      source: Pid,
+      targets: NonEmptyList[Pid],
+      primaryKey: Ident,
+      morePrimaryKeys: Seq[Ident]
   ): BQSqlFrag = {
+    val targetTable = targets.head.wholeTable
     val primaryKeys: Seq[Ident] = {
       val partitionField: Option[Ident] =
-        target.wholeTable.partitionType match {
+        targetTable.partitionType match {
           case BQPartitionType.DatePartitioned(field) => Some(field)
           case _ => None
         }
@@ -32,7 +42,7 @@ object mergeQuery {
     }
 
     val allFields: List[BQField] =
-      (source.wholeTable, target.wholeTable) match {
+      (source.wholeTable, targetTable) match {
         // compare schema without comments, since those may be dynamic and it doesnt matter anyway
         case (from: BQTableDef[Any], into: BQTableDef[Any])
             if BQType
@@ -49,11 +59,12 @@ object mergeQuery {
 
     // note: we need to specify whole table for target table. partition info will be inferred from source
     bqsql"""
-           |MERGE ${target.wholeTable.unpartitioned} AS T
+           |MERGE ${targetTable.unpartitioned} AS T
            |USING $source AS S
            |ON ${primaryKeys.toList
         .map(keyEqualsFragment(allFields))
         .mkFragment("\n AND ")}
+           |AND ${targets.map(p => p.partitionQuery(Option("T."))).mkFragment("(", "OR", ")")}
            |WHEN MATCHED THEN UPDATE SET
            |${allFieldNames
         .filterNot(isPrimaryKey)

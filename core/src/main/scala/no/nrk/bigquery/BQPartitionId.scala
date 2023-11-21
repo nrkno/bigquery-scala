@@ -6,8 +6,8 @@
 
 package no.nrk.bigquery
 
-import no.nrk.bigquery.syntax._
 import cats.Show
+import no.nrk.bigquery.syntax.*
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, YearMonth}
@@ -29,6 +29,7 @@ sealed trait BQPartitionId[+P] {
   val wholeTable: BQTableLike[P]
   def asTableId: BQTableId
   def asSubQuery: BQSqlFrag
+  def partitionQuery(prefix: Option[String] = None): BQSqlFrag
 
   /** This is a compromise. Originally `BQPartitionId` was parametrized by LocalDate, Unit and so on. In order to
     * simplify a bit we settled on this form as that value rendered to `String`. It can be used to compare dates for
@@ -64,6 +65,11 @@ object BQPartitionId {
     def asSubQuery: BQSqlFrag =
       bqfr"""(select * from ${wholeTable.tableId.asFragment} where $field = $partition)"""
 
+    def partitionQuery(prefix: Option[String]): BQSqlFrag = {
+      val partitionField = prefix.fold(field)(field.prefixed(_))
+      bqfr"""$partitionField = $partition"""
+    }
+
     def asTableId: BQTableId =
       wholeTable.tableId.modifyTableName(_ + "$" + partitionString)
 
@@ -83,6 +89,11 @@ object BQPartitionId {
     def asSubQuery: BQSqlFrag =
       bqfr"""(select * from ${wholeTable.tableId.asFragment} where $field = $partition)"""
 
+    def partitionQuery(prefix: Option[String]): BQSqlFrag = {
+      val partitionField = prefix.fold(field)(field.prefixed(_))
+      bqfr"""$partitionField = $partition"""
+    }
+
     def asTableId: BQTableId =
       wholeTable.tableId.modifyTableName(_ + "$" + partitionString)
 
@@ -99,13 +110,19 @@ object BQPartitionId {
       case other => sys.error(s"Unexpected $other")
     }
 
-    def asSubQuery: BQSqlFrag =
+    val (rangeStart: Long, rangeEnd: Long) =
       wholeTable.partitionType match {
-        case BQPartitionType.RangePartitioned(field, range) =>
-          val (rangeStart, rangeEnd) = range.calculatePartition(partition)
-          bqfr"""(select * from ${wholeTable.tableId.asFragment} where $field BETWEEN $rangeStart AND $rangeEnd)"""
-
+        case BQPartitionType.RangePartitioned(_, range) =>
+          range.calculatePartition(partition)
       }
+
+    def asSubQuery: BQSqlFrag =
+      bqfr"""(select * from ${wholeTable.tableId.asFragment} where $field BETWEEN $rangeStart AND $rangeEnd)"""
+
+    def partitionQuery(prefix: Option[String]): BQSqlFrag = {
+      val partitionField = prefix.fold(field)(field.prefixed(_))
+      bqfr"""$partitionField BETWEEN $rangeStart AND $rangeEnd"""
+    }
 
     def asTableId: BQTableId =
       wholeTable.tableId.modifyTableName(_ + "$" + partitionString)
@@ -128,6 +145,9 @@ object BQPartitionId {
     override def asSubQuery: BQSqlFrag =
       bqsql"(select * from ${asTableId.asFragment})"
 
+    def partitionQuery(prefix: Option[String]): BQSqlFrag =
+      bqfr"""1 = 1"""
+
     override def partitionString: String =
       partition.format(localDateNoDash)
   }
@@ -137,6 +157,9 @@ object BQPartitionId {
 
     override def asSubQuery: BQSqlFrag =
       bqsql"(select * from ${asTableId.asFragment})"
+
+    def partitionQuery(prefix: Option[String]): BQSqlFrag =
+      bqfr"""1 = 1"""
 
     override def asTableId: BQTableId =
       wholeTable.tableId
