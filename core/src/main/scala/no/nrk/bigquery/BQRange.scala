@@ -12,6 +12,7 @@ case class BQRange(start: Long, end: Long, interval: Long) {
   def calculatePartition(i: Long): (Long, Long) =
     (start to end).toList.sliding(interval.toInt, interval.toInt).find(_.contains(i)) match {
       case Some(head +: _ :+ tail) => (head, tail)
+      case Some(head :: Nil) => (head, head)
       case None => (start, end)
     }
 }
