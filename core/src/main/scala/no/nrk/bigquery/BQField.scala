@@ -41,8 +41,6 @@ case class BQField(
   def withDescription(desc: String) = copy(description = Some(desc))
   def withoutDescription = copy(description = None)
 
-  @deprecated("use withRequired instead", "0.9.0")
-  def required = copy(mode = BQField.Mode.REQUIRED)
   def withRequired = copy(mode = BQField.Mode.REQUIRED)
   def withRepeated = copy(mode = BQField.Mode.REPEATED)
 

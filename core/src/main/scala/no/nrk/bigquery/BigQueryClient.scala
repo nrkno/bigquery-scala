@@ -43,7 +43,8 @@ import scala.jdk.CollectionConverters._
 class BigQueryClient[F[_]](
     bigQuery: BigQuery,
     val reader: BigQueryReadClient,
-    val metricOps: MetricsOps[F]
+    val metricOps: MetricsOps[F],
+    defaults: Option[BQClientDefaults]
 )(implicit F: Async[F], lf: LoggerFactory[F]) {
   private val logger = lf.getLogger
   private implicit def showJob[J <: JobInfo]: Show[J] = Show.show(Jsonify.job)
@@ -51,33 +52,25 @@ class BigQueryClient[F[_]](
   def underlying: BigQuery = bigQuery
 
   def synchronousQuery[A](
-      jobName: BQJobName,
+      jobId: BQJobId,
       query: BQQuery[A]
   ): Stream[F, A] =
-    synchronousQuery(jobName, query, legacySql = false)
+    synchronousQuery(jobId, query, legacySql = false)
+
   def synchronousQuery[A](
-      jobName: BQJobName,
+      jobId: BQJobId,
       query: BQQuery[A],
       legacySql: Boolean
   ): Stream[F, A] =
-    synchronousQuery(jobName, query, legacySql, Nil)
+    synchronousQuery(jobId, query, legacySql, Nil)
 
   def synchronousQuery[A](
-      jobName: BQJobName,
+      jobId: BQJobId,
       query: BQQuery[A],
       legacySql: Boolean,
       jobOptions: Seq[JobOption]
   ): Stream[F, A] =
-    synchronousQuery(jobName, query, legacySql, jobOptions, logStream = true)
-
-  def synchronousQuery[A](
-      jobName: BQJobName,
-      query: BQQuery[A],
-      legacySql: Boolean,
-      jobOptions: Seq[JobOption],
-      logStream: Boolean
-  ): Stream[F, A] =
-    synchronousQuery(jobName, query, legacySql, jobOptions, logStream, None)
+    synchronousQuery(jobId, query, legacySql, jobOptions, logStream = true)
 
   /** Synchronous query to BQ.
     *
@@ -90,22 +83,20 @@ class BigQueryClient[F[_]](
     * }}}
     */
   def synchronousQuery[A](
-      jobName: BQJobName,
+      jobId: BQJobId,
       query: BQQuery[A],
       legacySql: Boolean,
       jobOptions: Seq[JobOption],
-      logStream: Boolean,
-      locationId: Option[LocationId]
+      logStream: Boolean
   ): Stream[F, A] =
     Stream
       .resource(
         synchronousQueryExecute(
-          jobName,
+          jobId,
           query.sql,
           legacySql,
           jobOptions,
-          logStream,
-          locationId
+          logStream
         )
       )
       .flatMap { case (_, rowStream) =>
@@ -123,12 +114,11 @@ class BigQueryClient[F[_]](
       }
 
   protected def synchronousQueryExecute(
-      jobName: BQJobName,
+      jobId: BQJobId,
       query: BQSqlFrag,
       legacySql: Boolean,
       jobOptions: Seq[JobOption],
-      logStream: Boolean,
-      locationId: Option[LocationId]
+      logStream: Boolean
   ): Resource[F, (avro.Schema, Stream[F, GenericRecord])] = {
 
     val runQuery: F[Job] = {
@@ -136,7 +126,7 @@ class BigQueryClient[F[_]](
         .newBuilder(query.asStringWithUDFs)
         .setUseLegacySql(legacySql)
         .build
-      submitJob(jobName, locationId)(jobId =>
+      submitJob(jobId)(jobId =>
         F.blocking(
           Option(
             bigQuery.create(JobInfo.of(jobId, queryRequest), jobOptions: _*)
@@ -145,7 +135,7 @@ class BigQueryClient[F[_]](
         case Some(job) => F.pure(job)
         case None =>
           F.raiseError(
-            new Exception(s"Unexpected: got no job after submitting $jobName")
+            new Exception(s"Unexpected: got no job after submitting ${jobId.name}")
           )
       }
     }
@@ -229,13 +219,13 @@ class BigQueryClient[F[_]](
   }
 
   def loadJson[A: Encoder, P: TableOps](
-      jobName: BQJobName,
+      jobId: BQJobId,
       table: BQTableDef.Table[P],
       partition: P,
       stream: fs2.Stream[F, A],
       writeDisposition: WriteDisposition
   ): F[Option[LoadStatistics]] = loadJson(
-    jobName = jobName,
+    jobId = jobId,
     table = table,
     partition = partition,
     stream = stream,
@@ -244,7 +234,7 @@ class BigQueryClient[F[_]](
   )
 
   def loadJson[A: Encoder, P: TableOps](
-      jobName: BQJobName,
+      jobId: BQJobId,
       table: BQTableDef.Table[P],
       partition: P,
       stream: fs2.Stream[F, A],
@@ -252,7 +242,7 @@ class BigQueryClient[F[_]](
       logStream: Boolean
   ): F[Option[LoadStatistics]] =
     loadJson(
-      jobName = jobName,
+      jobId = jobId,
       table = table,
       partition = partition,
       stream = stream,
@@ -265,7 +255,7 @@ class BigQueryClient[F[_]](
     *   None, if `chunkedStream` is empty
     */
   def loadJson[A: Encoder, P: TableOps](
-      jobName: BQJobName,
+      jobId: BQJobId,
       table: BQTableDef.Table[P],
       partition: P,
       stream: fs2.Stream[F, A],
@@ -273,7 +263,7 @@ class BigQueryClient[F[_]](
       logStream: Boolean,
       chunkSize: Int
   ): F[Option[LoadStatistics]] =
-    submitJob(jobName, table.tableId.dataset.location) { jobId =>
+    submitJob(jobId) { jobId =>
       val partitionId = table.assertPartition(partition)
       val formatOptions = FormatOptions.json()
       val schema = table.schema
@@ -345,49 +335,38 @@ class BigQueryClient[F[_]](
       tmpDataset: BQDataset): Resource[F, BQTableDef.Table[Param]] =
     Resource.make(createTempTable(table, tmpDataset))(tmp => delete(tmp.tableId).attempt.void)
 
-  def submitQuery[P](jobName: BQJobName, query: BQSqlFrag): F[Job] =
-    submitQuery(jobName, query, None)
+  def submitQuery[P](jobId: BQJobId, query: BQSqlFrag): F[Job] =
+    submitQuery(jobId, query, None)
 
   def submitQuery[P](
-      jobName: BQJobName,
+      id: BQJobId,
       query: BQSqlFrag,
-      locationId: Option[LocationId]
-  ): F[Job] = submitQuery(jobName, query, locationId, None)
-
-  def submitQuery[P](
-      jobName: BQJobName,
-      query: BQSqlFrag,
-      locationId: Option[LocationId],
       destination: Option[BQPartitionId[P]]
   ): F[Job] =
-    submitQuery(jobName, query, locationId, destination, None)
+    submitQuery(id, query, destination, None)
 
   def submitQuery[P](
-      jobName: BQJobName,
+      id: BQJobId,
       query: BQSqlFrag,
-      locationId: Option[LocationId],
       destination: Option[BQPartitionId[P]],
       writeDisposition: Option[WriteDisposition]
   ): F[Job] = submitQuery(
-    jobName,
+    id,
     query,
-    locationId,
     destination,
     writeDisposition,
     None
   )
 
   def submitQuery[P](
-      jobName: BQJobName,
+      id: BQJobId,
       query: BQSqlFrag,
-      locationId: Option[LocationId],
       destination: Option[BQPartitionId[P]],
       writeDisposition: Option[WriteDisposition],
       timePartitioning: Option[TimePartitioning]
   ): F[Job] = submitQuery(
-    jobName,
+    id,
     query,
-    locationId,
     destination,
     writeDisposition,
     timePartitioning,
@@ -397,15 +376,14 @@ class BigQueryClient[F[_]](
   /** Submit any SQL statement to BQ, perfect for BQ to BQ insertions or data mutation
     */
   def submitQuery[P](
-      jobName: BQJobName,
+      id: BQJobId,
       query: BQSqlFrag,
-      locationId: Option[LocationId],
       destination: Option[BQPartitionId[P]],
       writeDisposition: Option[WriteDisposition],
       timePartitioning: Option[TimePartitioning],
       jobOptions: Seq[JobOption]
   ): F[Job] =
-    submitJob(jobName, locationId) { jobId =>
+    submitJob(id) { jobId =>
       val jobConfiguration = {
         val b = QueryJobConfiguration.newBuilder(query.asStringWithUDFs)
         destination.foreach(partitionId => b.setDestinationTable(partitionId.asTableId.underlying))
@@ -423,13 +401,13 @@ class BigQueryClient[F[_]](
       case Some(job) => F.pure(job)
       case None =>
         F.raiseError(
-          new Exception(s"Unexpected: got no job after submitting $jobName")
+          new Exception(s"Unexpected: got no job after submitting ${id.name}")
         )
     }
 
   /** Submit a job to BQ, wait for it to finish, log results, track as dependency
     */
-  def submitJob(jobName: BQJobName, location: Option[LocationId])(
+  def submitJob(jobId: BQJobId)(
       runJob: JobId => F[Option[Job]]
   ): F[Option[Job]] = {
     val loggedJob: JobId => F[Option[Job]] = id =>
@@ -464,9 +442,8 @@ class BigQueryClient[F[_]](
           F.pure(None)
       }
 
-    jobName
-      .freshJobId(location)
-      .flatMap(id => BQMetrics(metricOps, jobName)(loggedJob(id)))
+    freshJobId(jobId)
+      .flatMap(id => BQMetrics(metricOps, jobId.name)(loggedJob(id)))
   }
 
   def getTable(
@@ -496,11 +473,10 @@ class BigQueryClient[F[_]](
     }
 
   def dryRun(
-      jobName: BQJobName,
-      query: BQSqlFrag,
-      location: Option[LocationId]
+      id: BQJobId,
+      query: BQSqlFrag
   ): F[Job] =
-    jobName.freshJobId(location).flatMap { jobId =>
+    freshJobId(id).flatMap { jobId =>
       val jobInfo = JobInfo.of(
         jobId,
         QueryJobConfiguration
@@ -558,9 +534,9 @@ class BigQueryClient[F[_]](
         }
     }
 
-  def getRoutine(udfId: UDF.UDFId.PersistentId): F[Option[Routine]] =
+  def getRoutine(persistentId: BQPersistentRoutine.Id): F[Option[Routine]] =
     F.interruptible {
-      val routineId = RoutineId.of(udfId.dataset.project.value, udfId.dataset.id, udfId.name.value)
+      val routineId = RoutineId.of(persistentId.dataset.project.value, persistentId.dataset.id, persistentId.name.value)
       Option(bigQuery.getRoutine(routineId)).filter(_.exists())
     }
 
@@ -573,6 +549,18 @@ class BigQueryClient[F[_]](
   def delete(udfId: UDF.UDFId.PersistentId): F[Boolean] =
     F.blocking(bigQuery.delete(RoutineId.of(udfId.dataset.project.value, udfId.dataset.id, udfId.name.value)))
 
+  private def freshJobId(id: BQJobId): F[JobId] = {
+    val withDefaults = id.withDefaults(defaults)
+
+    F.delay(
+      JobId
+        .newBuilder()
+        .setJob(s"${withDefaults.name.value}-${UUID.randomUUID}")
+        .setLocation(withDefaults.locationId.map(_.value).orNull)
+        .setProject(withDefaults.projectId.map(_.value).orNull)
+        .build()
+    )
+  }
 }
 
 object BigQueryClient {
@@ -637,12 +625,13 @@ object BigQueryClient {
   def resource[F[_]: Async: LoggerFactory](
       credentials: Credentials,
       metricsOps: MetricsOps[F],
-      configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] = None
+      configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] = None,
+      clientDefaults: Option[BQClientDefaults] = None
   ): Resource[F, BigQueryClient[F]] =
     for {
       bq <- Resource.eval(
         BigQueryClient.fromCredentials(credentials, configure)
       )
       bqRead <- BigQueryClient.readerResource(credentials)
-    } yield new BigQueryClient(bq, bqRead, metricsOps)
+    } yield new BigQueryClient(bq, bqRead, metricsOps, clientDefaults)
 }

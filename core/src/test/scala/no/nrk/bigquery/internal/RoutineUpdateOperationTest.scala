@@ -10,22 +10,23 @@ import com.google.cloud.bigquery.{RoutineId, RoutineInfo}
 import munit.FunSuite
 import no.nrk.bigquery.UpdateOperation.{CreatePersistentUdf, Illegal, UpdatePersistentUdf}
 import no.nrk.bigquery._
+import no.nrk.bigquery.BQRoutine.{Param, Params}
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.util.nat._
 
-class UdfUpdateOperationTest extends FunSuite {
+class RoutineUpdateOperationTest extends FunSuite {
 
   private val udf: UDF.Persistent[_0] =
     UDF.persistent(
       ident"foo",
       BQDataset(ProjectId("p1"), "ds1", None),
-      UDF.Params.empty,
+      Params.empty,
       UDF.Body.Sql(bqfr"(1)"),
       Some(BQType.INT64))
   private val routineId: RoutineId = RoutineId.of("p1", "ds1", "foo")
 
   test("should create when it does not exist") {
-    UdfUpdateOperation.from(udf, None) match {
+    RoutineUpdateOperation.from(udf, None) match {
       case CreatePersistentUdf(_, routine) =>
         assertEquals(routine.getRoutineId, routineId)
       case other => fail(other.toString)
@@ -33,13 +34,13 @@ class UdfUpdateOperationTest extends FunSuite {
   }
 
   test("should update udf when changed") {
-    val existingRoutine = UdfUpdateOperation.from(udf, None) match {
+    val existingRoutine = RoutineUpdateOperation.from(udf, None) match {
       case CreatePersistentUdf(_, routine) => routine
       case other => fail(s"test setup failed: ${other.toString}")
     }
 
-    UdfUpdateOperation.from(
-      udf.copy(params = UDF.Params(UDF.Param(ident"foo", Some(BQType.INT64)))),
+    RoutineUpdateOperation.from(
+      udf.copy(params = Params(Param(ident"foo", Some(BQType.INT64)))),
       Some(existingRoutine)
     ) match {
       case UpdatePersistentUdf(newUdf, newRoutine) =>
@@ -55,7 +56,7 @@ class UdfUpdateOperationTest extends FunSuite {
       .setRoutineType("PROCEDURE")
       .build()
 
-    UdfUpdateOperation.from(udf, Some(routine)) match {
+    RoutineUpdateOperation.from(udf, Some(routine)) match {
       case Illegal(_, _) =>
       case other => fail(other.toString)
     }
@@ -66,17 +67,16 @@ class UdfUpdateOperationTest extends FunSuite {
       UDF.persistent(
         ident"foo",
         BQDataset(ProjectId("p1"), "ds1", None),
-        UDF.Params(
-          UDF
-            .Param(
-              "segments",
-              BQType.fromField(
-                BQField.repeatedStruct("segments")(BQField("foo", BQField.Type.STRING, BQField.Mode.REQUIRED))))),
+        Params(
+          Param(
+            "segments",
+            BQType.fromField(
+              BQField.repeatedStruct("segments")(BQField("foo", BQField.Type.STRING, BQField.Mode.REQUIRED))))),
         UDF.Body.Sql(bqfr"(1)"),
         Some(BQType.INT64)
       )
 
-    val existingRoutine = UdfUpdateOperation.from(udf, None) match {
+    val existingRoutine = RoutineUpdateOperation.from(udf, None) match {
       case CreatePersistentUdf(_, routine) => routine
       case other => fail(s"test setup failed: ${other.toString}")
     }

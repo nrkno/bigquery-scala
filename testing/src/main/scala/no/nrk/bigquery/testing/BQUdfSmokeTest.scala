@@ -15,7 +15,6 @@ import io.circe.parser.decode
 import io.circe.syntax._
 import munit.{CatsEffectSuite, Location}
 import no.nrk.bigquery.syntax._
-import no.nrk.bigquery.UDF._
 import org.typelevel.log4cats.slf4j._
 
 import java.nio.charset.StandardCharsets
@@ -40,7 +39,6 @@ abstract class BQUdfSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) exte
       expected: Json
   )(implicit loc: Location): Unit = {
     val longerTestName = show"${call.udf.name} - $testName"
-
     test(s"bqCheck UDF: $longerTestName") {
       BQUdfSmokeTest
         .bqEvaluateCall(longerTestName, call)
@@ -48,6 +46,7 @@ abstract class BQUdfSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) exte
         .map(actual => assertEquals(actual, expected))
     }
   }
+
 }
 
 object BQUdfSmokeTest {
@@ -61,12 +60,12 @@ object BQUdfSmokeTest {
       testName: String,
       call: BQSqlFrag.Call
   ): BigQueryClient[IO] => IO[Json] = { bqClient =>
-    val temporaryUdfCall =
-      call.copy(udf = call.udf match {
-        case tUdf: Temporary[_] => tUdf
-        case pUdf: Persistent[_] => pUdf.convertToTemporary
-        case ref: Reference[_] => ref
-      })
+    val temporaryUdfCall = call.udf match {
+      case _: UDF.Temporary[_] => call
+      case _: UDF.Reference[_] => call
+      case udf: UDF.Persistent[_] => call.copy(udf = udf.convertToTemporary)
+    }
+
     val query = bqfr"SELECT TO_JSON_STRING($temporaryUdfCall)"
     val cachedQuery = CachedQuery(query)
 
@@ -79,7 +78,7 @@ object BQUdfSmokeTest {
           )
 
           val run = bqClient
-            .synchronousQuery(BQJobName("smoketest"), BQQuery[Json](query))
+            .synchronousQuery(BQJobId(None, None, BQJobName("smoketest")), BQQuery[Json](query))
             .compile
             .lastOrError
             .guaranteeCase {

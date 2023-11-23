@@ -22,6 +22,7 @@ import no.nrk.bigquery.internal.SchemaHelper
 import no.nrk.bigquery.testing.BQSmokeTest.{CheckType, bqCheckFragment}
 import org.typelevel.log4cats.slf4j._
 import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.util.{Nat, Sized}
 import org.typelevel.log4cats.SelfAwareStructuredLogger
 
 import java.nio.charset.StandardCharsets
@@ -56,12 +57,6 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
   )
 
   override def munitFixtures = List(bqClient)
-
-  @deprecated("use bqTypeCheckTest", "0.4.6")
-  protected def bqCheckTest[A](
-      testName: String
-  )(query: BQQuery[A])(implicit loc: Location): Unit =
-    bqTypeCheckTest[A](testName)(query)
 
   protected def bqTypeCheckTest[A](
       testName: String
@@ -221,6 +216,23 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
             )
         }
     }
+
+  protected def bqCheckTableValueFunction[N <: Nat](testName: String, tvf: TVF[_, N])(
+      args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]
+  )(implicit loc: Location): Unit = {
+    val values =
+      tvf.params.unsized
+        .zip(args.unsized)
+        .map { case (param, arg) => bqfr"declare ${param.name} default ${arg};" }
+        .mkFragment("\n")
+
+    bqCheckFragmentTest(testName)(
+      bqfr"""|$values
+             |${tvf.query}
+          """.stripMargin -> tvf.schema
+    )
+  }
+
 }
 
 object BQSmokeTest {
@@ -259,7 +271,7 @@ object BQSmokeTest {
                 s"Running $testName against BQ (could have been cached)"
               )
               val run = bqClient
-                .dryRun(BQJobName("smoketest"), staticFrag, None)
+                .dryRun(BQJobId(None, None, BQJobName("smoketest")), staticFrag)
                 .map(job =>
                   SchemaHelper.fromSchema(
                     job.getStatistics[QueryStatistics]().getSchema
@@ -281,7 +293,7 @@ object BQSmokeTest {
         val log = logger.warn(s"Running $testName becase $notStaticBecause")
 
         val runCheck = bqClient
-          .dryRun(BQJobName("smoketest"), frag, None)
+          .dryRun(BQJobId(None, None, BQJobName("smoketest")), frag)
           .guaranteeCase {
             case Outcome.Errored(_) if checkType != CheckType.Failing =>
               IO(println(s"failed query: ${frag.asStringWithUDFs}"))
@@ -392,7 +404,7 @@ object BQSmokeTest {
         (x, Nil)
 
       case BQSqlFrag.Call(udf, args) =>
-        val (newArgs, ctes) = args.toList.map(recurse).separate
+        val (newArgs, ctes) = args.map(recurse).separate
         udf match {
           case tUdf @ UDF.Temporary(_, _, Body.Sql(body), _) =>
             val (newUdfBody, ctesFromUDF) = recurse(body)
@@ -409,7 +421,8 @@ object BQSmokeTest {
               ),
               ctesFromUDF ++ ctes.flatten
             )
-          case _ => (BQSqlFrag.Call(udf, newArgs), ctes.flatten)
+          case _ =>
+            (BQSqlFrag.Call(udf, newArgs), ctes.flatten)
         }
 
       case BQSqlFrag.Combined(frags) =>
@@ -434,6 +447,7 @@ object BQSmokeTest {
         val schemaOpt: Option[BQSchema] =
           pid.wholeTable match {
             case BQTableRef(_, _, _) => None
+            case _: BQAppliedTableValuedFunction[Any] => None
             case x: BQTableDef[Any] => Some(x.schema)
           }
 

@@ -6,6 +6,6 @@
 
 package no.nrk.bigquery
 
-import no.nrk.bigquery.internal.{BQLiteralSyntax, BQShowSyntax}
+import no.nrk.bigquery.internal.{BQLiteralSyntax, BQNameConversions, BQShowSyntax}
 
-object syntax extends BQLiteralSyntax with BQShowSyntax
+object syntax extends BQLiteralSyntax with BQShowSyntax with BQNameConversions

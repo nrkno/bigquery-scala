@@ -65,32 +65,30 @@ object BigQueryTestClient {
       cacheFrom: Resource[IO, BigQueryClient[IO]]
   ): Resource[IO, BigQueryClient[IO]] =
     cacheFrom.map(client =>
-      new BigQueryClient(client.underlying, client.reader, client.metricOps) {
+      new BigQueryClient(client.underlying, client.reader, client.metricOps, None) {
         override protected def synchronousQueryExecute(
-            jobName: BQJobName,
+            jobId: BQJobId,
             query: BQSqlFrag,
             legacySql: Boolean,
             jobOptions: Seq[JobOption],
-            logStream: Boolean,
-            location: Option[LocationId]
+            logStream: Boolean
         ): Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] = {
           val hash =
             java.util.Objects.hash(query, Boolean.box(legacySql), jobOptions)
           val hashedSchemaPath =
-            queryCachePath.resolve(s"${jobName.value}__$hash.json")
+            queryCachePath.resolve(s"${jobId.name.value}__$hash.json")
           val hashedRowsPath =
-            queryCachePath.resolve(s"${jobName.value}__$hash.avro")
+            queryCachePath.resolve(s"${jobId.name.value}__$hash.avro")
 
           def runAndStore: Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] =
             for {
               tuple <- super
                 .synchronousQueryExecute(
-                  jobName,
+                  jobId,
                   query,
                   legacySql,
                   jobOptions,
-                  logStream,
-                  location
+                  logStream
                 )
               (schema, rowStream) = tuple
               _ <- Resource.liftK(serializeSchema(hashedSchemaPath, schema))

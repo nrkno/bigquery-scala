@@ -56,7 +56,7 @@ val commonSettings = Seq(
     if (scalaVersion.value.startsWith("3")) {
       Seq("-source:3.2-migration")
     } else {
-      Seq("-feature", "-language:implicitConversions")
+      Seq("-feature", "-language:implicitConversions", "-language:experimental.macros")
     }
   },
   sonatypeProfileName := "no.nrk"
@@ -82,7 +82,7 @@ lazy val core = crossProject(JVMPlatform)
       "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       "com.google.cloud" % "google-cloud-bigquery" % "2.34.2",
-      "com.google.cloud" % "google-cloud-bigquerystorage" % "2.45.0",
+      "com.google.cloud" % "google-cloud-bigquerystorage" % "2.46.0",
       "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.30.0",
       "org.apache.avro" % "avro" % "1.11.3",
       "com.lihaoyi" %% "sourcecode" % "0.3.1",

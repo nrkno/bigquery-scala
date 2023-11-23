@@ -20,9 +20,6 @@ case class BQFill[+P](
 )(implicit P: TableOps[P]) {
   val destination: BQPartitionId[P] =
     tableDef.assertPartition(partitionValue)
-
-  @deprecated("use partitionValue", "0.6.x")
-  def executionDate: P = partitionValue
 }
 
 case class BQFilledTable[+P](
