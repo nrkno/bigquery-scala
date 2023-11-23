@@ -612,12 +612,19 @@ object BigQueryClient {
 
   def fromCredentials[F[_]](
       credentials: Credentials,
-      configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] = None
+      configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] = None,
+      clientDefaults: Option[BQClientDefaults] = None
   )(implicit F: Async[F]): F[BigQuery] =
     F.blocking {
       val conf = configure.getOrElse(defaultConfigure(_))
-      conf(BigQueryOptions.newBuilder())
+      val configured = conf(BigQueryOptions.newBuilder())
         .setCredentials(credentials)
+      // overrides projectId from credentials if set.
+      clientDefaults.foreach(defaults =>
+        configured
+          .setLocation(defaults.locationId.value)
+          .setProjectId(defaults.projectId.value))
+      configured
         .build()
         .getService
     }
@@ -630,7 +637,7 @@ object BigQueryClient {
   ): Resource[F, BigQueryClient[F]] =
     for {
       bq <- Resource.eval(
-        BigQueryClient.fromCredentials(credentials, configure)
+        BigQueryClient.fromCredentials(credentials, configure, clientDefaults)
       )
       bqRead <- BigQueryClient.readerResource(credentials)
     } yield new BigQueryClient(bq, bqRead, metricsOps, clientDefaults)
