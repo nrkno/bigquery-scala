@@ -15,12 +15,12 @@ import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.util.IndexSeqSizedBuilder
 import no.nrk.bigquery.util.{Nat, Sized}
 
-sealed trait BQRoutine[N <: Nat] {
+sealed trait BQRoutine[N <: Nat, C] {
   def params: BQRoutine.Params[N]
-  def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]): BQSqlFrag
+  def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]): C
 }
 
-sealed trait BQPersistentRoutine[N <: Nat] extends BQRoutine[N] {
+sealed trait BQPersistentRoutine[N <: Nat, C] extends BQRoutine[N, C] {
   def name: BQPersistentRoutine.Id
 }
 
@@ -64,8 +64,8 @@ case class TVF[+P, N <: Nat](
     query: BQSqlFrag,
     schema: BQSchema,
     description: Option[String] = None
-) extends BQPersistentRoutine[N] {
-  def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]): BQSqlFrag =
+) extends BQPersistentRoutine[N, BQSqlFrag.TableRef] {
+  def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]): BQSqlFrag.TableRef =
     BQSqlFrag.TableRef(BQAppliedTableValuedFunction(this, args.map(_.frag)))
 }
 
@@ -96,12 +96,12 @@ object TVF {
   * bqfr"\${myUdf(ident"bar1", ident"bar")}" // compile error
   * }}}
   */
-sealed trait UDF[+A <: UDFId, N <: Nat] extends BQRoutine[N] {
+sealed trait UDF[+A <: UDFId, N <: Nat] extends BQRoutine[N, BQSqlFrag.Call] {
   def name: A
   def params: BQRoutine.Params[N]
   def returnType: Option[BQType]
 
-  def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]): BQSqlFrag =
+  def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]): BQSqlFrag.Call =
     BQSqlFrag.Call(this, args.unsized.toList.map(_.frag))
 }
 
@@ -133,7 +133,7 @@ object UDF {
       body: UDF.Body,
       returnType: Option[BQType]
   ) extends UDF[UDFId.PersistentId, N]
-      with BQPersistentRoutine[N] {
+      with BQPersistentRoutine[N, BQSqlFrag.Call] {
     def convertToTemporary: Temporary[N] =
       Temporary(TemporaryId(name.name), params, body, returnType)
   }
