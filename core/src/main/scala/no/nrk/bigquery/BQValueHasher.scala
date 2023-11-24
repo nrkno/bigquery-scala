@@ -1,24 +1,19 @@
 package no.nrk.bigquery
 
 import no.nrk.bigquery.syntax.bqShowInterpolator
-import org.apache.commons.codec.digest.DigestUtils
+import scodec.bits.ByteVector
+
+import java.nio.charset.StandardCharsets
 
 trait BQValueHasher[T] {
-  val range: BQRange
-  def hashValueInBQ(value: Ident): BQSqlFrag
-  def hashValue(value: T): Long
+  def hashValueInBQ(value: Ident, range: BQRange): BQSqlFrag =
+    bqsql"""MOD(CAST(SUBSTRING(CONCAT("0x", TO_HEX(SHA256($value))), 0, 16) as INT64), ${range.end})"""
+  def hashValue(value: T, range: BQRange): Long
 }
 
 object BQValueHasher {
-  case class ShaHasher(range: BQRange) extends BQValueHasher[String] {
-    val digester = new DigestUtils("SHA-256")
-
-    override def hashValueInBQ(value: Ident): BQSqlFrag =
-      bqsql"""MOD(CAST(SUBSTRING(CONCAT("0x", TO_HEX(SHA256($value))), 0, 16) as INT64), ${range.end})"""
-
-    override def hashValue(value: String): Long = {
-      val hash = digester.digestAsHex(value)
-      BigInt.apply(hash.substring(0, 14), 16).longValue % range.end
-    }
+  implicit def stringHasher: BQValueHasher[String] = (value: String, range: BQRange) => {
+    val hash = ByteVector.apply(value.getBytes(StandardCharsets.UTF_8)).sha256.toHex
+    BigInt.apply(hash.substring(0, 14), 16).longValue % range.end
   }
 }
