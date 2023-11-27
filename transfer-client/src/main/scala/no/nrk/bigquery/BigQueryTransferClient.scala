@@ -11,7 +11,6 @@ import cats.effect.kernel.Resource
 import cats.syntax.traverse._
 import com.google.api.gax.core.FixedCredentialsProvider
 import com.google.auth.oauth2.ServiceAccountCredentials
-import com.google.cloud.bigquery.DatasetId
 import com.google.cloud.bigquery.datatransfer.v1._
 import com.google.protobuf.{Struct, Value}
 import no.nrk.bigquery.BigQueryTransferClient.{TransferConfigFailed, TransferFailed, TransferStatus, TransferSucceeded}
@@ -35,13 +34,13 @@ class BigQueryTransferClient(transferClient: DataTransferServiceClient) {
     )
 
   def buildTransferConfig(
-      sourceDatasetId: DatasetId,
-      destinationDatasetId: DatasetId,
+      sourceDatasetId: BQDataset,
+      destinationDatasetId: BQDataset,
       transferConfigName: TransferConfigName
   ): TransferConfig =
     TransferConfig.newBuilder
       .setDisplayName(transferConfigName.getTransferConfig)
-      .setDestinationDatasetId(destinationDatasetId.getDataset)
+      .setDestinationDatasetId(destinationDatasetId.id)
       .setDataSourceId("cross_region_copy")
       .setDatasetRegion(transferConfigName.getLocation)
       .setScheduleOptions(
@@ -51,11 +50,11 @@ class BigQueryTransferClient(transferClient: DataTransferServiceClient) {
         Struct.newBuilder
           .putFields(
             "source_project_id",
-            Value.newBuilder.setStringValue(sourceDatasetId.getProject).build
+            Value.newBuilder.setStringValue(sourceDatasetId.project.value).build
           )
           .putFields(
             "source_dataset_id",
-            Value.newBuilder.setStringValue(sourceDatasetId.getDataset).build
+            Value.newBuilder.setStringValue(sourceDatasetId.id).build
           )
           .build
       )

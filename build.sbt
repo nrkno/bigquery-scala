@@ -1,7 +1,7 @@
 import com.typesafe.tools.mima.core._
 
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
-ThisBuild / tlBaseVersion := "0.12" // your current series x.y
+ThisBuild / tlBaseVersion := "0.13" // your current series x.y
 
 ThisBuild / organization := "no.nrk.bigquery"
 ThisBuild / organizationName := "NRK"
@@ -65,7 +65,7 @@ val commonSettings = Seq(
 lazy val root = tlCrossRootProject
   .settings(name := "bigquery-scala")
   .settings(commonSettings)
-  .aggregate(core, testing, prometheus, zetasql, codegen, codegenTests, docs)
+  .aggregate(core, testing, prometheus, zetasql, codegen, codegenTests, `transfer-client`, docs)
 
 lazy val core = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -83,7 +83,6 @@ lazy val core = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       "com.google.cloud" % "google-cloud-bigquery" % "2.34.2",
       "com.google.cloud" % "google-cloud-bigquerystorage" % "2.46.0",
-      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.30.0",
       "org.apache.avro" % "avro" % "1.11.3",
       "com.lihaoyi" %% "sourcecode" % "0.3.1",
       "org.typelevel" %% "log4cats-slf4j" % "2.6.0",
@@ -139,6 +138,23 @@ lazy val zetasql = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
     mimaBinaryIssueFilters := Nil
+  )
+
+lazy val `transfer-client` = crossProject(JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("transfer-client"))
+  .settings(commonSettings)
+  .dependsOn(core)
+  .settings(
+    name := "bigquery-transfer-client",
+    libraryDependencies ++= Seq(
+      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.30.0",
+      "org.scalameta" %% "munit" % "0.7.29",
+      "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
+    ),
+    mimaBinaryIssueFilters := Nil,
+    tlMimaPreviousVersions := Set.empty
   )
 
 lazy val testing = crossProject(JVMPlatform)
