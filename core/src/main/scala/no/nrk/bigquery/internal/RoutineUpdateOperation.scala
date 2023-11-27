@@ -27,7 +27,7 @@ object RoutineUpdateOperation {
   private val TvfRoutineType = "TABLE_VALUED_FUNCTION"
 
   def from(
-      routine: BQPersistentRoutine[_],
+      routine: BQPersistentRoutine[_, _],
       maybeExisting: Option[RoutineInfo]
   ): UpdateOperation = maybeExisting match {
     case None =>

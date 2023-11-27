@@ -11,81 +11,81 @@ import no.nrk.bigquery.util.nat._
 import no.nrk.bigquery.util.IndexSeqSizedBuilder
 
 trait RoutineSyntax {
-  implicit def bqRoutineOps0(routine: BQRoutine[_0]): RoutineOps0 = new RoutineOps0(routine)
-  implicit def bqRoutineOps1(routine: BQRoutine[_1]): RoutineOps1 = new RoutineOps1(routine)
-  implicit def bqRoutineOps2(routine: BQRoutine[_2]): RoutineOps2 = new RoutineOps2(routine)
-  implicit def bqRoutineOps3(routine: BQRoutine[_3]): RoutineOps3 = new RoutineOps3(routine)
-  implicit def bqRoutineOps4(routine: BQRoutine[_4]): RoutineOps4 = new RoutineOps4(routine)
-  implicit def bqRoutineOps5(routine: BQRoutine[_5]): RoutineOps5 = new RoutineOps5(routine)
-  implicit def bqRoutineOps6(routine: BQRoutine[_6]): RoutineOps6 = new RoutineOps6(routine)
-  implicit def bqRoutineOps7(routine: BQRoutine[_7]): RoutineOps7 = new RoutineOps7(routine)
-  implicit def bqRoutineOps8(routine: BQRoutine[_8]): RoutineOps8 = new RoutineOps8(routine)
-  implicit def bqRoutineOps9(routine: BQRoutine[_9]): RoutineOps9 = new RoutineOps9(routine)
-  implicit def bqRoutineOps10(routine: BQRoutine[_10]): RoutineOps10 = new RoutineOps10(routine)
-  implicit def bqRoutineOps11(routine: BQRoutine[_11]): RoutineOps11 = new RoutineOps11(routine)
-  implicit def bqRoutineOps12(routine: BQRoutine[_12]): RoutineOps12 = new RoutineOps12(routine)
-  implicit def bqRoutineOps13(routine: BQRoutine[_13]): RoutineOps13 = new RoutineOps13(routine)
-  implicit def bqRoutineOps14(routine: BQRoutine[_14]): RoutineOps14 = new RoutineOps14(routine)
-  implicit def bqRoutineOps15(routine: BQRoutine[_15]): RoutineOps15 = new RoutineOps15(routine)
-  implicit def bqRoutineOps16(routine: BQRoutine[_16]): RoutineOps16 = new RoutineOps16(routine)
-  implicit def bqRoutineOps17(routine: BQRoutine[_17]): RoutineOps17 = new RoutineOps17(routine)
-  implicit def bqRoutineOps18(routine: BQRoutine[_18]): RoutineOps18 = new RoutineOps18(routine)
-  implicit def bqRoutineOps19(routine: BQRoutine[_19]): RoutineOps19 = new RoutineOps19(routine)
-  implicit def bqRoutineOps20(routine: BQRoutine[_20]): RoutineOps20 = new RoutineOps20(routine)
-  implicit def bqRoutineOps21(routine: BQRoutine[_21]): RoutineOps21 = new RoutineOps21(routine)
-  implicit def bqRoutineOps22(routine: BQRoutine[_22]): RoutineOps22 = new RoutineOps22(routine)
+  implicit def bqRoutineOps0[C](routine: BQRoutine[_0, C]): RoutineOps0[C] = new RoutineOps0(routine)
+  implicit def bqRoutineOps1[C](routine: BQRoutine[_1, C]): RoutineOps1[C] = new RoutineOps1(routine)
+  implicit def bqRoutineOps2[C](routine: BQRoutine[_2, C]): RoutineOps2[C] = new RoutineOps2(routine)
+  implicit def bqRoutineOps3[C](routine: BQRoutine[_3, C]): RoutineOps3[C] = new RoutineOps3(routine)
+  implicit def bqRoutineOps4[C](routine: BQRoutine[_4, C]): RoutineOps4[C] = new RoutineOps4(routine)
+  implicit def bqRoutineOps5[C](routine: BQRoutine[_5, C]): RoutineOps5[C] = new RoutineOps5(routine)
+  implicit def bqRoutineOps6[C](routine: BQRoutine[_6, C]): RoutineOps6[C] = new RoutineOps6(routine)
+  implicit def bqRoutineOps7[C](routine: BQRoutine[_7, C]): RoutineOps7[C] = new RoutineOps7(routine)
+  implicit def bqRoutineOps8[C](routine: BQRoutine[_8, C]): RoutineOps8[C] = new RoutineOps8(routine)
+  implicit def bqRoutineOps9[C](routine: BQRoutine[_9, C]): RoutineOps9[C] = new RoutineOps9(routine)
+  implicit def bqRoutineOps10[C](routine: BQRoutine[_10, C]): RoutineOps10[C] = new RoutineOps10(routine)
+  implicit def bqRoutineOps11[C](routine: BQRoutine[_11, C]): RoutineOps11[C] = new RoutineOps11(routine)
+  implicit def bqRoutineOps12[C](routine: BQRoutine[_12, C]): RoutineOps12[C] = new RoutineOps12(routine)
+  implicit def bqRoutineOps13[C](routine: BQRoutine[_13, C]): RoutineOps13[C] = new RoutineOps13(routine)
+  implicit def bqRoutineOps14[C](routine: BQRoutine[_14, C]): RoutineOps14[C] = new RoutineOps14(routine)
+  implicit def bqRoutineOps15[C](routine: BQRoutine[_15, C]): RoutineOps15[C] = new RoutineOps15(routine)
+  implicit def bqRoutineOps16[C](routine: BQRoutine[_16, C]): RoutineOps16[C] = new RoutineOps16(routine)
+  implicit def bqRoutineOps17[C](routine: BQRoutine[_17, C]): RoutineOps17[C] = new RoutineOps17(routine)
+  implicit def bqRoutineOps18[C](routine: BQRoutine[_18, C]): RoutineOps18[C] = new RoutineOps18(routine)
+  implicit def bqRoutineOps19[C](routine: BQRoutine[_19, C]): RoutineOps19[C] = new RoutineOps19(routine)
+  implicit def bqRoutineOps20[C](routine: BQRoutine[_20, C]): RoutineOps20[C] = new RoutineOps20(routine)
+  implicit def bqRoutineOps21[C](routine: BQRoutine[_21, C]): RoutineOps21[C] = new RoutineOps21(routine)
+  implicit def bqRoutineOps22[C](routine: BQRoutine[_22, C]): RoutineOps22[C] = new RoutineOps22(routine)
 }
 
 object RoutineSyntax {
   private[internal] val builder = new IndexSeqSizedBuilder[BQSqlFrag.Magnet]
 }
 
-class RoutineOps0(routine: BQRoutine[_0]) {
-  def apply(): BQSqlFrag =
+class RoutineOps0[C](routine: BQRoutine[_0, C]) {
+  def apply(): C =
     routine.call(RoutineSyntax.builder.empty)
 }
 
-class RoutineOps1(routine: BQRoutine[_1]) {
+class RoutineOps1[C](routine: BQRoutine[_1, C]) {
   def apply(
       m1: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1))
+  ): C = routine.call(RoutineSyntax.builder.apply(m1))
 }
 
-class RoutineOps2(routine: BQRoutine[_2]) {
+class RoutineOps2[C](routine: BQRoutine[_2, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2))
+  ): C = routine.call(RoutineSyntax.builder.apply(m1, m2))
 }
 
-class RoutineOps3(routine: BQRoutine[_3]) {
+class RoutineOps3[C](routine: BQRoutine[_3, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
       m3: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3))
+  ): C = routine.call(RoutineSyntax.builder.apply(m1, m2, m3))
 }
 
-class RoutineOps4(routine: BQRoutine[_4]) {
+class RoutineOps4[C](routine: BQRoutine[_4, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
       m3: BQSqlFrag.Magnet,
       m4: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4))
+  ): C = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4))
 }
 
-class RoutineOps5(routine: BQRoutine[_5]) {
+class RoutineOps5[C](routine: BQRoutine[_5, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
       m3: BQSqlFrag.Magnet,
       m4: BQSqlFrag.Magnet,
       m5: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5))
+  ): C = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5))
 }
 
-class RoutineOps6(routine: BQRoutine[_6]) {
+class RoutineOps6[C](routine: BQRoutine[_6, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -93,10 +93,10 @@ class RoutineOps6(routine: BQRoutine[_6]) {
       m4: BQSqlFrag.Magnet,
       m5: BQSqlFrag.Magnet,
       m6: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6))
+  ): C = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6))
 }
 
-class RoutineOps7(routine: BQRoutine[_7]) {
+class RoutineOps7[C](routine: BQRoutine[_7, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -105,10 +105,10 @@ class RoutineOps7(routine: BQRoutine[_7]) {
       m5: BQSqlFrag.Magnet,
       m6: BQSqlFrag.Magnet,
       m7: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7))
+  ): C = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7))
 }
 
-class RoutineOps8(routine: BQRoutine[_8]) {
+class RoutineOps8[C](routine: BQRoutine[_8, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -118,10 +118,10 @@ class RoutineOps8(routine: BQRoutine[_8]) {
       m6: BQSqlFrag.Magnet,
       m7: BQSqlFrag.Magnet,
       m8: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8))
+  ): C = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8))
 }
 
-class RoutineOps9(routine: BQRoutine[_9]) {
+class RoutineOps9[C](routine: BQRoutine[_9, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -132,10 +132,10 @@ class RoutineOps9(routine: BQRoutine[_9]) {
       m7: BQSqlFrag.Magnet,
       m8: BQSqlFrag.Magnet,
       m9: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9))
+  ): C = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9))
 }
 
-class RoutineOps10(routine: BQRoutine[_10]) {
+class RoutineOps10[C](routine: BQRoutine[_10, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -147,10 +147,10 @@ class RoutineOps10(routine: BQRoutine[_10]) {
       m8: BQSqlFrag.Magnet,
       m9: BQSqlFrag.Magnet,
       m10: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10))
+  ): C = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10))
 }
 
-class RoutineOps11(routine: BQRoutine[_11]) {
+class RoutineOps11[C](routine: BQRoutine[_11, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -163,10 +163,10 @@ class RoutineOps11(routine: BQRoutine[_11]) {
       m9: BQSqlFrag.Magnet,
       m10: BQSqlFrag.Magnet,
       m11: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11))
+  ): C = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11))
 }
 
-class RoutineOps12(routine: BQRoutine[_12]) {
+class RoutineOps12[C](routine: BQRoutine[_12, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -180,10 +180,10 @@ class RoutineOps12(routine: BQRoutine[_12]) {
       m10: BQSqlFrag.Magnet,
       m11: BQSqlFrag.Magnet,
       m12: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12))
+  ): C = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12))
 }
 
-class RoutineOps13(routine: BQRoutine[_13]) {
+class RoutineOps13[C](routine: BQRoutine[_13, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -198,10 +198,10 @@ class RoutineOps13(routine: BQRoutine[_13]) {
       m11: BQSqlFrag.Magnet,
       m12: BQSqlFrag.Magnet,
       m13: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13))
+  ): C = routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13))
 }
 
-class RoutineOps14(routine: BQRoutine[_14]) {
+class RoutineOps14[C](routine: BQRoutine[_14, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -217,11 +217,11 @@ class RoutineOps14(routine: BQRoutine[_14]) {
       m12: BQSqlFrag.Magnet,
       m13: BQSqlFrag.Magnet,
       m14: BQSqlFrag.Magnet
-  ): BQSqlFrag =
+  ): C =
     routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14))
 }
 
-class RoutineOps15(routine: BQRoutine[_15]) {
+class RoutineOps15[C](routine: BQRoutine[_15, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -238,11 +238,11 @@ class RoutineOps15(routine: BQRoutine[_15]) {
       m13: BQSqlFrag.Magnet,
       m14: BQSqlFrag.Magnet,
       m15: BQSqlFrag.Magnet
-  ): BQSqlFrag =
+  ): C =
     routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15))
 }
 
-class RoutineOps16(routine: BQRoutine[_16]) {
+class RoutineOps16[C](routine: BQRoutine[_16, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -260,11 +260,11 @@ class RoutineOps16(routine: BQRoutine[_16]) {
       m14: BQSqlFrag.Magnet,
       m15: BQSqlFrag.Magnet,
       m16: BQSqlFrag.Magnet
-  ): BQSqlFrag =
+  ): C =
     routine.call(RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16))
 }
 
-class RoutineOps17(routine: BQRoutine[_17]) {
+class RoutineOps17[C](routine: BQRoutine[_17, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -283,12 +283,12 @@ class RoutineOps17(routine: BQRoutine[_17]) {
       m15: BQSqlFrag.Magnet,
       m16: BQSqlFrag.Magnet,
       m17: BQSqlFrag.Magnet
-  ): BQSqlFrag =
+  ): C =
     routine.call(
       RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17))
 }
 
-class RoutineOps18(routine: BQRoutine[_18]) {
+class RoutineOps18[C](routine: BQRoutine[_18, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -308,12 +308,12 @@ class RoutineOps18(routine: BQRoutine[_18]) {
       m16: BQSqlFrag.Magnet,
       m17: BQSqlFrag.Magnet,
       m18: BQSqlFrag.Magnet
-  ): BQSqlFrag =
+  ): C =
     routine.call(
       RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18))
 }
 
-class RoutineOps19(routine: BQRoutine[_19]) {
+class RoutineOps19[C](routine: BQRoutine[_19, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -334,11 +334,11 @@ class RoutineOps19(routine: BQRoutine[_19]) {
       m17: BQSqlFrag.Magnet,
       m18: BQSqlFrag.Magnet,
       m19: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(
+  ): C = routine.call(
     RoutineSyntax.builder.apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19))
 }
 
-class RoutineOps20(routine: BQRoutine[_20]) {
+class RoutineOps20[C](routine: BQRoutine[_20, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -360,12 +360,12 @@ class RoutineOps20(routine: BQRoutine[_20]) {
       m18: BQSqlFrag.Magnet,
       m19: BQSqlFrag.Magnet,
       m20: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(
+  ): C = routine.call(
     RoutineSyntax.builder
       .apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20))
 }
 
-class RoutineOps21(routine: BQRoutine[_21]) {
+class RoutineOps21[C](routine: BQRoutine[_21, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -388,12 +388,12 @@ class RoutineOps21(routine: BQRoutine[_21]) {
       m19: BQSqlFrag.Magnet,
       m20: BQSqlFrag.Magnet,
       m21: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(
+  ): C = routine.call(
     RoutineSyntax.builder
       .apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20, m21))
 }
 
-class RoutineOps22(routine: BQRoutine[_22]) {
+class RoutineOps22[C](routine: BQRoutine[_22, C]) {
   def apply(
       m1: BQSqlFrag.Magnet,
       m2: BQSqlFrag.Magnet,
@@ -417,7 +417,7 @@ class RoutineOps22(routine: BQRoutine[_22]) {
       m20: BQSqlFrag.Magnet,
       m21: BQSqlFrag.Magnet,
       m22: BQSqlFrag.Magnet
-  ): BQSqlFrag = routine.call(
+  ): C = routine.call(
     RoutineSyntax.builder
       .apply(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20, m21, m22))
 }
