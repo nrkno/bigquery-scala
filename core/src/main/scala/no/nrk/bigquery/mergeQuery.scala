@@ -59,7 +59,7 @@ object mergeQuery {
              |ON ${primaryKeys.toList
           .map(keyEqualsFragment(allFields))
           .mkFragment("\n AND ")}
-             |AND $prunePartitions
+             |$prunePartitions
              |WHEN MATCHED THEN UPDATE SET
              |${allFieldNames
           .filterNot(isPrimaryKey)
@@ -87,7 +87,7 @@ object mergeQuery {
              |DECLARE partitions STRUCT<minP $fieldType, maxP $fieldType>;
              |SET partitions = (SELECT STRUCT(MIN($field) AS minP , MAX($field) AS maxP) FROM ${source.wholeTable});
         """.stripMargin,
-        bqsql"T.$field BETWEEN partitions.minP AND partitions.maxP"
+        bqsql"AND T.$field BETWEEN partitions.minP AND partitions.maxP"
       )
     }
 
