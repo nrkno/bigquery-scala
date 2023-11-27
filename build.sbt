@@ -167,7 +167,6 @@ lazy val codegen = crossProject(JVMPlatform)
     libraryDependencies ++= Seq(
       "org.apache.commons" % "commons-text" % "1.11.0"
     ),
-    tlMimaPreviousVersions := Set.empty,
     mimaBinaryIssueFilters := Nil
   )
 
