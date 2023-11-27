@@ -20,4 +20,6 @@ final case class BQJobId(projectId: Option[ProjectId], locationId: Option[Locati
 object BQJobId {
   def auto(implicit enclosing: sourcecode.Enclosing) =
     BQJobId(None, None, BQJobName(enclosing.value))
+
+  def apply(name: String): BQJobId = BQJobId(None, None, BQJobName(name))
 }
