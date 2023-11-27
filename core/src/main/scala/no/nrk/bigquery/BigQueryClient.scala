@@ -612,6 +612,12 @@ object BigQueryClient {
 
   def fromCredentials[F[_]](
       credentials: Credentials,
+      configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder]
+  )(implicit F: Async[F]): F[BigQuery] =
+    fromCredentials(credentials, configure)
+
+  def fromCredentials[F[_]](
+      credentials: Credentials,
       configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] = None,
       clientDefaults: Option[BQClientDefaults] = None
   )(implicit F: Async[F]): F[BigQuery] =

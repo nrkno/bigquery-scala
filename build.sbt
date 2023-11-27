@@ -109,9 +109,7 @@ lazy val core = crossProject(JVMPlatform)
     Compile / doc / scalacOptions ++= Seq(
       "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
     ),
-    mimaBinaryIssueFilters := List(
-      ProblemFilters.exclude[DirectMissingMethodProblem]("no.nrk.bigquery.BigQueryClient.fromCredentials")
-    )
+    mimaBinaryIssueFilters := Nil
   )
 
 lazy val prometheus = crossProject(JVMPlatform)
@@ -169,7 +167,6 @@ lazy val codegen = crossProject(JVMPlatform)
     libraryDependencies ++= Seq(
       "org.apache.commons" % "commons-text" % "1.11.0"
     ),
-    tlMimaPreviousVersions := Set.empty,
     mimaBinaryIssueFilters := Nil
   )
 
