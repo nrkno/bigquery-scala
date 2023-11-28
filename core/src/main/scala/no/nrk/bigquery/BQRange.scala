@@ -19,4 +19,6 @@ case class BQRange(start: Long, end: Long, interval: Long) {
 object BQRange {
   def fromRangePartitioning(range: RangePartitioning.Range) =
     BQRange(start = range.getStart, end = range.getEnd, interval = range.getInterval)
+
+  def DefaultRange: BQRange = BQRange(start = 0, end = 4000, interval = 1)
 }
