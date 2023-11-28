@@ -251,31 +251,28 @@ class BigQueryClient[F[_]](
       chunkSize = 10 * StreamUtils.Megabyte
     )
 
-  def loadJson[A, T](
+  def loadToHashedPartition[A, T](
       jobId: BQJobId,
       table: BQTableDef.Table[Long],
       stream: fs2.Stream[F, A],
-      writeDisposition: WriteDisposition
-  )(implicit hashedEncoder: HashedEncoder[A, T]): F[Option[LoadStatistics]] =
-    loadJson(jobId, table, stream, writeDisposition, logStream = false)
+  )(implicit hashedEncoder: HashedPartitionEncoder[A, T]): F[Option[LoadStatistics]] =
+    loadToHashedPartition(jobId, table, stream, logStream = false)
 
-  def loadJson[A, T](
+  def loadToHashedPartition[A, T](
       jobId: BQJobId,
       table: BQTableDef.Table[Long],
       stream: fs2.Stream[F, A],
-      writeDisposition: WriteDisposition,
       logStream: Boolean
-  )(implicit hashedEncoder: HashedEncoder[A, T]): F[Option[LoadStatistics]] =
-    loadJson(jobId, table, stream, writeDisposition, logStream, chunkSize = 10 * StreamUtils.Megabyte)
+  )(implicit hashedEncoder: HashedPartitionEncoder[A, T]): F[Option[LoadStatistics]] =
+    loadToHashedPartition(jobId, table, stream, logStream, chunkSize = 10 * StreamUtils.Megabyte)
 
-  def loadJson[A, T](
+  def loadToHashedPartition[A, T](
       jobId: BQJobId,
       table: BQTableDef.Table[Long],
       stream: fs2.Stream[F, A],
-      writeDisposition: WriteDisposition,
       logStream: Boolean,
       chunkSize: Int
-  )(implicit hashedEncoder: HashedEncoder[A, T]): F[Option[LoadStatistics]] = {
+  )(implicit hashedEncoder: HashedPartitionEncoder[A, T]): F[Option[LoadStatistics]] = {
     val partitionType = table.partitionType match {
       case x: BQPartitionType.RangePartitioned => x
     }
@@ -285,7 +282,7 @@ class BigQueryClient[F[_]](
       table.tableId,
       table.schema,
       stream.map(x => hashedEncoder.toJson(x, partitionType)),
-      writeDisposition,
+      WriteDisposition.WRITE_APPEND,
       logStream,
       chunkSize
     )
@@ -310,7 +307,7 @@ class BigQueryClient[F[_]](
   /** @return
     *   None, if `chunkedStream` is empty
     */
-  def loadJson[A: Encoder](
+  private def loadJson[A: Encoder](
       jobId: BQJobId,
       tableId: BQTableId,
       schema: BQSchema,
