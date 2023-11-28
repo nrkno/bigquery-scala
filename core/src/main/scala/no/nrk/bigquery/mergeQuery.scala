@@ -84,10 +84,10 @@ object mergeQuery {
     }).fold((BQSqlFrag.Empty, BQSqlFrag.Empty)) { case (field, fieldType) =>
       (
         bqsql"""
-             |DECLARE partitions STRUCT<minP $fieldType, maxP $fieldType>;
-             |SET partitions = (SELECT STRUCT(MIN($field) AS minP , MAX($field) AS maxP) FROM ${source.wholeTable});
+             |DECLARE partitions ARRAY<$fieldType>;
+             |SET partitions = ARRAY(SELECT DISTINCT($field) FROM ${source.wholeTable});
         """.stripMargin,
-        bqsql"AND T.$field BETWEEN partitions.minP AND partitions.maxP"
+        bqsql"AND T.$field IN UNNEST(partitions)"
       )
     }
 
