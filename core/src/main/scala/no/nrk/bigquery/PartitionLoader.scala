@@ -331,7 +331,7 @@ private[bigquery] object PartitionLoader {
         if (requireRowNums)
           client
             .synchronousQuery(
-              BQJobName.auto,
+              BQJobId.auto,
               rowCountQuery(table, field, startPartition)
             )
             .compile
@@ -344,7 +344,7 @@ private[bigquery] object PartitionLoader {
           case view: BQTableDef.View[Long] =>
             client
               .synchronousQuery(
-                BQJobName.auto,
+                BQJobId.auto,
                 allPartitionsQueries
                   .fromTableData[Long](view.unpartitioned, field)
               )
@@ -352,7 +352,7 @@ private[bigquery] object PartitionLoader {
           case _ =>
             client
               .synchronousQuery(
-                BQJobName.auto,
+                BQJobId.auto,
                 allPartitionsQuery(table, startPartition),
                 legacySql = true
               )
