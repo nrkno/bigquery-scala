@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets
 
 trait BQValueHasher[T] {
   def hashValueInBQ(value: Ident, range: BQRange): BQSqlFrag =
-    bqsql"""MOD(CAST(SUBSTRING(CONCAT("0x", TO_HEX(SHA256($value))), 0, 16) as INT64), ${range.end})"""
+    bqsql"""MOD(CAST(CONCAT("0x", SUBSTRING(TO_HEX(SHA256($value)), 0, 14)) as INT64), ${range.end})"""
   def hashValue(value: T, range: BQRange): Long
 }
 
