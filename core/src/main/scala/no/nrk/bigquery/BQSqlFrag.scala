@@ -292,9 +292,9 @@ object BQSqlFrag {
             x
           }.sorted match {
             case partitions@(first :: _) =>
-              val in = partitions.map(_.partition).mkFragment("[", ", ", "]")
+              val in = partitions.map(_.partition).mkFragment("(", ", ", ")")
               Some(
-                bqfr"(select * from ${first.wholeTable.tableId.asFragment} WHERE ${first.field} IN UNNEST($in))"
+                bqfr"(select * from ${first.wholeTable.tableId.asFragment} WHERE ${first.field} IN $in)"
               )
             case Nil => None
           }
