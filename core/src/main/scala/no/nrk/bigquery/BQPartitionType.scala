@@ -21,24 +21,36 @@ import java.time.{LocalDate, YearMonth}
   *
   * It is meant that when we add support for more partition schemes, the first step is to add a new subtype here.
   */
-sealed trait BQPartitionType[+Param]
+sealed trait BQPartitionType[+Param] {
+  def fieldOpt: Option[Ident]
+}
 
 object BQPartitionType {
 
-  final case class DatePartitioned(field: Ident) extends BQPartitionType[LocalDate]
+  final case class DatePartitioned(field: Ident) extends BQPartitionType[LocalDate] {
+    override def fieldOpt: Option[Ident] = Option(field)
+  }
 
-  final case class MonthPartitioned(field: Ident) extends BQPartitionType[YearMonth]
+  final case class MonthPartitioned(field: Ident) extends BQPartitionType[YearMonth] {
+    override def fieldOpt: Option[Ident] = Option(field)
+  }
 
-  final case class RangePartitioned(field: Ident, range: BQRange = BQRange.default) extends BQPartitionType[Long]
+  final case class RangePartitioned(field: Ident, range: BQRange = BQRange.default) extends BQPartitionType[Long] {
+    override def fieldOpt: Option[Ident] = Option(field)
+  }
 
   sealed trait Sharded extends BQPartitionType[LocalDate]
 
   // note: the reason why there are both a sealed trait and an object with the same name is to say `Sharded` sharded instead of `Sharded.type`.
-  case object Sharded extends Sharded
+  case object Sharded extends Sharded {
+    override def fieldOpt: Option[Ident] = None
+  }
 
   sealed trait NotPartitioned extends BQPartitionType[Unit]
 
-  case object NotPartitioned extends NotPartitioned
+  case object NotPartitioned extends NotPartitioned {
+    override def fieldOpt: Option[Ident] = None
+  }
 
   def ignoredPartitioning[P](original: BQPartitionType[P]): NotPartitioned =
     original match {
@@ -47,5 +59,7 @@ object BQPartitionType {
     }
 
   /* this only exists to recover information in tests, for instance when staging view queries for date-partitioned fills */
-  case class IgnoredPartitioning[P](original: BQPartitionType[P]) extends NotPartitioned
+  case class IgnoredPartitioning[P](original: BQPartitionType[P]) extends NotPartitioned {
+    override def fieldOpt: Option[Ident] = original.fieldOpt
+  }
 }
