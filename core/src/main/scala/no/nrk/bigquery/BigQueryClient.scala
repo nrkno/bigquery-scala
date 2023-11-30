@@ -254,7 +254,7 @@ class BigQueryClient[F[_]](
   def loadToHashedPartition[A, T](
       jobId: BQJobId,
       table: BQTableDef.Table[Long],
-      stream: fs2.Stream[F, A],
+      stream: fs2.Stream[F, A]
   )(implicit hashedEncoder: HashedPartitionEncoder[A, T]): F[Option[LoadStatistics]] =
     loadToHashedPartition(jobId, table, stream, logStream = false)
 

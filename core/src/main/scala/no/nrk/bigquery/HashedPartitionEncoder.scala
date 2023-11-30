@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 NRK
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 package no.nrk.bigquery
 
 import io.circe.{Encoder, Json}
