@@ -68,7 +68,7 @@ sealed trait BQSqlFrag {
         partitionId match {
           case x @ BQPartitionId.MonthPartitioned(_, _) => x.asSubQuery.asString
           case x @ BQPartitionId.DatePartitioned(_, _) => x.asSubQuery.asString
-          case x @ BQPartitionId.RangePartitioned(_, _) => x.asSubQuery.asString
+          case x @ BQPartitionId.IntegerRangePartitioned(_, _) => x.asSubQuery.asString
           case x @ BQPartitionId.Sharded(_, _) =>
             x.asTableId.asFragment.asString
           case x @ BQPartitionId.NotPartitioned(_) =>
@@ -288,7 +288,7 @@ object BQSqlFrag {
           }
 
         val fromRangePartitioned: Option[BQSqlFrag] =
-          partitions.collect { case x: BQPartitionId.RangePartitioned =>
+          partitions.collect { case x: BQPartitionId.IntegerRangePartitioned =>
             x
           }.sorted match {
             case partitions @ (first :: _) =>

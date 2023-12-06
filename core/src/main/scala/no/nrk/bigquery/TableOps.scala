@@ -96,8 +96,8 @@ object TableOps {
         partition: Long
     ): BQPartitionId[Long] =
       table.partitionType match {
-        case _: BQPartitionType.RangePartitioned =>
-          BQPartitionId.RangePartitioned(table, partition)
+        case _: BQPartitionType.IntegerRangePartitioned =>
+          BQPartitionId.IntegerRangePartitioned(table, partition)
       }
 
     override def loadPartitions[F[_]: Concurrent](
@@ -107,7 +107,7 @@ object TableOps {
         requireRowNums: Boolean
     ): F[Vector[(BQPartitionId[Long], PartitionMetadata)]] =
       table.partitionType match {
-        case x: BQPartitionType.RangePartitioned =>
+        case x: BQPartitionType.IntegerRangePartitioned =>
           PartitionLoader
             .range(
               table,

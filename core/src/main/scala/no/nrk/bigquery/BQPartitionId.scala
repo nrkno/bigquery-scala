@@ -90,18 +90,18 @@ object BQPartitionId {
       partition.format(yearMonthNoDash)
   }
 
-  final case class RangePartitioned(
+  final case class IntegerRangePartitioned(
       wholeTable: BQTableLike[Long],
       partition: Long
   ) extends BQPartitionId[Long] {
     def field: Ident = wholeTable.partitionType match {
-      case BQPartitionType.RangePartitioned(field, _) => field
+      case BQPartitionType.IntegerRangePartitioned(field, _) => field
       case other => sys.error(s"Unexpected $other")
     }
 
     val (rangeStart: Long, rangeEnd: Long) =
       wholeTable.partitionType match {
-        case BQPartitionType.RangePartitioned(_, range) =>
+        case BQPartitionType.IntegerRangePartitioned(_, range) =>
           range.calculatePartition(partition)
       }
 

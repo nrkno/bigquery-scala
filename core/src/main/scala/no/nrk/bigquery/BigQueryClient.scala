@@ -251,30 +251,30 @@ class BigQueryClient[F[_]](
       chunkSize = 10 * StreamUtils.Megabyte
     )
 
-  def loadToHashedPartition[A, T](
+  def loadToHashedPartition[A](
       jobId: BQJobId,
       table: BQTableDef.Table[Long],
       stream: fs2.Stream[F, A]
-  )(implicit hashedEncoder: HashedPartitionEncoder[A, T]): F[Option[LoadStatistics]] =
+  )(implicit hashedEncoder: HashedPartitionEncoder[A]): F[Option[LoadStatistics]] =
     loadToHashedPartition(jobId, table, stream, logStream = false)
 
-  def loadToHashedPartition[A, T](
+  def loadToHashedPartition[A](
       jobId: BQJobId,
       table: BQTableDef.Table[Long],
       stream: fs2.Stream[F, A],
       logStream: Boolean
-  )(implicit hashedEncoder: HashedPartitionEncoder[A, T]): F[Option[LoadStatistics]] =
+  )(implicit hashedEncoder: HashedPartitionEncoder[A]): F[Option[LoadStatistics]] =
     loadToHashedPartition(jobId, table, stream, logStream, chunkSize = 10 * StreamUtils.Megabyte)
 
-  def loadToHashedPartition[A, T](
+  def loadToHashedPartition[A](
       jobId: BQJobId,
       table: BQTableDef.Table[Long],
       stream: fs2.Stream[F, A],
       logStream: Boolean,
       chunkSize: Int
-  )(implicit hashedEncoder: HashedPartitionEncoder[A, T]): F[Option[LoadStatistics]] = {
+  )(implicit hashedEncoder: HashedPartitionEncoder[A]): F[Option[LoadStatistics]] = {
     val partitionType = table.partitionType match {
-      case x: BQPartitionType.RangePartitioned => x
+      case x: BQPartitionType.IntegerRangePartitioned => x
     }
 
     loadJson(

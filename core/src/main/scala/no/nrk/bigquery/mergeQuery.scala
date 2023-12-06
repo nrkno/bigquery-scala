@@ -31,7 +31,7 @@ object mergeQuery {
     } else {
       val partitionField = target.partitionType match {
         case BQPartitionType.DatePartitioned(field) => Some(field)
-        case BQPartitionType.RangePartitioned(field, _) => Some(field)
+        case BQPartitionType.IntegerRangePartitioned(field, _) => Some(field)
         case _ => None
       }
 
@@ -79,7 +79,7 @@ object mergeQuery {
     (source.partitionType match {
       case BQPartitionType.DatePartitioned(field) => Some((field, BQType.DATE))
       case BQPartitionType.MonthPartitioned(field) => Some((field, BQType.DATE))
-      case BQPartitionType.RangePartitioned(field, _) => Some((field, BQType.INT64))
+      case BQPartitionType.IntegerRangePartitioned(field, _) => Some((field, BQType.INT64))
       case _ => None
     }).fold((BQSqlFrag.Empty, BQSqlFrag.Empty)) { case (field, fieldType) =>
       (

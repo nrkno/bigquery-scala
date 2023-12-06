@@ -11,7 +11,7 @@ import munit.FunSuite
 import java.util.UUID
 
 class BQValueHasherTest extends FunSuite {
-  val TestRange = BQRange(start = 0, end = 20, interval = 2)
+  val TestRange = BQIntegerRange(start = 0, end = 20, interval = 2)
 
   test("That the hash is inside our range") {
     assert((1 to 100).forall { _ =>

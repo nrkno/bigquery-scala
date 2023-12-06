@@ -51,7 +51,7 @@ private[bigquery] object PartitionLoader {
           )
           .widen
 
-      case x: BQPartitionType.RangePartitioned =>
+      case x: BQPartitionType.IntegerRangePartitioned =>
         PartitionLoader
           .range(
             table.withTableType[Long](x),
@@ -326,7 +326,7 @@ private[bigquery] object PartitionLoader {
         requireRowNums: Boolean
     )(implicit
         F: Concurrent[F]
-    ): F[Vector[(BQPartitionId.RangePartitioned, PartitionMetadata)]] = {
+    ): F[Vector[(BQPartitionId.IntegerRangePartitioned, PartitionMetadata)]] = {
       val rowNumByInt: F[Map[Long, Long]] =
         if (requireRowNums)
           client
@@ -369,7 +369,7 @@ private[bigquery] object PartitionLoader {
         rows <- rowsIO.compile.toVector
         rowsNumByInt <- rowNumByInt
       } yield rows.map { case (partition, l1, l2) =>
-        BQPartitionId.RangePartitioned(table, partition) -> PartitionMetadata(
+        BQPartitionId.IntegerRangePartitioned(table, partition) -> PartitionMetadata(
           l1,
           l2,
           rowCount = rowsNumByInt.get(partition),

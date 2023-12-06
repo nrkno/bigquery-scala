@@ -36,12 +36,12 @@ object PartitionTypeHelper {
         )
       case _: BQPartitionType.Sharded => None
       case _: BQPartitionType.NotPartitioned => None
-      case _: BQPartitionType.RangePartitioned => None
+      case _: BQPartitionType.IntegerRangePartitioned => None
     }
 
   def rangepartitioned(bqtype: BQPartitionType[Any]): Option[RangePartitioning] =
     bqtype match {
-      case BQPartitionType.RangePartitioned(field, range) =>
+      case BQPartitionType.IntegerRangePartitioned(field, range) =>
         Some(
           RangePartitioning
             .newBuilder()
@@ -86,10 +86,13 @@ object PartitionTypeHelper {
       case (Some(time), None) if time.getType == TimePartitioning.Type.MONTH && time.getField != null =>
         Right(BQPartitionType.MonthPartitioned(Ident(time.getField)))
       case (None, Some(range)) =>
-        Right(BQPartitionType.RangePartitioned(Ident(range.getField), BQRange.fromRangePartitioning(range.getRange)))
+        Right(BQPartitionType.IntegerRangePartitioned(Ident(range.getField), fromRangePartitioning(range.getRange)))
       case (time, range) =>
         Left(
           s"Need to implement support in `BQPartitionType` for ${time.orElse(range)}"
         )
     }
+
+  def fromRangePartitioning(range: RangePartitioning.Range) =
+    BQIntegerRange(start = range.getStart, end = range.getEnd, interval = range.getInterval)
 }

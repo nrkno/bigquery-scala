@@ -38,7 +38,7 @@ object BQPartitionType {
 
   final case class DatePartitioned(field: Ident) extends BQPartitionType[LocalDate]
   final case class MonthPartitioned(field: Ident) extends BQPartitionType[YearMonth]
-  final case class RangePartitioned(field: Ident, range: BQRange = BQRange.default) extends BQPartitionType[Long]
+  final case class IntegerRangePartitioned(field: Ident, range: BQIntegerRange = BQIntegerRange.DefaultRange) extends BQPartitionType[Long]
 
   sealed trait Sharded extends BQPartitionType[LocalDate]
 
