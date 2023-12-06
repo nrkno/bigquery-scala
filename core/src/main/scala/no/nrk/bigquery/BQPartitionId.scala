@@ -6,8 +6,8 @@
 
 package no.nrk.bigquery
 
-import no.nrk.bigquery.syntax._
 import cats.Show
+import no.nrk.bigquery.syntax.*
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, YearMonth}
@@ -88,6 +88,30 @@ object BQPartitionId {
 
     override def partitionString: String =
       partition.format(yearMonthNoDash)
+  }
+
+  final case class IntegerRangePartitioned(
+      wholeTable: BQTableLike[Long],
+      partition: Long
+  ) extends BQPartitionId[Long] {
+    def field: Ident = wholeTable.partitionType match {
+      case BQPartitionType.IntegerRangePartitioned(field, _) => field
+      case other => sys.error(s"Unexpected $other")
+    }
+
+    val (rangeStart: Long, rangeEnd: Long) =
+      wholeTable.partitionType match {
+        case BQPartitionType.IntegerRangePartitioned(_, range) =>
+          range.calculatePartition(partition)
+      }
+
+    def asSubQuery: BQSqlFrag =
+      bqfr"""(select * from ${wholeTable.tableId.asFragment} where $field BETWEEN $rangeStart AND $rangeEnd)"""
+
+    def asTableId: BQTableId =
+      wholeTable.tableId.modifyTableName(_ + "$" + partitionString)
+
+    override def partitionString: String = partition.toString
   }
 
   final case class Sharded(

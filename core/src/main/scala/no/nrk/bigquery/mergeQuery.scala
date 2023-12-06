@@ -11,63 +11,85 @@ import no.nrk.bigquery.syntax._
 import scala.annotation.tailrec
 
 object mergeQuery {
-  def into[Pid <: BQPartitionId[Any]](
-      source: Pid,
-      target: Pid,
-      primaryKey: Ident,
-      morePrimaryKeys: Ident*
-  ): BQSqlFrag = {
-    val primaryKeys: Seq[Ident] = {
-      val partitionField: Option[Ident] =
-        target.wholeTable.partitionType match {
-          case BQPartitionType.DatePartitioned(field) => Some(field)
-          case _ => None
-        }
-
-      List(
-        List(primaryKey),
-        morePrimaryKeys.toList,
-        partitionField.toList
-      ).flatten.distinct
+  def into[Pid <: BQPartitionId[Any]](source: Pid, target: Pid, primaryKey: Ident, morePrimaryKeys: Ident*): BQSqlFrag =
+    (source.wholeTable, target.wholeTable) match {
+      case (from: BQTableDef[Any], to: BQTableDef[Any]) =>
+        into(from, to, primaryKey, morePrimaryKeys *)
+      case (from, into) =>
+        sys.error(s"Cannot merge $from into $into")
     }
 
-    val allFields: List[BQField] =
-      (source.wholeTable, target.wholeTable) match {
-        // compare schema without comments, since those may be dynamic and it doesnt matter anyway
-        case (from: BQTableDef[Any], into: BQTableDef[Any])
-            if BQType
-              .fromBQSchema(from.schema) == BQType.fromBQSchema(into.schema) =>
-          from.schema.fields
-        case (from, into) =>
-          sys.error(s"Cannot merge $from into $into")
+  def into[P](
+      source: BQTableDef[P],
+      target: BQTableDef[P],
+      primaryKey: Ident,
+      morePrimaryKeys: Ident*
+  ): BQSqlFrag =
+    // compare schema without comments, since those may be dynamic and it doesnt matter anyway
+    if (BQType.fromBQSchema(source.schema) != BQType.fromBQSchema(target.schema)) {
+      sys.error(s"Cannot merge $source into $target")
+    } else {
+      val partitionField = target.partitionType match {
+        case BQPartitionType.DatePartitioned(field) => Some(field)
+        case BQPartitionType.IntegerRangePartitioned(field, _) => Some(field)
+        case _ => None
       }
 
-    val allFieldNames: List[Ident] =
-      allFields.map(_.ident)
+      val primaryKeys: Seq[Ident] =
+        List(
+          List(primaryKey),
+          morePrimaryKeys.toList,
+          partitionField.toList
+        ).flatten.distinct
 
-    val isPrimaryKey = primaryKeys.toSet
+      val allFields: List[BQField] =
+        source.schema.fields
 
-    // note: we need to specify whole table for target table. partition info will be inferred from source
-    bqsql"""
-           |MERGE ${target.wholeTable.unpartitioned} AS T
-           |USING $source AS S
-           |ON ${primaryKeys.toList
-        .map(keyEqualsFragment(allFields))
-        .mkFragment("\n AND ")}
-           |WHEN MATCHED THEN UPDATE SET
-           |${allFieldNames
-        .filterNot(isPrimaryKey)
-        .map(nonKey => bqfr"    T.$nonKey = S.$nonKey")
-        .mkFragment(",\n")}
-           |WHEN NOT MATCHED THEN
-           |  INSERT (
-           |${allFieldNames.map(field => bqfr"    $field").mkFragment(",\n")}
-           |  )
-           |  VALUES (
-           |${allFieldNames.map(field => bqfr"    S.$field").mkFragment(",\n")}
-           |  )
+      val allFieldNames: List[Ident] =
+        allFields.map(_.ident)
+
+      val isPrimaryKey = primaryKeys.toSet
+      val (declareStruct, prunePartitions) = partitionPruningFrags(source)
+
+      bqsql"""
+             |$declareStruct
+             |
+             |MERGE ${target.wholeTable} AS T
+             |USING ${source.wholeTable} AS S
+             |ON ${primaryKeys.toList
+          .map(keyEqualsFragment(allFields))
+          .mkFragment("\n AND ")}
+             |$prunePartitions
+             |WHEN MATCHED THEN UPDATE SET
+             |${allFieldNames
+          .filterNot(isPrimaryKey)
+          .map(nonKey => bqfr"    T.$nonKey = S.$nonKey")
+          .mkFragment(",\n")}
+             |WHEN NOT MATCHED THEN
+             |  INSERT (
+             |${allFieldNames.map(field => bqfr"    $field").mkFragment(",\n")}
+             |  )
+             |  VALUES (
+             |${allFieldNames.map(field => bqfr"    S.$field").mkFragment(",\n")}
+             |  )
          """.stripMargin
-  }
+    }
+
+  def partitionPruningFrags[P](source: BQTableDef[P]): (BQSqlFrag, BQSqlFrag) =
+    (source.partitionType match {
+      case BQPartitionType.DatePartitioned(field) => Some((field, BQType.DATE))
+      case BQPartitionType.MonthPartitioned(field) => Some((field, BQType.DATE))
+      case BQPartitionType.IntegerRangePartitioned(field, _) => Some((field, BQType.INT64))
+      case _ => None
+    }).fold((BQSqlFrag.Empty, BQSqlFrag.Empty)) { case (field, fieldType) =>
+      (
+        bqsql"""
+             |DECLARE partitions ARRAY<$fieldType>;
+             |SET partitions = ARRAY(SELECT DISTINCT($field) FROM ${source.wholeTable});
+        """.stripMargin,
+        bqsql"AND T.$field IN UNNEST(partitions)"
+      )
+    }
 
   def keyEqualsFragment(
       allFields: List[BQField]

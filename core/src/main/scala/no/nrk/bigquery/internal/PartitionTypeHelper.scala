@@ -15,8 +15,6 @@ import com.google.cloud.bigquery.{
 }
 
 object PartitionTypeHelper {
-  private def assertIsUsed(a: Any*): Unit = (a, ())._2
-
   def timePartitioned(bqtype: BQPartitionType[Any], tableOptions: TableOptions): Option[TimePartitioning] =
     bqtype match {
       case BQPartitionType.DatePartitioned(field) =>
@@ -38,12 +36,27 @@ object PartitionTypeHelper {
         )
       case _: BQPartitionType.Sharded => None
       case _: BQPartitionType.NotPartitioned => None
+      case _: BQPartitionType.IntegerRangePartitioned => None
     }
 
-  def rangepartitioned(bqtype: BQPartitionType[Any]): Option[RangePartitioning] = {
-    assertIsUsed(bqtype)
-    None
-  }
+  def rangepartitioned(bqtype: BQPartitionType[Any]): Option[RangePartitioning] =
+    bqtype match {
+      case BQPartitionType.IntegerRangePartitioned(field, range) =>
+        Some(
+          RangePartitioning
+            .newBuilder()
+            .setRange(
+              RangePartitioning.Range
+                .newBuilder()
+                .setStart(range.start)
+                .setEnd(range.end)
+                .setInterval(range.interval)
+                .build())
+            .setField(field.value)
+            .build()
+        )
+      case _ => None
+    }
 
   def from(
       actual: StandardTableDefinition
@@ -72,9 +85,14 @@ object PartitionTypeHelper {
         Right(BQPartitionType.DatePartitioned(Ident(time.getField)))
       case (Some(time), None) if time.getType == TimePartitioning.Type.MONTH && time.getField != null =>
         Right(BQPartitionType.MonthPartitioned(Ident(time.getField)))
+      case (None, Some(range)) =>
+        Right(BQPartitionType.IntegerRangePartitioned(Ident(range.getField), fromRangePartitioning(range.getRange)))
       case (time, range) =>
         Left(
           s"Need to implement support in `BQPartitionType` for ${time.orElse(range)}"
         )
     }
+
+  def fromRangePartitioning(range: RangePartitioning.Range) =
+    BQIntegerRange(start = range.getStart, end = range.getEnd, interval = range.getInterval)
 }

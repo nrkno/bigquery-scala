@@ -251,6 +251,43 @@ class BigQueryClient[F[_]](
       chunkSize = 10 * StreamUtils.Megabyte
     )
 
+  def loadToHashedPartition[A](
+      jobId: BQJobId,
+      table: BQTableDef.Table[Long],
+      stream: fs2.Stream[F, A]
+  )(implicit hashedEncoder: HashedPartitionEncoder[A]): F[Option[LoadStatistics]] =
+    loadToHashedPartition(jobId, table, stream, logStream = false)
+
+  def loadToHashedPartition[A](
+      jobId: BQJobId,
+      table: BQTableDef.Table[Long],
+      stream: fs2.Stream[F, A],
+      logStream: Boolean
+  )(implicit hashedEncoder: HashedPartitionEncoder[A]): F[Option[LoadStatistics]] =
+    loadToHashedPartition(jobId, table, stream, logStream, chunkSize = 10 * StreamUtils.Megabyte)
+
+  def loadToHashedPartition[A](
+      jobId: BQJobId,
+      table: BQTableDef.Table[Long],
+      stream: fs2.Stream[F, A],
+      logStream: Boolean,
+      chunkSize: Int
+  )(implicit hashedEncoder: HashedPartitionEncoder[A]): F[Option[LoadStatistics]] = {
+    val partitionType = table.partitionType match {
+      case x: BQPartitionType.IntegerRangePartitioned => x
+    }
+
+    loadJson(
+      jobId,
+      table.tableId,
+      table.schema,
+      stream.map(x => hashedEncoder.toJson(x, partitionType)),
+      WriteDisposition.WRITE_APPEND,
+      logStream,
+      chunkSize
+    )
+  }
+
   /** @return
     *   None, if `chunkedStream` is empty
     */
@@ -262,14 +299,28 @@ class BigQueryClient[F[_]](
       writeDisposition: WriteDisposition,
       logStream: Boolean,
       chunkSize: Int
+  ): F[Option[LoadStatistics]] = {
+    val tableId = table.assertPartition(partition).asTableId
+    loadJson(jobId, tableId, table.schema, stream, writeDisposition, logStream, chunkSize)
+  }
+
+  /** @return
+    *   None, if `chunkedStream` is empty
+    */
+  private def loadJson[A: Encoder](
+      jobId: BQJobId,
+      tableId: BQTableId,
+      schema: BQSchema,
+      stream: fs2.Stream[F, A],
+      writeDisposition: WriteDisposition,
+      logStream: Boolean,
+      chunkSize: Int
   ): F[Option[LoadStatistics]] =
     submitJob(jobId) { jobId =>
-      val partitionId = table.assertPartition(partition)
       val formatOptions = FormatOptions.json()
-      val schema = table.schema
 
       val writeChannelConfiguration = WriteChannelConfiguration
-        .newBuilder(partitionId.asTableId.underlying)
+        .newBuilder(tableId.underlying)
         .setWriteDisposition(writeDisposition)
         .setFormatOptions(formatOptions)
         .setSchema(SchemaHelper.toSchema(schema))
@@ -287,7 +338,7 @@ class BigQueryClient[F[_]](
             .through(
               if (logStream)
                 StreamUtils
-                  .logChunks(logger, None, show"uploading to $partitionId")
+                  .logChunks(logger, None, show"uploading to $tableId")
               else identity
             )
             .prefetch

@@ -21,13 +21,25 @@ import java.time.{LocalDate, YearMonth}
   *
   * It is meant that when we add support for more partition schemes, the first step is to add a new subtype here.
   */
-sealed trait BQPartitionType[+Param]
+sealed trait BQPartitionType[+Param] {
+  def partitionField: Option[Ident] = {
+    val asType = this.asInstanceOf[BQPartitionType[Any]]
+    asType match {
+      case BQPartitionType.DatePartitioned(field) => Some(field)
+      case BQPartitionType.MonthPartitioned(field) => Some(field)
+      case BQPartitionType.IntegerRangePartitioned(field, _) => Some(field)
+      case _: BQPartitionType.Sharded => None
+      case _: BQPartitionType.NotPartitioned => None
+    }
+  }
+}
 
 object BQPartitionType {
 
   final case class DatePartitioned(field: Ident) extends BQPartitionType[LocalDate]
-
   final case class MonthPartitioned(field: Ident) extends BQPartitionType[YearMonth]
+  final case class IntegerRangePartitioned(field: Ident, range: BQIntegerRange = BQIntegerRange.default)
+      extends BQPartitionType[Long]
 
   sealed trait Sharded extends BQPartitionType[LocalDate]
 
