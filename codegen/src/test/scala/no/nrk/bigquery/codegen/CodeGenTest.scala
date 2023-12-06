@@ -39,6 +39,29 @@ class CodeGenTest extends munit.FunSuite with testing.GeneratedTest {
     writeAndCompare(head.loc.destinationFile(path), head.asObject)
   }
 
+  test("generate table integer range code") {
+    val table = BQTableDef.Table(
+      BQTableId.unsafeFromString("com-example.test.something-ranged"),
+      BQSchema.of(
+        BQField("id", BQField.Type.STRING, BQField.Mode.REQUIRED),
+        BQField("name", BQField.Type.STRING, BQField.Mode.REQUIRED)
+      ),
+      partitionType = BQPartitionType.IntegerRangePartitioned(Ident("id")),
+      description = Some("desc"),
+      clustering = Nil,
+      labels = TableLabels.apply("foo" -> "bar"),
+      TableOptions.Empty
+    )
+
+    val generated = CodeGen.generate(
+      List(table),
+      List("example")
+    )
+    val head = generated.head
+    val path = basedir.resolve("codegen-tests")
+    writeAndCompare(head.loc.destinationFile(path), head.asObject)
+  }
+
   test("generate view code") {
     val generated = CodeGen.generate(
       List(
