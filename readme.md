@@ -20,3 +20,4 @@ What does this library include:
 - [View example](./docs/example_view.md)
 - [User defined function (UDF) example](./docs/example_udf.md)
 - [Table value function (TVF) exampe](./docs/example_tvf.md)
+- [Rewrite structs](./docs/struct_projection.md)

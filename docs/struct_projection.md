@@ -1,7 +1,7 @@
 # Struct projection
 
-Using structs in bigquery is a nice way to organize your data. However, it can be cumbersome to manup with. Struct
-projection gives us a more declarative API to rewrite them. 
+Using structs in bigquery is a nice way to organize your data. However, it can be cumbersome to transform and maintain. Struct
+projection gives us a more declarative API to rewrite the mappings. 
 
 ## Projection example
 
