@@ -19,3 +19,4 @@ What does this library include:
 - [Query example](./docs/example_query.md)
 - [View example](./docs/example_view.md)
 - [User defined function (UDF) example](./docs/example_udf.md)
+- [Table value function (TVF) exampe](./docs/example_tvf.md)
