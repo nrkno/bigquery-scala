@@ -169,7 +169,10 @@ lazy val testing = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
-    mimaBinaryIssueFilters := Nil
+    mimaBinaryIssueFilters := List(
+      ProblemFilters.exclude[IncompatibleMethTypeProblem](
+        "no.nrk.bigquery.testing.BQSmokeTest.bqCheckTableValueFunction")
+    )
   )
 
 lazy val codegen = crossProject(JVMPlatform)

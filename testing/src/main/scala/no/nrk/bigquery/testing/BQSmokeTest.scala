@@ -22,7 +22,7 @@ import no.nrk.bigquery.internal.SchemaHelper
 import no.nrk.bigquery.testing.BQSmokeTest.{CheckType, bqCheckFragment}
 import org.typelevel.log4cats.slf4j._
 import no.nrk.bigquery.syntax._
-import no.nrk.bigquery.util.{Nat, Sized}
+import no.nrk.bigquery.util.{IndexSeqSizedBuilder, Nat, Sized}
 import org.typelevel.log4cats.SelfAwareStructuredLogger
 
 import java.nio.charset.StandardCharsets
@@ -32,6 +32,8 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
   self =>
 
   override def testType: String = "big-query"
+
+  private val builder: IndexSeqSizedBuilder[BQSqlFrag.Magnet] = new IndexSeqSizedBuilder[BQSqlFrag.Magnet]
 
   val assertStableTables: List[BQTableLike[Any]] = Nil
 
@@ -218,11 +220,11 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
     }
 
   protected def bqCheckTableValueFunction[N <: Nat](testName: String, tvf: TVF[_, N])(
-      args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]
+      args: IndexSeqSizedBuilder[BQSqlFrag.Magnet] => Sized[IndexedSeq[BQSqlFrag.Magnet], N]
   )(implicit loc: Location): Unit = {
     val values =
       tvf.params.unsized
-        .zip(args.unsized)
+        .zip(args(builder).unsized)
         .map { case (param, arg) => bqfr"declare ${param.name} default ${arg};" }
         .mkFragment("\n")
 
