@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets
 @FunctionalInterface
 trait BQValueHasher[T] {
   final def hashValueInBQ(value: Ident, range: BQIntegerRange): BQSqlFrag =
-    bqsql"""MOD(CAST(CONCAT("0x", SUBSTRING(TO_HEX(SHA256($value)), 0, 14)) as INT64), ${range.end})"""
+    bqsql"""MOD(CAST(CONCAT("0x", SUBSTRING(TO_HEX(SHA256(COALESCE($value, ""))), 0, 14)) as INT64), ${range.end})"""
   def hashValue(value: T, range: BQIntegerRange): Long
 
   def contramap[Q](f: Q => T): BQValueHasher[Q] = (value: Q, range: BQIntegerRange) => hashValue(f(value), range)
