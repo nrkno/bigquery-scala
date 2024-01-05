@@ -449,7 +449,7 @@ object BQSmokeTest {
         val schemaOpt: Option[BQSchema] =
           pid.wholeTable match {
             case BQTableRef(_, _, _) => None
-            case _: BQAppliedTableValuedFunction[Any] => None
+            case x: BQAppliedTableValuedFunction[Any] => Some(x.schema)
             case x: BQTableDef[Any] => Some(x.schema)
           }
 
