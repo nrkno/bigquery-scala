@@ -78,7 +78,7 @@ object BQUdfSmokeTest {
           )
 
           val run = bqClient
-            .synchronousQuery(BQJobId(None, None, BQJobName("smoketest")), BQQuery[Json](query))
+            .synchronousQuery(BQJobId(None, None, BQJobName("smoketest"), JobLabels.empty), BQQuery[Json](query))
             .compile
             .lastOrError
             .guaranteeCase {

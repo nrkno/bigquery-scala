@@ -1,7 +1,7 @@
 import com.typesafe.tools.mima.core._
 
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
-ThisBuild / tlBaseVersion := "0.14" // your current series x.y
+ThisBuild / tlBaseVersion := "0.15" // your current series x.y
 
 ThisBuild / organization := "no.nrk.bigquery"
 ThisBuild / organizationName := "NRK"
@@ -153,8 +153,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
-    mimaBinaryIssueFilters := Nil,
-    tlMimaPreviousVersions := Set.empty
+    mimaBinaryIssueFilters := Nil
   )
 
 lazy val testing = crossProject(JVMPlatform)
@@ -169,10 +168,7 @@ lazy val testing = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
-    mimaBinaryIssueFilters := List(
-      ProblemFilters.exclude[IncompatibleMethTypeProblem](
-        "no.nrk.bigquery.testing.BQSmokeTest.bqCheckTableValueFunction")
-    )
+    mimaBinaryIssueFilters := Nil
   )
 
 lazy val codegen = crossProject(JVMPlatform)

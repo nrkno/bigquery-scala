@@ -6,10 +6,10 @@
 
 package no.nrk.bigquery.internal
 
-import no.nrk.bigquery.{BQJobId, BQJobName}
+import no.nrk.bigquery.{BQJobId, BQJobName, JobLabels}
 
 trait BQNameConversions {
 
-  implicit def bqNameToBQJobId(name: BQJobName): BQJobId = BQJobId(None, None, name)
+  implicit def bqNameToBQJobId(name: BQJobName): BQJobId = BQJobId(None, None, name, JobLabels.empty)
 
 }

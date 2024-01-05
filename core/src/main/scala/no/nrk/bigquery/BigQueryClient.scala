@@ -125,6 +125,7 @@ class BigQueryClient[F[_]](
       val queryRequest = QueryJobConfiguration
         .newBuilder(query.asStringWithUDFs)
         .setUseLegacySql(legacySql)
+        .setLabels(jobId.labels.value.asJava)
         .build
       submitJob(jobId)(jobId =>
         F.blocking(
@@ -308,7 +309,7 @@ class BigQueryClient[F[_]](
     *   None, if `chunkedStream` is empty
     */
   private def loadJson[A: Encoder](
-      jobId: BQJobId,
+      id: BQJobId,
       tableId: BQTableId,
       schema: BQSchema,
       stream: fs2.Stream[F, A],
@@ -316,7 +317,7 @@ class BigQueryClient[F[_]](
       logStream: Boolean,
       chunkSize: Int
   ): F[Option[LoadStatistics]] =
-    submitJob(jobId) { jobId =>
+    submitJob(id) { jobId =>
       val formatOptions = FormatOptions.json()
 
       val writeChannelConfiguration = WriteChannelConfiguration
@@ -324,6 +325,7 @@ class BigQueryClient[F[_]](
         .setWriteDisposition(writeDisposition)
         .setFormatOptions(formatOptions)
         .setSchema(SchemaHelper.toSchema(schema))
+        .setLabels(id.labels.value.asJava)
         .build()
 
       val writerResource: Resource[F, TableDataWriteChannel] =
@@ -440,6 +442,7 @@ class BigQueryClient[F[_]](
         destination.foreach(partitionId => b.setDestinationTable(partitionId.asTableId.underlying))
         writeDisposition.foreach(b.setWriteDisposition)
         timePartitioning.foreach(b.setTimePartitioning)
+        b.setLabels(id.labels.value.asJava)
         b.build()
       }
 
