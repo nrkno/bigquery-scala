@@ -50,9 +50,16 @@ object JobLabels {
       .toEither
   }
 
-  def safeString(value: String): Option[String] =
-    if (value.trim.isEmpty) None
-    else Some(value.substring(0, Math.min(63, value.length)).toLowerCase().replaceAll("\\W", "-"))
+  /** truncates string to 63 chars. Replaces all non-word chars with _ Users should make sure this cannot result in an
+    * empty string, as that will fail validation,
+    *
+    * @param value
+    *   a non-empty string
+    * @return
+    *   a truncated or empty string.
+    */
+  def safeString(value: String): String =
+    value.trim.substring(0, Math.min(63, value.length)).toLowerCase().replaceAll("\\W", "_")
 
   def apply(params: (String, String)*): Either[NonEmptyChain[String], JobLabels] = validated(SortedMap(params: _*))
 
