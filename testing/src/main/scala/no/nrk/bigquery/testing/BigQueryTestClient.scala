@@ -76,9 +76,9 @@ object BigQueryTestClient {
           val hash =
             java.util.Objects.hash(query, Boolean.box(legacySql), jobOptions)
           val hashedSchemaPath =
-            queryCachePath.resolve(s"${jobId.name.value}__$hash.json")
+            queryCachePath.resolve(s"${jobId.name}__$hash.json")
           val hashedRowsPath =
-            queryCachePath.resolve(s"${jobId.name.value}__$hash.avro")
+            queryCachePath.resolve(s"${jobId.name}__$hash.avro")
 
           def runAndStore: Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] =
             for {

@@ -497,7 +497,7 @@ class BigQueryClient[F[_]](
       }
 
     freshJobId(jobId)
-      .flatMap(id => BQMetrics(metricOps, jobId.name)(loggedJob(id)))
+      .flatMap(id => BQMetrics(metricOps, jobId)(loggedJob(id)))
   }
 
   def getTable(
@@ -609,7 +609,7 @@ class BigQueryClient[F[_]](
     F.delay(
       JobId
         .newBuilder()
-        .setJob(s"${withDefaults.name.value}-${UUID.randomUUID}")
+        .setJob(s"${withDefaults.name}-${UUID.randomUUID}")
         .setLocation(withDefaults.locationId.map(_.value).orNull)
         .setProject(withDefaults.projectId.map(_.value).orNull)
         .build()

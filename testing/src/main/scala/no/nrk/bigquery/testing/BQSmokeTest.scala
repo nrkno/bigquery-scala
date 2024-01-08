@@ -273,7 +273,7 @@ object BQSmokeTest {
                 s"Running $testName against BQ (could have been cached)"
               )
               val run = bqClient
-                .dryRun(BQJobId(None, None, BQJobName("smoketest"), JobLabels.empty), staticFrag)
+                .dryRun(BQJobId("smoketest"), staticFrag)
                 .map(job =>
                   SchemaHelper.fromSchema(
                     job.getStatistics[QueryStatistics]().getSchema
@@ -295,7 +295,7 @@ object BQSmokeTest {
         val log = logger.warn(s"Running $testName because $notStaticBecause")
 
         val runCheck = bqClient
-          .dryRun(BQJobId(None, None, BQJobName("smoketest"), JobLabels.empty), frag)
+          .dryRun(BQJobId("smoketest"), frag)
           .guaranteeCase {
             case Outcome.Errored(_) if checkType != CheckType.Failing =>
               IO(println(s"failed query: ${frag.asStringWithUDFs}"))

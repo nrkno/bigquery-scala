@@ -38,19 +38,19 @@ object Prometheus {
         registry: CollectorRegistry,
         prefix: String
     ): Resource[F, MetricsOps[F]] =
-      apply(registry, prefix, job => Some(job.value))
+      apply(registry, prefix, job => Some(job.name))
 
     def apply[F[_]: Sync](
         registry: CollectorRegistry,
         prefix: String,
-        classifierF: BQJobName => Option[String]
+        classifierF: BQJobId => Option[String]
     ): Resource[F, MetricsOps[F]] =
       apply(registry, prefix, classifierF, DefaultHistogramBuckets)
 
     def apply[F[_]: Sync](
         registry: CollectorRegistry,
         prefix: String,
-        classifierF: BQJobName => Option[String],
+        classifierF: BQJobId => Option[String],
         responseDurationSecondsHistogramBuckets: NonEmptyList[Double]
     ): Resource[F, MetricsOps[F]] =
       for {
@@ -63,11 +63,11 @@ object Prometheus {
 
     private def createMetricsOps[F[_]](
         metrics: MetricsCollection,
-        classifierF: BQJobName => Option[String]
+        classifierF: BQJobId => Option[String]
     )(implicit F: Sync[F]): MetricsOps[F] =
       new MetricsOps[F] {
         override def increaseActiveJobs(
-            jobName: BQJobName
+            jobName: BQJobId
         ): F[Unit] =
           F.delay {
             metrics.activeJobs
@@ -76,7 +76,7 @@ object Prometheus {
           }
 
         override def decreaseActiveJobs(
-            jobName: BQJobName
+            jobName: BQJobId
         ): F[Unit] =
           F.delay {
             metrics.activeJobs
@@ -86,7 +86,7 @@ object Prometheus {
 
         override def recordTotalTime(
             elapsed: Long,
-            jobName: BQJobName
+            jobName: BQJobId
         ): F[Unit] =
           F.delay {
             metrics.jobDuration
@@ -100,7 +100,7 @@ object Prometheus {
         override def recordAbnormalTermination(
             elapsed: Long,
             terminationType: TerminationType,
-            jobName: BQJobName
+            jobName: BQJobId
         ): F[Unit] =
           terminationType match {
             case TerminationType.Abnormal(e) =>
@@ -112,7 +112,7 @@ object Prometheus {
 
         private def recordCanceled(
             elapsed: Long,
-            jobName: BQJobName
+            jobName: BQJobId
         ): F[Unit] =
           F.delay {
             metrics.abnormalTerminations
@@ -126,7 +126,7 @@ object Prometheus {
 
         private def recordAbnormal(
             elapsed: Long,
-            jobName: BQJobName,
+            jobName: BQJobId,
             cause: Throwable
         ): F[Unit] =
           F.delay {
@@ -141,7 +141,7 @@ object Prometheus {
 
         private def recordError(
             elapsed: Long,
-            jobName: BQJobName,
+            jobName: BQJobId,
             cause: Throwable
         ): F[Unit] =
           F.delay {
@@ -156,7 +156,7 @@ object Prometheus {
 
         private def recordTimeout(
             elapsed: Long,
-            jobName: BQJobName
+            jobName: BQJobId
         ): F[Unit] =
           F.delay {
             metrics.abnormalTerminations
@@ -170,7 +170,7 @@ object Prometheus {
 
         override def recordTotalBytesBilled(
             job: Option[JobStatistics],
-            jobName: BQJobName
+            jobName: BQJobId
         ): F[Unit] =
           job
             .collect { case stats: QueryStatistics =>

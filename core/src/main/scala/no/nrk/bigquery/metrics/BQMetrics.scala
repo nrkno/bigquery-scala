@@ -10,20 +10,20 @@ import cats.effect.kernel.Outcome
 import cats.effect.{Clock, Concurrent, Resource}
 import cats.syntax.all._
 import com.google.cloud.bigquery.{Job, JobStatistics}
-import no.nrk.bigquery.BQJobName
+import no.nrk.bigquery.BQJobId
 
 import scala.concurrent.TimeoutException
 
 object BQMetrics {
   def apply[F[_]](
       ops: MetricsOps[F],
-      jobName: BQJobName
+      jobName: BQJobId
   )(
       job: F[Option[Job]]
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
     effect(ops, jobName)(job)
 
-  def effect[F[_]](ops: MetricsOps[F], jobName: BQJobName)(
+  def effect[F[_]](ops: MetricsOps[F], jobName: BQJobId)(
       job: F[Option[Job]]
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
     withMetrics(job, ops, jobName)
@@ -31,7 +31,7 @@ object BQMetrics {
   private def withMetrics[F[_]](
       job: F[Option[Job]],
       ops: MetricsOps[F],
-      jobName: BQJobName
+      jobName: BQJobId
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
     (for {
       start <- Resource.eval(F.monotonic)
@@ -46,7 +46,7 @@ object BQMetrics {
   private def executeRequestAndRecordMetrics[F[_]](
       job: F[Option[Job]],
       ops: MetricsOps[F],
-      jobName: BQJobName,
+      jobName: BQJobId,
       start: Long
   )(implicit F: Clock[F], C: Concurrent[F]): Resource[F, Option[Job]] =
     (for {
@@ -83,7 +83,7 @@ object BQMetrics {
   private def registerError[F[_]](
       start: Long,
       ops: MetricsOps[F],
-      jobName: BQJobName
+      jobName: BQJobId
   )(
       e: Throwable
   )(implicit F: Clock[F], C: Concurrent[F]): F[Unit] =
