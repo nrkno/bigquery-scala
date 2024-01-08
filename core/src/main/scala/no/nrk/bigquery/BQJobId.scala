@@ -37,6 +37,9 @@ object BQJobId {
   def auto(implicit enclosing: sourcecode.Enclosing): BQJobId =
     apply(enclosing.value)
 
+  def autolabeled(implicit enclosing: sourcecode.Enclosing, labels: JobLabels): BQJobId =
+    apply(enclosing.value, labels)
+
   def apply(name: String): BQJobId = apply(name, JobLabels.empty)
   def apply(name: String, labels: JobLabels): BQJobId = BQJobId(None, None, mkName(name), labels)
 
