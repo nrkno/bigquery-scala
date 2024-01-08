@@ -39,7 +39,7 @@ object JobLabels {
             check(key)(_.isEmpty, show"label key $key is empty"),
             checkLength(key, "key"),
             checkChars(key, "key"),
-            check(key)(_(0).isLower, show"label key $key must start with lowercase letter or international character"))
+            check(key)(!_(0).isLower, show"label key $key must start with lowercase letter or international character"))
             .mapN((_, _, _, _) => key)
 
         val checkValue = (checkLength(value, "value"), checkChars(value, "value")).mapN((_, _) => value)
