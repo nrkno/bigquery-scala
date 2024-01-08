@@ -8,8 +8,10 @@ package no.nrk.bigquery
 
 import cats.data.NonEmptyChain
 
+import scala.annotation.implicitNotFound
 import scala.collection.immutable.SortedMap
 
+@implicitNotFound("No joblabels instance was found, make sure you have an implicit or given instance")
 final case class JobLabels private (value: SortedMap[String, String]) {
   def ++(other: JobLabels): JobLabels =
     JobLabels(other.value ++ this.value)
@@ -44,7 +46,7 @@ object JobLabels {
 
         (checkKey, checkValue).tupled
       }
-      .map(list => JobLabels(SortedMap.from(list)))
+      .map(list => JobLabels(SortedMap(list: _*)))
       .toEither
   }
 
@@ -52,10 +54,10 @@ object JobLabels {
     if (value.trim.isEmpty) None
     else Some(value.substring(0, Math.min(63, value.length)).toLowerCase().replaceAll("\\W", "-"))
 
-  def apply(params: (String, String)*): Either[NonEmptyChain[String], JobLabels] = validated(SortedMap.from(params))
+  def apply(params: (String, String)*): Either[NonEmptyChain[String], JobLabels] = validated(SortedMap(params: _*))
 
   def unsafeFrom(params: (String, String)*): JobLabels =
-    validated(SortedMap.from(params))
+    validated(SortedMap(params: _*))
       .fold(messages => throw new IllegalArgumentException(messages.toList.mkString("\n")), identity)
 
 }
