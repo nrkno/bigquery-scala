@@ -6,51 +6,18 @@
 
 package no.nrk.bigquery
 
-import cats.syntax.show._
+import cats.data.NonEmptyChain
+import cats.syntax.all.*
 
 import scala.collection.immutable.SortedMap
 
 /** @param values sorted for consistent behaviour */
-case class TableLabels(values: SortedMap[String, String]) {
-  // https://cloud.google.com/bigquery/docs/labels-intro#requirements
-  def verify(tableId: BQTableId): Unit = {
-    def fail(msg: String) =
-      System.err.println(show"Table $tableId: requirement failed: $msg")
-
-    values.foreach { case (key, value) =>
-      // Keys have a minimum length of 1 character and a maximum length of 63 characters,
-      if (key.isEmpty)
-        fail("label key is empty")
-      if (key.length > 63)
-        fail(show"label key $key is longer than 63 chars")
-
-      // Values can be empty, and have a maximum length of 63 characters.
-      if (value.length > 63)
-        fail(show"label value $value is longer than 63 chars")
-
-      // Keys and values can contain only lowercase letters, numeric characters, underscores, and dashes. All characters must use UTF-8 encoding, and international characters are allowed.
-      if (!key.forall(c => c.isLower || c.isDigit || c == '-' || c == '_'))
-        fail(
-          show"label key $key can contain only lowercase letters, numeric characters, underscores, and dashes"
-        )
-      if (!value.forall(c => c.isLower || c.isDigit || c == '-' || c == '_'))
-        fail(
-          show"label value $value can contain only lowercase letters, numeric characters, underscores, and dashes"
-        )
-
-      // Keys must start with a lowercase letter or international character.
-      if (!key(0).isLower)
-        fail(
-          show"label key $key must start with lowercase letter or international character"
-        )
-    }
-  }
-
-  def withAll(moreLabels: Iterable[(String, String)]): TableLabels =
-    TableLabels(values ++ moreLabels)
+final case class TableLabels private[bigquery] (values: SortedMap[String, String]) {
+  def withAll(moreLabels: Iterable[(Labels.Key, Labels.Value)]): TableLabels =
+    TableLabels(values ++ moreLabels.map { case (k, v) => k.value -> v.value })
 
   def ++(other: TableLabels): TableLabels =
-    withAll(other.values)
+    TableLabels(values ++ other.values)
 
   def contains(tableLabels: TableLabels): Boolean =
     if (tableLabels.values.nonEmpty) {
@@ -85,8 +52,21 @@ case class TableLabels(values: SortedMap[String, String]) {
 object TableLabels {
   val Empty: TableLabels = new TableLabels(SortedMap.empty)
 
+  def validated(values: Iterable[(String, String)]): Either[NonEmptyChain[String], TableLabels] =
+    values.toList
+      .traverse { case (key, value) =>
+        (Labels.Key.apply(key), Labels.Value.apply(value)).tupled
+      }
+      .map(list => TableLabels.from(list))
+      .toEither
+
+  def from(params: scala.collection.immutable.Seq[(Labels.Key, Labels.Value)]): TableLabels = TableLabels(
+    SortedMap(params.map { case (k, v) =>
+      k.value -> v.value
+    }: _*))
+
   /* nicer syntax for creating instances */
   def apply(values: (String, String)*): TableLabels =
-    Empty.withAll(values)
+    validated(values).fold(err => throw new IllegalArgumentException(err.toList.mkString("\n")), identity)
 
 }

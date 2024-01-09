@@ -143,8 +143,6 @@ sealed trait BQTableDef[+P] extends BQTableLike[P] {
   def schema: BQSchema
   def labels: TableLabels
   def asFragment: BQSqlFrag = tableId.asFragment
-
-  labels.verify(tableId)
 }
 
 case class WholeTable[+P](table: BQTableLike[P])

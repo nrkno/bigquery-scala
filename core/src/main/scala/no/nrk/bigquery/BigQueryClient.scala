@@ -536,6 +536,7 @@ class BigQueryClient[F[_]](
         QueryJobConfiguration
           .newBuilder(query.asStringWithUDFs)
           .setDryRun(true)
+          .setLabels(id.labels.value.asJava)
           .build()
       )
       F.interruptible(bigQuery.create(jobInfo))
