@@ -11,6 +11,7 @@ import com.google.cloud.bigquery.{DatasetId, StandardTableDefinition, TableDefin
 import no.nrk.bigquery.TableLabels.Empty
 
 import java.util.concurrent.TimeUnit
+import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters._
 
@@ -49,7 +50,7 @@ object GoogleTypeHelper {
 
   def tableLabelsfromTableInfo(tableInfo: TableInfo): TableLabels =
     Option(tableInfo.getLabels) match {
-      case Some(values) => Empty.withAll(values.asScala)
+      case Some(values) => new TableLabels(SortedMap(values.asScala.toList: _*))
       case None => Empty
     }
 }

@@ -10,35 +10,35 @@ import cats.effect.kernel.Outcome
 import cats.effect.{Clock, Concurrent, Resource}
 import cats.syntax.all._
 import com.google.cloud.bigquery.{Job, JobStatistics}
-import no.nrk.bigquery.BQJobName
+import no.nrk.bigquery.BQJobId
 
 import scala.concurrent.TimeoutException
 
 object BQMetrics {
   def apply[F[_]](
       ops: MetricsOps[F],
-      jobName: BQJobName
+      jobId: BQJobId
   )(
       job: F[Option[Job]]
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
-    effect(ops, jobName)(job)
+    effect(ops, jobId)(job)
 
-  def effect[F[_]](ops: MetricsOps[F], jobName: BQJobName)(
+  def effect[F[_]](ops: MetricsOps[F], jobId: BQJobId)(
       job: F[Option[Job]]
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
-    withMetrics(job, ops, jobName)
+    withMetrics(job, ops, jobId)
 
   private def withMetrics[F[_]](
       job: F[Option[Job]],
       ops: MetricsOps[F],
-      jobName: BQJobName
+      jobId: BQJobId
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
     (for {
       start <- Resource.eval(F.monotonic)
       resp <- executeRequestAndRecordMetrics(
         job,
         ops,
-        jobName,
+        jobId,
         start.toNanos
       )
     } yield resp).use(C.pure)
@@ -46,19 +46,19 @@ object BQMetrics {
   private def executeRequestAndRecordMetrics[F[_]](
       job: F[Option[Job]],
       ops: MetricsOps[F],
-      jobName: BQJobName,
+      jobId: BQJobId,
       start: Long
   )(implicit F: Clock[F], C: Concurrent[F]): Resource[F, Option[Job]] =
     (for {
-      _ <- Resource.make(ops.increaseActiveJobs(jobName))(_ => ops.decreaseActiveJobs(jobName))
+      _ <- Resource.make(ops.increaseActiveJobs(jobId))(_ => ops.decreaseActiveJobs(jobId))
       _ <- Resource.onFinalize(
-        F.monotonic.flatMap(now => ops.recordTotalTime(now.toNanos - start, jobName))
+        F.monotonic.flatMap(now => ops.recordTotalTime(now.toNanos - start, jobId))
       )
       jobResult <- Resource.eval(job)
       _ <- Resource.eval(
         ops.recordTotalBytesBilled(
           jobResult.map(_.getStatistics[JobStatistics]),
-          jobName
+          jobId
         )
       )
     } yield jobResult)
@@ -66,7 +66,7 @@ object BQMetrics {
         case Outcome.Succeeded(fa) => fa.void
         case Outcome.Errored(e) =>
           Resource.eval(
-            registerError(start, ops, jobName)(e) *> C.raiseError(e)
+            registerError(start, ops, jobId)(e) *> C.raiseError(e)
           )
         case Outcome.Canceled() =>
           Resource.eval(
@@ -75,7 +75,7 @@ object BQMetrics {
                 .recordAbnormalTermination(
                   now.toNanos - start,
                   TerminationType.Canceled,
-                  jobName
+                  jobId
                 ))
           )
       }
@@ -83,7 +83,7 @@ object BQMetrics {
   private def registerError[F[_]](
       start: Long,
       ops: MetricsOps[F],
-      jobName: BQJobName
+      jobId: BQJobId
   )(
       e: Throwable
   )(implicit F: Clock[F], C: Concurrent[F]): F[Unit] =
@@ -93,13 +93,13 @@ object BQMetrics {
           ops.recordAbnormalTermination(
             now.toNanos - start,
             TerminationType.Timeout,
-            jobName
+            jobId
           )
         else
           ops.recordAbnormalTermination(
             now.toNanos - start,
             TerminationType.Error(e),
-            jobName
+            jobId
           )
       }
 }
