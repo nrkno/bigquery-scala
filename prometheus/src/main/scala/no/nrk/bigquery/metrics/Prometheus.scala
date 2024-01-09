@@ -67,47 +67,47 @@ object Prometheus {
     )(implicit F: Sync[F]): MetricsOps[F] =
       new MetricsOps[F] {
         override def increaseActiveJobs(
-            jobName: BQJobId
+                                         jobId: BQJobId
         ): F[Unit] =
           F.delay {
             metrics.activeJobs
-              .labels(label(classifierF(jobName)))
+              .labels(label(classifierF(jobId)))
               .inc()
           }
 
         override def decreaseActiveJobs(
-            jobName: BQJobId
+                                         jobId: BQJobId
         ): F[Unit] =
           F.delay {
             metrics.activeJobs
-              .labels(label(classifierF(jobName)))
+              .labels(label(classifierF(jobId)))
               .dec()
           }
 
         override def recordTotalTime(
-            elapsed: Long,
-            jobName: BQJobId
+                                      elapsed: Long,
+                                      jobId: BQJobId
         ): F[Unit] =
           F.delay {
             metrics.jobDuration
-              .labels(label(classifierF(jobName)))
+              .labels(label(classifierF(jobId)))
               .observe(SimpleTimer.elapsedSecondsFromNanos(0, elapsed))
             metrics.jobs
-              .labels(label(classifierF(jobName)))
+              .labels(label(classifierF(jobId)))
               .inc()
           }
 
         override def recordAbnormalTermination(
-            elapsed: Long,
-            terminationType: TerminationType,
-            jobName: BQJobId
+                                                elapsed: Long,
+                                                terminationType: TerminationType,
+                                                jobId: BQJobId
         ): F[Unit] =
           terminationType match {
             case TerminationType.Abnormal(e) =>
-              recordAbnormal(elapsed, jobName, e)
-            case TerminationType.Error(e) => recordError(elapsed, jobName, e)
-            case TerminationType.Canceled => recordCanceled(elapsed, jobName)
-            case TerminationType.Timeout => recordTimeout(elapsed, jobName)
+              recordAbnormal(elapsed, jobId, e)
+            case TerminationType.Error(e) => recordError(elapsed, jobId, e)
+            case TerminationType.Canceled => recordCanceled(elapsed, jobId)
+            case TerminationType.Timeout => recordTimeout(elapsed, jobId)
           }
 
         private def recordCanceled(
@@ -169,10 +169,10 @@ object Prometheus {
           }
 
         override def recordTotalBytesBilled(
-            job: Option[JobStatistics],
-            jobName: BQJobId
+                                             jobStats: Option[JobStatistics],
+                                             jobId: BQJobId
         ): F[Unit] =
-          job
+          jobStats
             .collect { case stats: QueryStatistics =>
               stats.getTotalBytesBilled
             }
@@ -180,7 +180,7 @@ object Prometheus {
               F.delay {
                 metrics.bytesBilled
                   .labels(
-                    label(classifierF(jobName))
+                    label(classifierF(jobId))
                   )
                   .inc(totalBytesBilled.toDouble)
               })

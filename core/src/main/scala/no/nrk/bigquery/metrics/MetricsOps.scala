@@ -11,42 +11,42 @@ import com.google.cloud.bigquery.JobStatistics
 import no.nrk.bigquery.BQJobId
 
 trait MetricsOps[F[_]] {
-  def increaseActiveJobs(jobName: BQJobId): F[Unit]
-  def decreaseActiveJobs(jobName: BQJobId): F[Unit]
-  def recordTotalTime(elapsed: Long, jobName: BQJobId): F[Unit]
+  def increaseActiveJobs(jobId: BQJobId): F[Unit]
+  def decreaseActiveJobs(jobId: BQJobId): F[Unit]
+  def recordTotalTime(elapsed: Long, jobId: BQJobId): F[Unit]
   def recordAbnormalTermination(
       elapsed: Long,
       terminationType: TerminationType,
-      jobName: BQJobId
+      jobId: BQJobId
   ): F[Unit]
   def recordTotalBytesBilled(
-      job: Option[JobStatistics],
-      jobName: BQJobId
+      jobStats: Option[JobStatistics],
+      jobId: BQJobId
   ): F[Unit]
 }
 
 object MetricsOps {
   def noop[F[_]](implicit F: Applicative[F]): MetricsOps[F] = new MetricsOps[F] {
-    override def increaseActiveJobs(jobName: BQJobId): F[Unit] =
+    override def increaseActiveJobs(jobId: BQJobId): F[Unit] =
       F.unit
 
-    override def decreaseActiveJobs(jobName: BQJobId): F[Unit] =
+    override def decreaseActiveJobs(jobId: BQJobId): F[Unit] =
       F.unit
 
     override def recordTotalTime(
         elapsed: Long,
-        jobName: BQJobId
+        jobId: BQJobId
     ): F[Unit] = F.unit
 
     override def recordAbnormalTermination(
         elapsed: Long,
         terminationType: TerminationType,
-        jobName: BQJobId
+        jobId: BQJobId
     ): F[Unit] = F.unit
 
     override def recordTotalBytesBilled(
-        job: Option[JobStatistics],
-        jobName: BQJobId
+        jobStats: Option[JobStatistics],
+        jobId: BQJobId
     ): F[Unit] = F.unit
   }
 }
