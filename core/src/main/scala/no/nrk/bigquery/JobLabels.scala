@@ -52,14 +52,7 @@ object JobLabels {
     validated(SortedMap(params: _*))
       .fold(messages => throw new IllegalArgumentException(messages.toList.mkString("\n")), identity)
 
-  final class Key private (val value: String) {
-    override def hashCode(): Int = 31 * value.hashCode
-
-    override def equals(obj: Any): Boolean = obj match {
-      case k: Key => value == k.value
-      case _ => false
-    }
-
+  final class Key private (val value: String) extends AnyVal {
     override def toString: String = value
   }
   object Key {
@@ -75,14 +68,7 @@ object JobLabels {
       apply(value).fold(messages => throw new IllegalArgumentException(messages.toList.mkString("\n")), identity)
   }
 
-  final class Value private (val value: String) {
-    override def hashCode(): Int = 31 * value.hashCode
-
-    override def equals(obj: Any): Boolean = obj match {
-      case k: Value => value == k.value
-      case _ => false
-    }
-
+  final class Value private (val value: String) extends AnyVal {
     override def toString: String = value
   }
 
@@ -99,6 +85,7 @@ object JobLabels {
 
   private def checkLength(v: String, mode: String) =
     check(v)(_.length > 63, show"label $mode $v is longer than 63 chars")
+
   private def checkChars(v: String, mode: String) = check(v)(
     !_.forall(c => c.isLower || c.isDigit || c == '-' || c == '_'),
     show"label $mode $v can contain only lowercase letters, numeric characters, underscores, and dashes"
