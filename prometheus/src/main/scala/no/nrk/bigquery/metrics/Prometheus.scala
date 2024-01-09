@@ -67,7 +67,7 @@ object Prometheus {
     )(implicit F: Sync[F]): MetricsOps[F] =
       new MetricsOps[F] {
         override def increaseActiveJobs(
-                                         jobId: BQJobId
+            jobId: BQJobId
         ): F[Unit] =
           F.delay {
             metrics.activeJobs
@@ -76,7 +76,7 @@ object Prometheus {
           }
 
         override def decreaseActiveJobs(
-                                         jobId: BQJobId
+            jobId: BQJobId
         ): F[Unit] =
           F.delay {
             metrics.activeJobs
@@ -85,8 +85,8 @@ object Prometheus {
           }
 
         override def recordTotalTime(
-                                      elapsed: Long,
-                                      jobId: BQJobId
+            elapsed: Long,
+            jobId: BQJobId
         ): F[Unit] =
           F.delay {
             metrics.jobDuration
@@ -98,9 +98,9 @@ object Prometheus {
           }
 
         override def recordAbnormalTermination(
-                                                elapsed: Long,
-                                                terminationType: TerminationType,
-                                                jobId: BQJobId
+            elapsed: Long,
+            terminationType: TerminationType,
+            jobId: BQJobId
         ): F[Unit] =
           terminationType match {
             case TerminationType.Abnormal(e) =>
@@ -169,8 +169,8 @@ object Prometheus {
           }
 
         override def recordTotalBytesBilled(
-                                             jobStats: Option[JobStatistics],
-                                             jobId: BQJobId
+            jobStats: Option[JobStatistics],
+            jobId: BQJobId
         ): F[Unit] =
           jobStats
             .collect { case stats: QueryStatistics =>
