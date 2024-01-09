@@ -46,7 +46,7 @@ object JobLabels {
       k.value -> v.value
   }: _*))
 
-  def apply(params: (Key, Value)*): JobLabels = from(params)
+  def apply(params: (Key, Value)*): JobLabels = from(params.toList)
 
   def unsafeFrom(params: (String, String)*): JobLabels =
     validated(SortedMap(params: _*))
