@@ -66,7 +66,7 @@ class BQSqlFragTest extends FunSuite {
 
   test("collect partitions in order") {
     val date = LocalDate.of(2023, 1, 1)
-    def tableId(name: String) = BQTableId(BQDataset(ProjectId("p1"), "d1", None), name)
+    def tableId(name: String) = BQTableId(BQDataset.Ref(ProjectId("p1"), "d1"), name)
 
     val t1 = BQTableRef(tableId("t1"), DatePartitioned(Ident("column1")))
     val t2 = BQTableRef(tableId("t2"), DatePartitioned(Ident("column1")))
@@ -120,7 +120,7 @@ class BQSqlFragTest extends FunSuite {
     val partitionField = BQField("partitionDate", BQField.Type.DATE, BQField.Mode.REQUIRED)
 
     BQTableDef.Table(
-      BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("foo"), "bar"), name),
+      BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("foo"), "bar").toRef, name),
       BQSchema.of(partitionField, BQField("num", BQField.Type.FLOAT64, BQField.Mode.REQUIRED)),
       BQPartitionType.DatePartitioned(partitionField.ident)
     )

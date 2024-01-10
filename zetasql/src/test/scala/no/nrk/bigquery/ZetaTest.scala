@@ -17,7 +17,7 @@ class ZetaTest extends munit.CatsEffectSuite {
   private lazy val zetaSql = new ZetaSql[IO]
 
   private val table = BQTableDef.Table(
-    BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("com-example"), "example"), "test"),
+    BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("com-example"), "example").toRef, "test"),
     BQSchema.of(
       BQField("partitionDate", BQField.Type.DATE, BQField.Mode.REQUIRED),
       BQField("a", BQField.Type.STRING, BQField.Mode.REQUIRED),
@@ -29,7 +29,7 @@ class ZetaTest extends munit.CatsEffectSuite {
   )
 
   private val table2 = BQTableDef.Table(
-    BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("com-example"), "example"), "test2"),
+    BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("com-example"), "example").toRef, "test2"),
     BQSchema.of(
       BQField("partitionDate", BQField.Type.DATE, BQField.Mode.REQUIRED),
       BQField("name", BQField.Type.STRING, BQField.Mode.REQUIRED)
@@ -37,7 +37,7 @@ class ZetaTest extends munit.CatsEffectSuite {
     BQPartitionType.DatePartitioned(Ident("partitionDate"))
   )
   private val tvf = TVF(
-    TVF.TVFId(BQDataset.unsafeOf(ProjectId("com-example"), "example"), ident"tvftest"),
+    TVF.TVFId(BQDataset.unsafeOf(ProjectId("com-example"), "example").toRef, ident"tvftest"),
     BQPartitionType.NotPartitioned,
     BQRoutine.Params(BQRoutine.Param("d", BQType.DATE)),
     bqfr"select a from ${table.unpartitioned} where partitionDate = d",

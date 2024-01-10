@@ -354,13 +354,13 @@ class BigQueryClient[F[_]](
 
   def createTempTable[Param](
       table: BQTableDef.Table[Param],
-      tmpDataset: BQDataset
+      tmpDataset: BQDataset.Ref
   ): F[BQTableDef.Table[Param]] =
     createTempTable(table, tmpDataset, Some(1.hour))
 
   def createTempTable[Param](
       table: BQTableDef.Table[Param],
-      tmpDataset: BQDataset,
+      tmpDataset: BQDataset.Ref,
       expirationDuration: Option[FiniteDuration]
   ): F[BQTableDef.Table[Param]] = F
     .delay {
@@ -385,7 +385,7 @@ class BigQueryClient[F[_]](
 
   def createTempTableResource[Param](
       table: BQTableDef.Table[Param],
-      tmpDataset: BQDataset): Resource[F, BQTableDef.Table[Param]] =
+      tmpDataset: BQDataset.Ref): Resource[F, BQTableDef.Table[Param]] =
     Resource.make(createTempTable(table, tmpDataset))(tmp => delete(tmp.tableId).attempt.void)
 
   def submitQuery[P](jobId: BQJobId, query: BQSqlFrag): F[Job] =
@@ -554,10 +554,11 @@ class BigQueryClient[F[_]](
   def datasetsInProject(project: ProjectId): F[Vector[BQDataset]] =
     F.interruptible(
       bigQuery.listDatasets(project.value).iterateAll().asScala.toVector
-    ).map(_.mapFilter(ds => BQDataset.of(project, ds.getDatasetId.getDataset).toOption))
+    ).map(_.mapFilter(ds =>
+      BQDataset.of(project, ds.getDatasetId.getDataset, Option(ds.getLocation).map(s => LocationId(s))).toOption))
 
   def tablesIn(
-      dataset: BQDataset,
+      dataset: BQDataset.Ref,
       datasetOptions: BigQuery.TableListOption*
   ): F[Vector[BQTableRef[Any]]] =
     F.interruptible(bigQuery.listTables(dataset.underlying, datasetOptions: _*)).flatMap { tables =>

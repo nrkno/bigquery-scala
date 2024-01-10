@@ -15,7 +15,7 @@ class TvfSmokeTest extends BQSmokeTest(BigQueryTestClient.testClient) {
   private val schema: BQSchema = BQSchema.of(
     BQField("id", BQField.Type.STRING, BQField.Mode.NULLABLE)
   )
-  private val myDataset: BQDataset = BQDataset(ProjectId.unsafeFromString("some-project"), "my-dataset", None)
+  private val myDataset: BQDataset.Ref = BQDataset(ProjectId.unsafeFromString("some-project"), "my-dataset", None).toRef
   private val sourceTable = BQTableDef.Table(
     BQTableId.unsafeOf(myDataset, "source-table"),
     schema,

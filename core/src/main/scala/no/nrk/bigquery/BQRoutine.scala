@@ -26,7 +26,7 @@ sealed trait BQPersistentRoutine[N <: Nat, C] extends BQRoutine[N, C] {
 
 object BQPersistentRoutine {
   trait Id {
-    def dataset: BQDataset
+    def dataset: BQDataset.Ref
     def name: Ident
     def asString: String
   }
@@ -70,7 +70,7 @@ case class TVF[+P, N <: Nat](
 }
 
 object TVF {
-  case class TVFId(dataset: BQDataset, name: Ident) extends BQPersistentRoutine.Id {
+  case class TVFId(dataset: BQDataset.Ref, name: Ident) extends BQPersistentRoutine.Id {
     override def asString: String = show"${dataset.project.value}.${dataset.id}.$name"
     def asFragment: BQSqlFrag = BQSqlFrag.backticks(asString)
   }
@@ -162,7 +162,7 @@ object UDF {
 
   def persistent[N <: Nat](
       name: Ident,
-      dataset: BQDataset,
+      dataset: BQDataset.Ref,
       params: BQRoutine.Params[N],
       body: UDF.Body,
       returnType: Option[BQType]
@@ -171,7 +171,7 @@ object UDF {
 
   def reference[N <: Nat](
       name: Ident,
-      dataset: BQDataset,
+      dataset: BQDataset.Ref,
       params: BQRoutine.Params[N],
       returnType: Option[BQType]
   ): Reference[N] =
@@ -192,7 +192,7 @@ object UDF {
       implicit val bqShows: BQShow[TemporaryId] = _.asFragment
     }
 
-    case class PersistentId(dataset: BQDataset, name: Ident) extends UDFId with BQPersistentRoutine.Id {
+    case class PersistentId(dataset: BQDataset.Ref, name: Ident) extends UDFId with BQPersistentRoutine.Id {
       override def asString: String = show"${dataset.project.value}.${dataset.id}.$name"
       override def asFragment: BQSqlFrag = BQSqlFrag.backticks(asString)
     }

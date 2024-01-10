@@ -17,7 +17,7 @@ import scala.jdk.CollectionConverters._
 
 object GoogleTypeHelper {
 
-  def toDatasetGoogle(ds: BQDataset): DatasetId = DatasetId.of(ds.project.value, ds.id)
+  def toDatasetGoogle(ds: BQDataset.Ref): DatasetId = DatasetId.of(ds.project.value, ds.id)
   def toTableIdGoogle(tableId: BQTableId): TableId =
     TableId.of(tableId.dataset.project.value, tableId.dataset.id, tableId.tableName)
 
@@ -32,7 +32,7 @@ object GoogleTypeHelper {
     }
   )
 
-  def unsafeTableIdFromGoogle(dataset: BQDataset, tableId: TableId): BQTableId = {
+  def unsafeTableIdFromGoogle(dataset: BQDataset.Ref, tableId: TableId): BQTableId = {
     require(
       tableId.getProject == dataset.project.value && dataset.id == tableId.getDataset,
       s"Expected google table Id($tableId) to be the same datasetId and project as provided dataset[$dataset]"
@@ -45,6 +45,10 @@ object GoogleTypeHelper {
   }
 
   implicit class BQDatasetOps(val ds: BQDataset) extends AnyVal {
+    def underlying: DatasetId = toDatasetGoogle(ds.toRef)
+  }
+
+  implicit class BQDatasetRefOps(val ds: BQDataset.Ref) extends AnyVal {
     def underlying: DatasetId = toDatasetGoogle(ds)
   }
 

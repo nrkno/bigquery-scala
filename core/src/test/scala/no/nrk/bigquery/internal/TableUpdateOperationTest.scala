@@ -19,12 +19,11 @@ class TableUpdateOperationTest extends FunSuite {
   private val a = BQField("a", BQField.Type.INT64, BQField.Mode.REQUIRED)
   private val b = BQField("b", BQField.Type.INT64, BQField.Mode.REQUIRED)
   private val c = BQField("c", BQField.Type.INT64, BQField.Mode.REQUIRED)
-  private val viewId = BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset"), "view")
-  private val tableId = BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset"), "table")
-  private val tableIdWithLocation =
-    BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset", Some(LocationId.EuropeNorth1)), "table")
+  private val dataset: BQDataset.Ref = BQDataset.unsafeOf(ProjectId("project"), "dataset").toRef
+  private val viewId = BQTableId.unsafeOf(dataset, "view")
+  private val tableId = BQTableId.unsafeOf(dataset, "table")
   private val materializedViewId =
-    BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("project"), "dataset"), "mat_view")
+    BQTableId.unsafeOf(dataset, "mat_view")
 
   test("views with schema should trigger update after create") {
     val schema = BQSchema.of(a)
@@ -182,7 +181,7 @@ class TableUpdateOperationTest extends FunSuite {
 
   test("should be a noop when no fields has changed") {
     val givenTable = BQTableDef.Table(
-      tableIdWithLocation,
+      tableId,
       BQSchema.of(a, b),
       BQPartitionType.NotPartitioned,
       description = None,
@@ -192,7 +191,7 @@ class TableUpdateOperationTest extends FunSuite {
     val actualTable = Some(
       TableInfo
         .newBuilder(
-          tableIdWithLocation.underlying,
+          tableId.underlying,
           StandardTableDefinition.newBuilder
             .setSchema(SchemaHelper.toSchema(BQSchema.of(a, b)))
             .setLocation(LocationId.EuropeNorth1.value)
