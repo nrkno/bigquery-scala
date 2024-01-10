@@ -14,7 +14,7 @@ import java.time.LocalDate
 class BQFillTest extends FunSuite {
   case class JobKey(value: String) extends JobKeyBQ
 
-  private def tableId(name: String) = BQTableId(BQDataset(ProjectId("p1"), "d1", None), name)
+  private def tableId(name: String) = BQTableId(BQDataset.Ref(ProjectId("p1"), "d1"), name)
 
   private val c1 = BQField("c1", BQField.Type.DATE, BQField.Mode.REQUIRED)
   private val source1: BQTableDef.Table[LocalDate] =

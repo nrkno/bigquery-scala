@@ -20,13 +20,12 @@ import java.util.regex.Pattern
   *
   * FROM https://cloud.google.com/bigquery/docs/tables#table_naming
   */
-final case class BQTableId private[bigquery] (dataset: BQDataset, tableName: String) {
+final case class BQTableId private[bigquery] (dataset: BQDataset.Ref, tableName: String) {
 
   def modifyTableName(f: String => String): BQTableId =
     BQTableId.unsafeOf(dataset, f(tableName))
 
-  def withLocation(locationId: Option[LocationId]) = withDataset(dataset.copy(location = locationId))
-  def withDataset(ds: BQDataset) = copy(dataset = ds)
+  def withDataset(ds: BQDataset.Ref) = copy(dataset = ds)
 
   def asString: String = s"${dataset.project.value}.${dataset.id}.${tableName}"
   def asPathString: String = s"projects/${dataset.project.value}/datasets/${dataset.id}/tables/${tableName}"
@@ -37,13 +36,13 @@ object BQTableId {
 
   private val regex: Pattern = "(?U)^\\w[\\w_ *$-]{1,1023}".r.pattern
   private val PathPattern = "/?projects/(.*)/datasets/(.*)/tables/(.*)".r
-  private lazy val example = BQTableId(BQDataset(ProjectId("projectId"), "datasetId", None), "tableName")
+  private lazy val example = BQTableId(BQDataset.Ref(ProjectId("projectId"), "datasetId"), "tableName")
 
-  def of(dataset: BQDataset, tableName: String): Either[String, BQTableId] =
+  def of(dataset: BQDataset.Ref, tableName: String): Either[String, BQTableId] =
     if (regex.matcher(tableName).matches()) Right(BQTableId(dataset, tableName))
     else Left(s"Expected '$tableName' to match regex (${regex.pattern()})")
 
-  def unsafeOf(dataset: BQDataset, tableName: String): BQTableId =
+  def unsafeOf(dataset: BQDataset.Ref, tableName: String): BQTableId =
     of(dataset, tableName).fold(err => throw new IllegalArgumentException(err), identity)
 
   def unsafeFrom(project: ProjectId, dataset: String, tableName: String): BQTableId =
@@ -66,7 +65,7 @@ object BQTableId {
 
     fromPath.split("\\.", 3) match {
       case Array(project, dataset, tableName) =>
-        ProjectId.fromString(project).flatMap(BQDataset.of(_, dataset)).flatMap(of(_, tableName))
+        ProjectId.fromString(project).flatMap(BQDataset.of(_, dataset)).flatMap(ds => of(ds.toRef, tableName))
       case _ => Left(s"Expected id formatted as'${example.asString}' or '${example.asPathString}' but got ${id}")
     }
   }

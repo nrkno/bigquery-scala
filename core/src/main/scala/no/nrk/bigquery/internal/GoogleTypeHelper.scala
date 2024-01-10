@@ -32,7 +32,7 @@ object GoogleTypeHelper {
     }
   )
 
-  def unsafeTableIdFromGoogle(dataset: BQDataset, tableId: TableId): BQTableId = {
+  def unsafeTableIdFromGoogle(dataset: BQDataset.Ref, tableId: TableId): BQTableId = {
     require(
       tableId.getProject == dataset.project.value && dataset.id == tableId.getDataset,
       s"Expected google table Id($tableId) to be the same datasetId and project as provided dataset[$dataset]"

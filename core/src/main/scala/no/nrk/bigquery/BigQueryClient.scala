@@ -366,7 +366,7 @@ class BigQueryClient[F[_]](
     .delay {
       // a copy of `table` with new coordinates
       table.copy(tableId = BQTableId(
-        tmpDataset,
+        tmpDataset.toRef,
         table.tableId.tableName + UUID.randomUUID().toString
       ))
     }
@@ -566,7 +566,7 @@ class BigQueryClient[F[_]](
         .asScala
         .toVector
         .parTraverseFilter { table =>
-          val tableId = unsafeTableIdFromGoogle(dataset, table.getTableId)
+          val tableId = unsafeTableIdFromGoogle(dataset.toRef, table.getTableId)
           table.getDefinition[TableDefinition] match {
             case definition: StandardTableDefinition =>
               PartitionTypeHelper.from(definition) match {

@@ -26,6 +26,8 @@ final case class BQDataset private[bigquery] (
   def withoutLocation: BQDataset = copy(location = None)
   def withId(id: String): BQDataset = copy(id = id)
   def withProject(project: ProjectId): BQDataset = copy(project = project)
+
+  def toRef: BQDataset.Ref = BQDataset.Ref(project, id)
 }
 
 object BQDataset {
@@ -37,4 +39,6 @@ object BQDataset {
   def of(project: ProjectId, dataset: String, location: Option[LocationId] = None): Either[String, BQDataset] =
     if (regex.matcher(dataset).matches()) Right(BQDataset(project, dataset, location))
     else Left(s"invalid project ID '$dataset' - must match ${regex.pattern()}")
+
+  final case class Ref private[bigquery] (project: ProjectId, id: String)
 }

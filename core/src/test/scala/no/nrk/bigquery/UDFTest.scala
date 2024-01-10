@@ -108,7 +108,7 @@ class UDFTest extends FunSuite {
     val udf = UDF
       .persistent(
         ident"fnName",
-        BQDataset(ProjectId("p1"), "ds1", None),
+        BQDataset.Ref(ProjectId("p1"), "ds1"),
         Params(Param("n", BQType.FLOAT64)),
         UDF.Body.Js("return n + 1", List("bucket/foo.js")),
         Some(BQType.FLOAT64)
@@ -120,7 +120,7 @@ class UDFTest extends FunSuite {
   test("render udf ref call") {
     val udf = UDF.reference(
       ident"fnName",
-      BQDataset(ProjectId("p1"), "ds1", None),
+      BQDataset.Ref(ProjectId("p1"), "ds1"),
       Params(Param("n", BQType.FLOAT64)),
       Some(BQType.FLOAT64)
     )

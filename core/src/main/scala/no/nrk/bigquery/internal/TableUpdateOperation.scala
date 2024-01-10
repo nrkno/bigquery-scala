@@ -16,18 +16,8 @@ import cats.syntax.all._
 
 object TableUpdateOperation {
 
-  private implicit val tableIdEquality: Eq[BQTableId] = Eq.instance { (a, b) =>
-    ((a.dataset.location, b.dataset.location) match {
-      case (Some(aLoc), Some(bLoc)) => aLoc == bLoc
-      case _ => true
-    }) &&
-    a.dataset.project == b.dataset.project &&
-    a.dataset.id == b.dataset.id &&
-    a.tableName == b.tableName
-
-  }
   private implicit val tableDefEquality: Eq[BQTableDef.Table[Any]] = Eq.instance { (a, b) =>
-    a.tableId === b.tableId &&
+    a.tableId == b.tableId &&
     a.schema == b.schema &&
     a.partitionType == b.partitionType &&
     a.clustering == b.clustering &&
@@ -37,7 +27,7 @@ object TableUpdateOperation {
   }
 
   private implicit val viewDefEquality: Eq[BQTableDef.View[Any]] = Eq.instance { (a, b) =>
-    a.tableId === b.tableId &&
+    a.tableId == b.tableId &&
     a.schema == b.schema &&
     a.partitionType == b.partitionType &&
     a.query == b.query &&
@@ -46,7 +36,7 @@ object TableUpdateOperation {
   }
 
   private implicit val materializedViewDefEquality: Eq[BQTableDef.MaterializedView[Any]] = Eq.instance { (a, b) =>
-    a.tableId === b.tableId &&
+    a.tableId == b.tableId &&
     a.schema == b.schema &&
     a.partitionType == b.partitionType &&
     a.query == b.query &&
