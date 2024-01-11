@@ -25,8 +25,8 @@ final case class BQJobId(
       copy(projectId = defaults.map(_.projectId), locationId = defaults.map(_.locationId))
     } else this
 
-  def +(str: String): BQJobId = copy(name = name + str)
-  def append(str: String): BQJobId = copy(name = name + str)
+  def +(str: String): BQJobId = append(str)
+  def append(str: String): BQJobId = copy(name = BQJobId.mkName(name + str))
 }
 
 object BQJobId {
@@ -43,9 +43,12 @@ object BQJobId {
   def apply(name: String): BQJobId = apply(name, JobLabels.empty)
   def apply(name: String, labels: JobLabels): BQJobId = BQJobId(None, None, mkName(name), labels)
 
-  private def mkName(str: String): String =
-    str
+  private def mkName(str: String): String = {
+    val replaced = str
       .replace("anonfun", "") // generated from `sourcecode.Enclosing`
       .replace('.', '_')
       .filter(c => c.isLetterOrDigit || c == '_')
+    replaced.substring(0, Math.min(replaced.length, 1024))
+  }
+
 }
