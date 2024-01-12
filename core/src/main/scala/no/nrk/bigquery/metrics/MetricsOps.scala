@@ -19,7 +19,7 @@ trait MetricsOps[F[_]] {
       terminationType: TerminationType,
       jobId: BQJobId
   ): F[Unit]
-  def recordTotalBytesBilled(
+  def recordComplete(
       jobStats: Option[JobStatistics],
       jobId: BQJobId
   ): F[Unit]
@@ -44,7 +44,7 @@ object MetricsOps {
         jobId: BQJobId
     ): F[Unit] = F.unit
 
-    override def recordTotalBytesBilled(
+    override def recordComplete(
         jobStats: Option[JobStatistics],
         jobId: BQJobId
     ): F[Unit] = F.unit
