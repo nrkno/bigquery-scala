@@ -1,7 +1,7 @@
 import com.typesafe.tools.mima.core._
 
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
-ThisBuild / tlBaseVersion := "0.15" // your current series x.y
+ThisBuild / tlBaseVersion := "0.16" // your current series x.y
 
 ThisBuild / organization := "no.nrk.bigquery"
 ThisBuild / organizationName := "NRK"
