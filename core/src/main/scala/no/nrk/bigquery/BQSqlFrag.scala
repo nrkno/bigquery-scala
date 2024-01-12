@@ -25,6 +25,7 @@ sealed trait BQSqlFrag {
       case x @ BQSqlFrag.FillRef(_) => x
       case x @ BQSqlFrag.FilledTableRef(_) => x
       case x @ BQSqlFrag.TableRef(_) => x
+      case x @ BQSqlFrag.Param(_, _) => x
     }
 
   final def ++(other: BQSqlFrag): BQSqlFrag =
@@ -74,6 +75,7 @@ sealed trait BQSqlFrag {
           case x @ BQPartitionId.NotPartitioned(_) =>
             x.asTableId.asFragment.asString
         }
+      case BQSqlFrag.Param(name, _) => show"@$name"
     }
 
   final lazy val asStringWithUDFs: String = {
@@ -92,6 +94,7 @@ sealed trait BQSqlFrag {
         case BQSqlFrag.FillRef(_) => Nil
         case BQSqlFrag.FilledTableRef(_) => Nil
         case BQSqlFrag.TableRef(_) => Nil
+        case BQSqlFrag.Param(_, _) => Nil
       }
 
     def extractInnerBody(frag: BQSqlFrag): Option[BQSqlFrag] =
@@ -187,6 +190,8 @@ object BQSqlFrag {
 
   case class FillRef(fill: BQFill[Any]) extends BQSqlFrag
   case class FilledTableRef(filledTable: BQFilledTable[Any]) extends BQSqlFrag
+
+  case class Param(name: String, tpe: BQField.Type) extends BQSqlFrag
 
   val Empty: BQSqlFrag = Frag("")
 

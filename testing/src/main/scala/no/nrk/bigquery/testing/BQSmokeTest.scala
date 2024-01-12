@@ -463,6 +463,8 @@ object BQSmokeTest {
           case None =>
             (p, Nil)
         }
+      case p @ BQSqlFrag.Param(_, _) =>
+        (p, Nil)
 
       case BQSqlFrag.TableRef(table) =>
         recurse(table.unpartitioned.assertPartition.bqShow)
