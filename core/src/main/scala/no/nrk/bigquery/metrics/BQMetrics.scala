@@ -56,7 +56,7 @@ object BQMetrics {
       )
       jobResult <- Resource.eval(job)
       _ <- Resource.eval(
-        ops.recordTotalBytesBilled(
+        ops.recordComplete(
           jobResult.map(_.getStatistics[JobStatistics]),
           jobId
         )

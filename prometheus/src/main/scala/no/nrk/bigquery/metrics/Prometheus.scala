@@ -168,22 +168,31 @@ object Prometheus {
               .observe(SimpleTimer.elapsedSecondsFromNanos(0, elapsed))
           }
 
-        override def recordTotalBytesBilled(
+        override def recordComplete(
             jobStats: Option[JobStatistics],
             jobId: BQJobId
         ): F[Unit] =
           jobStats
             .collect { case stats: QueryStatistics =>
-              stats.getTotalBytesBilled
+              Option(stats.getTotalBytesBilled) -> Option(stats.getTotalSlotMs)
             }
-            .map(totalBytesBilled =>
+            .map { case (maybeBilled, maybeTotalSlotsMs) =>
               F.delay {
-                metrics.bytesBilled
-                  .labels(
-                    label(classifierF(jobId))
-                  )
-                  .inc(totalBytesBilled.toDouble)
-              })
+                maybeBilled.foreach(totalBytes =>
+                  metrics.bytesBilled
+                    .labels(
+                      label(classifierF(jobId))
+                    )
+                    .inc(totalBytes.toDouble))
+
+                maybeTotalSlotsMs.foreach(total =>
+                  metrics.totalSlotsMs
+                    .labels(
+                      label(classifierF(jobId))
+                    )
+                    .inc(total.toDouble))
+              }
+            }
             .getOrElse(F.unit)
 
         private def label(value: Option[String]): String = value.getOrElse("")
@@ -244,13 +253,23 @@ object Prometheus {
           .create(),
         registry
       )
+      val totalSlotMs: Resource[F, Counter] = registerCollector(
+        Counter
+          .build()
+          .name(prefix + "_" + "total_slot_ms")
+          .help("Total Slot milliseconds.")
+          .labelNames("classifier")
+          .create(),
+        registry
+      )
 
       (
         jobDuration,
         activeJobs,
         jobs,
         abnormalTerminations,
-        bytesBilled
+        bytesBilled,
+        totalSlotMs
       ).mapN(MetricsCollection.apply)
     }
   }
@@ -274,7 +293,8 @@ final case class MetricsCollection(
     activeJobs: Gauge,
     jobs: Counter,
     abnormalTerminations: Histogram,
-    bytesBilled: Counter
+    bytesBilled: Counter,
+    totalSlotsMs: Counter
 )
 
 private sealed trait AbnormalTermination
