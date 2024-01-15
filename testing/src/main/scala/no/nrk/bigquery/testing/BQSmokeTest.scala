@@ -524,6 +524,8 @@ object BQSmokeTest {
           BQSqlFrag("ST_GeogFromText('POINT(0 0)')")
         case BQField.Type.INTERVAL =>
           BQSqlFrag("MAKE_INTERVAL(1, 6, 15)")
+        case BQField.Type.RANGE =>
+          counter.next().bqShow
       }
 
       field.mode match {
