@@ -244,6 +244,7 @@ object ZetaSql {
         case TypeKind.TYPE_TIME => BQField.Type.TIME
         case TypeKind.TYPE_GEOGRAPHY => BQField.Type.GEOGRAPHY
         case TypeKind.TYPE_INTERVAL => BQField.Type.INTERVAL
+        case TypeKind.TYPE_RANGE => BQField.Type.RANGE
         case _ => throw new IllegalArgumentException(s"$name with type ${typ.debugString()} is not supported ")
       }
       BQField(name, kind, BQField.Mode.NULLABLE)
@@ -271,6 +272,7 @@ object ZetaSql {
       case BQField.Type.GEOGRAPHY => TypeFactory.createSimpleType(TypeKind.TYPE_GEOGRAPHY)
       case BQField.Type.JSON => TypeFactory.createSimpleType(TypeKind.TYPE_JSON)
       case BQField.Type.INTERVAL => TypeFactory.createSimpleType(TypeKind.TYPE_INTERVAL)
+      case BQField.Type.RANGE => TypeFactory.createSimpleType(TypeKind.TYPE_RANGE)
     }
     if (isArray) TypeFactory.createArrayType(elemType) else elemType
   }

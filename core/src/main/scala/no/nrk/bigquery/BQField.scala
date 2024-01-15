@@ -120,6 +120,8 @@ object BQField {
     /** Represents duration or amount of time. */
     case object INTERVAL extends Type("INTERVAL")
 
+    case object RANGE extends Type("RANGE")
+
     val values: List[Type] = List(
       BOOL,
       INT64,
@@ -136,7 +138,9 @@ object BQField {
       DATETIME,
       GEOGRAPHY,
       JSON,
-      INTERVAL)
+      INTERVAL,
+      RANGE
+    )
 
     def fromString(name: String): Option[Type] = values.find(_.name == name.toUpperCase)
 

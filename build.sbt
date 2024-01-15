@@ -81,7 +81,7 @@ lazy val core = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
-      "com.google.cloud" % "google-cloud-bigquery" % "2.35.0",
+      "com.google.cloud" % "google-cloud-bigquery" % "2.36.0",
       "com.google.cloud" % "google-cloud-bigquerystorage" % "3.0.0",
       "org.apache.avro" % "avro" % "1.11.3",
       "com.lihaoyi" %% "sourcecode" % "0.3.1",
