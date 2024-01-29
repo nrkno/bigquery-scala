@@ -81,7 +81,7 @@ lazy val core = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
-      "com.google.cloud" % "google-cloud-bigquery" % "2.36.0",
+      "com.google.cloud" % "google-cloud-bigquery" % "2.37.0",
       "com.google.cloud" % "google-cloud-bigquerystorage" % "3.0.1",
       "org.apache.avro" % "avro" % "1.11.3",
       "com.lihaoyi" %% "sourcecode" % "0.3.1",
@@ -149,7 +149,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
-      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.33.0",
+      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.34.0",
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
