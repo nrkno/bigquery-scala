@@ -7,11 +7,11 @@
 package no.nrk.bigquery
 
 import cats.effect.Concurrent
-import cats.syntax.all._
-import no.nrk.bigquery.syntax._
+import cats.syntax.all.*
+import no.nrk.bigquery.syntax.*
 import fs2.Stream
 
-import java.time.{Instant, LocalDate, YearMonth}
+import java.time.{Instant, LocalDate, LocalDateTime, YearMonth}
 import scala.annotation.nowarn
 
 private[bigquery] object PartitionLoader {
@@ -22,6 +22,16 @@ private[bigquery] object PartitionLoader {
       requireRowNums: Boolean = false
   ): F[Vector[(BQPartitionId[Any], PartitionMetadata)]] =
     table.partitionType match {
+      case x: BQPartitionType.HourPartitioned =>
+        PartitionLoader
+          .hour(
+            table.withTableType[LocalDateTime](x),
+            x.field,
+            client,
+            startPartition.asDateTime,
+            requireRowNums
+          )
+          .widen
       case x: BQPartitionType.DatePartitioned =>
         PartitionLoader
           .date(
@@ -75,6 +85,101 @@ private[bigquery] object PartitionLoader {
 
   def localDateFromPartitionName(tableName: String): LocalDate =
     LocalDate.parse(tableName.takeRight(8), BQPartitionId.localDateNoDash)
+
+  def localDateTimeFromPartitionName(tableName: String): LocalDateTime =
+    LocalDateTime.parse(tableName.takeRight(10), BQPartitionId.localDateTimeNoDash)
+
+  object hour {
+    def apply[F[_]](
+        table: BQTableLike[LocalDateTime],
+        field: Ident,
+        client: BigQueryClient[F],
+        startPartition: StartPartition[LocalDateTime],
+        requireRowNums: Boolean
+    )(implicit
+        F: Concurrent[F]
+    ): F[Vector[(BQPartitionId.HourPartitioned, PartitionMetadata)]] = {
+      val rowNumByDate: F[Map[LocalDateTime, Long]] =
+        if (requireRowNums)
+          client
+            .synchronousQuery(
+              BQJobId.auto,
+              rowCountQuery(table, field, startPartition)
+            )
+            .compile
+            .to(Map)
+        else F.pure(Map.empty)
+
+      // views do not have metadata we can ask with partitions, so fire an actual query to get the data
+      val rowsIO: Stream[F, (LocalDateTime, Option[Instant], Option[Instant])] =
+        table match {
+          case view: BQTableDef.View[LocalDateTime] =>
+            client
+              .synchronousQuery(
+                BQJobId.auto,
+                allPartitionsQueries
+                  .fromTableData[LocalDateTime](view.unpartitioned, field)
+              )
+              .map(partitionDate => (partitionDate, None, None))
+          case _ =>
+            client
+              .synchronousQuery(
+                BQJobId.auto,
+                allPartitionsQuery(table, startPartition),
+                legacySql = true
+              )
+              .map { case (partitionName, creationTime, lastModifiedTime) =>
+                (
+                  localDateTimeFromPartitionName(partitionName),
+                  Some(creationTime.value),
+                  Some(lastModifiedTime.value)
+                )
+              }
+        }
+
+      for {
+        rows <- rowsIO.compile.toVector
+        rowNumByDate <- rowNumByDate
+      } yield rows.map { case (date, l1, l2) =>
+        BQPartitionId.HourPartitioned(table, date) -> PartitionMetadata(
+          l1,
+          l2,
+          rowCount = rowNumByDate.get(date),
+          None
+        )
+      }
+    }
+
+    def rowCountQuery(
+        table: BQTableLike[LocalDateTime],
+        field: Ident,
+        startPartition: StartPartition[LocalDateTime]
+    ): BQQuery[(LocalDateTime, Long)] = {
+      val inRange = startPartition match {
+        case StartPartition.All => bqfr"true"
+        case StartPartition.FromDateTime(startInclusive) =>
+          bqfr"$field >= $startInclusive"
+      }
+      allPartitionsQueries.withRowCountFromTableData(
+        table.unpartitioned,
+        inRange,
+        field
+      )
+    }
+
+    def allPartitionsQuery(
+        table: BQTableLike[LocalDateTime],
+        startPartition: StartPartition[LocalDateTime]
+    ): BQQuery[(String, LongInstant, LongInstant)] = {
+      val inRange = startPartition match {
+        case StartPartition.All => bqfr"true"
+        case StartPartition.FromDateTime(startInclusive) =>
+          bqfr"x.partition_id >= ${StringValue(startInclusive.format(BQPartitionId.localDateTimeNoDash))}"
+      }
+
+      allPartitionsQueries.fromMetadata(table, inRange)
+    }
+  }
 
   object date {
     def apply[F[_]](

@@ -66,6 +66,8 @@ object Generators {
     partitionType match {
       case BQPartitionType.DatePartitioned(Ident(field)) =>
         s"BQPartitionType.DatePartitioned(Ident(${lit(field)}))"
+      case BQPartitionType.HourPartitioned(Ident(field)) =>
+        s"BQPartitionType.HourPartitioned(Ident(${lit(field)}))"
       case BQPartitionType.MonthPartitioned(Ident(field)) =>
         s"BQPartitionType.MonthPartitioned(Ident(${lit(field)}))"
       case BQPartitionType.Sharded =>
