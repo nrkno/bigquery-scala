@@ -10,7 +10,7 @@ import cats.Show
 import no.nrk.bigquery.syntax.*
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, YearMonth}
+import java.time.{LocalDate, LocalDateTime, YearMonth}
 
 /** A reference to a partition within a table.
   *
@@ -39,6 +39,9 @@ sealed trait BQPartitionId[+P] {
 }
 
 object BQPartitionId {
+  val localDateTimeNoDash: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("yyyyMMddhh")
+
   val localDateNoDash: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyyMMdd")
 
@@ -51,6 +54,25 @@ object BQPartitionId {
 
   implicit def shows[Pid <: BQPartitionId[Any]]: Show[Pid] =
     pid => pid.asTableId.asString
+
+  final case class HourPartitioned(
+      wholeTable: BQTableLike[LocalDateTime],
+      partition: LocalDateTime
+  ) extends BQPartitionId[LocalDateTime] {
+    def field: Ident = wholeTable.partitionType match {
+      case BQPartitionType.HourPartitioned(field) => field
+      case other => sys.error(s"Unexpected $other")
+    }
+
+    def asSubQuery: BQSqlFrag =
+      bqfr"""(select * from ${wholeTable.tableId.asFragment} where $field = $partition)"""
+
+    def asTableId: BQTableId =
+      wholeTable.tableId.modifyTableName(_ + "$" + partitionString)
+
+    override def partitionString: String =
+      partition.format(localDateTimeNoDash)
+  }
 
   final case class DatePartitioned(
       wholeTable: BQTableLike[LocalDate],

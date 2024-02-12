@@ -6,11 +6,11 @@
 
 package no.nrk.bigquery
 
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 import com.google.cloud.bigquery.{Field, TimePartitioning}
 
 import java.time.temporal.ChronoUnit
-import java.time.{Instant, LocalDate, LocalTime, YearMonth}
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, YearMonth}
 
 /** A type class, directly derived from cats.Show, which determines what a type will look like when printed to BigQuery
   * SQL
@@ -121,6 +121,9 @@ trait BQShowInstances {
 
   implicit val bqShowBoolean: BQShow[Boolean] =
     x => BQSqlFrag(x.toString)
+
+  implicit val bqShowLocalDateTime: BQShow[LocalDateTime] =
+    x => BQSqlFrag(s"DATETIME('$x')")
 
   implicit val bqShowLocalDate: BQShow[LocalDate] =
     x => BQSqlFrag(s"DATE('$x')")

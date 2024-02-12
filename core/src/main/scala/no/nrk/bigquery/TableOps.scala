@@ -7,9 +7,9 @@
 package no.nrk.bigquery
 
 import cats.effect.Concurrent
-import cats.syntax.all._
+import cats.syntax.all.*
 
-import java.time.{LocalDate, YearMonth}
+import java.time.{LocalDate, LocalDateTime, YearMonth}
 import scala.annotation.implicitNotFound
 
 @implicitNotFound(
@@ -28,6 +28,36 @@ trait TableOps[P] {
 
 object TableOps {
   def apply[P: TableOps]: TableOps[P] = implicitly
+
+  implicit val hour: TableOps[LocalDateTime] = new TableOps[LocalDateTime] {
+    override def assertPartition(
+        table: BQTableLike[LocalDateTime],
+        partition: LocalDateTime
+    ): BQPartitionId[LocalDateTime] =
+      table.partitionType match {
+        case BQPartitionType.HourPartitioned(_) =>
+          BQPartitionId.HourPartitioned(table, partition)
+      }
+
+    override def loadPartitions[F[_]: Concurrent](
+        table: BQTableLike[LocalDateTime],
+        client: BigQueryClient[F],
+        startPartition: StartPartition[LocalDateTime],
+        requireRowNums: Boolean
+    ): F[Vector[(BQPartitionId[LocalDateTime], PartitionMetadata)]] =
+      table.partitionType match {
+        case x: BQPartitionType.HourPartitioned =>
+          PartitionLoader
+            .hour(
+              table,
+              x.field,
+              client,
+              startPartition,
+              requireRowNums
+            )
+            .widen
+      }
+  }
 
   implicit val date: TableOps[LocalDate] = new TableOps[LocalDate] {
     override def assertPartition(

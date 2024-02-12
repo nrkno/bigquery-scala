@@ -17,6 +17,15 @@ import com.google.cloud.bigquery.{
 object PartitionTypeHelper {
   def timePartitioned(bqtype: BQPartitionType[Any], tableOptions: TableOptions): Option[TimePartitioning] =
     bqtype match {
+      case BQPartitionType.HourPartitioned(field) =>
+        Some(
+          TimePartitioning
+            .newBuilder(TimePartitioning.Type.HOUR)
+            .setExpirationMs(tableOptions.partitionExpiration.map(exp => Long.box(exp.toMillis)).orNull)
+            .setField(field.value)
+            .build()
+        )
+
       case BQPartitionType.DatePartitioned(field) =>
         Some(
           TimePartitioning
@@ -81,6 +90,8 @@ object PartitionTypeHelper {
     (timePartitioning, rangePartitioning) match {
       case (None, None) =>
         Right(BQPartitionType.NotPartitioned)
+      case (Some(time), None) if time.getType == TimePartitioning.Type.HOUR && time.getField != null =>
+        Right(BQPartitionType.HourPartitioned(Ident(time.getField)))
       case (Some(time), None) if time.getType == TimePartitioning.Type.DAY && time.getField != null =>
         Right(BQPartitionType.DatePartitioned(Ident(time.getField)))
       case (Some(time), None) if time.getType == TimePartitioning.Type.MONTH && time.getField != null =>

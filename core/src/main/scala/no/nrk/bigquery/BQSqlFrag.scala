@@ -68,6 +68,7 @@ sealed trait BQSqlFrag {
         partitionId match {
           case x @ BQPartitionId.MonthPartitioned(_, _) => x.asSubQuery.asString
           case x @ BQPartitionId.DatePartitioned(_, _) => x.asSubQuery.asString
+          case x @ BQPartitionId.HourPartitioned(_, _) => x.asSubQuery.asString
           case x @ BQPartitionId.IntegerRangePartitioned(_, _) => x.asSubQuery.asString
           case x @ BQPartitionId.Sharded(_, _) =>
             x.asTableId.asFragment.asString
@@ -140,6 +141,8 @@ sealed trait BQSqlFrag {
         (table.partitionType, outerRef) match {
           case (partitionType: BQPartitionType.DatePartitioned, Some(partitionRef: BQPartitionId.DatePartitioned)) =>
             List(table.withTableType(partitionType).assertPartition(partitionRef.partition))
+          case (partitionType: BQPartitionType.HourPartitioned, Some(partitionRef: BQPartitionId.HourPartitioned)) =>
+            List(table.withTableType(partitionType).assertPartition(partitionRef.partition))
           case (_, _) => List(table.unpartitioned.assertPartition)
         }
 
@@ -147,6 +150,8 @@ sealed trait BQSqlFrag {
       case BQSqlFrag.FilledTableRef(fill) =>
         (fill.tableDef.partitionType, outerRef) match {
           case (partitionType: BQPartitionType.DatePartitioned, Some(partitionRef: BQPartitionId.DatePartitioned)) =>
+            List(fill.tableDef.withTableType(partitionType).assertPartition(partitionRef.partition))
+          case (partitionType: BQPartitionType.HourPartitioned, Some(partitionRef: BQPartitionId.HourPartitioned)) =>
             List(fill.tableDef.withTableType(partitionType).assertPartition(partitionRef.partition))
           case (_, _) => List(fill.tableDef.unpartitioned.assertPartition)
         }
@@ -275,6 +280,18 @@ object BQSqlFrag {
             case Nil => None
           }
 
+        val fromHourPartitioned: Option[BQSqlFrag] =
+          partitions.collect { case x: BQPartitionId.HourPartitioned =>
+            x
+          }.sorted match {
+            case partitions @ (first :: _) =>
+              val in = partitions.map(_.partition).mkFragment("[", ", ", "]")
+              Some(
+                bqfr"(select * from ${first.wholeTable.tableId.asFragment} WHERE ${first.field} IN UNNEST($in))"
+              )
+            case Nil => None
+          }
+
         val fromMonthPartitioned: Option[BQSqlFrag] =
           partitions.collect { case x: BQPartitionId.MonthPartitioned =>
             x
@@ -303,6 +320,7 @@ object BQSqlFrag {
           fromSharded.toList,
           fromNotPartitioned.toList,
           fromDatePartitioned.toList,
+          fromHourPartitioned.toList,
           fromMonthPartitioned.toList,
           fromRangePartitioned.toList
         ).flatten

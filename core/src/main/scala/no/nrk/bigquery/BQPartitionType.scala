@@ -6,7 +6,7 @@
 
 package no.nrk.bigquery
 
-import java.time.{LocalDate, YearMonth}
+import java.time.{LocalDate, LocalDateTime, YearMonth}
 
 /** Describes a way a BQ table can be partitioned (or not).
   *
@@ -25,6 +25,7 @@ sealed trait BQPartitionType[+Param] {
   def partitionField: Option[Ident] = {
     val asType = this.asInstanceOf[BQPartitionType[Any]]
     asType match {
+      case BQPartitionType.HourPartitioned(field) => Some(field)
       case BQPartitionType.DatePartitioned(field) => Some(field)
       case BQPartitionType.MonthPartitioned(field) => Some(field)
       case BQPartitionType.IntegerRangePartitioned(field, _) => Some(field)
@@ -36,6 +37,7 @@ sealed trait BQPartitionType[+Param] {
 
 object BQPartitionType {
 
+  final case class HourPartitioned(field: Ident) extends BQPartitionType[LocalDateTime]
   final case class DatePartitioned(field: Ident) extends BQPartitionType[LocalDate]
   final case class MonthPartitioned(field: Ident) extends BQPartitionType[YearMonth]
   final case class IntegerRangePartitioned(field: Ident, range: BQIntegerRange = BQIntegerRange.default)
