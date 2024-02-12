@@ -62,10 +62,15 @@ object BigQueryTestClient {
     } yield underlying
 
   def cachingClient(
-      cacheFrom: Resource[IO, BigQueryClient[IO]]
+      cacheFrom: Resource[IO, BigQueryClient[IO]],
+      config: Option[BigQueryClient.Config]
   ): Resource[IO, BigQueryClient[IO]] =
     cacheFrom.map(client =>
-      new BigQueryClient(client.underlying, client.reader, client.metricOps, None) {
+      new BigQueryClient(
+        client.underlying,
+        client.reader,
+        client.metricOps,
+        config.getOrElse(BigQueryClient.Config.default)) {
         override protected def synchronousQueryExecute(
             jobId: BQJobId,
             query: BQSqlFrag,
