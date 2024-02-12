@@ -44,7 +44,7 @@ class BigQueryClient[F[_]](
     bigQuery: BigQuery,
     val reader: BigQueryReadClient,
     val metricOps: MetricsOps[F],
-    defaults: Option[BQClientDefaults]
+    config: BigQueryClient.Config
 )(implicit F: Async[F], lf: LoggerFactory[F]) {
   private val logger = lf.getLogger
   private implicit def showJob[J <: JobInfo]: Show[J] = Show.show(Jsonify.job)
@@ -472,7 +472,7 @@ class BigQueryClient[F[_]](
               .poll[F](
                 runningJob,
                 baseDelay = 3.second,
-                maxDuration = 20.minutes,
+                maxDuration = config.jobTimeout,
                 maxErrorsTolerated = 10
               )(
                 retry = F.interruptible(bigQuery.getJob(runningJob.getJobId))
@@ -606,7 +606,7 @@ class BigQueryClient[F[_]](
     F.blocking(bigQuery.delete(RoutineId.of(udfId.dataset.project.value, udfId.dataset.id, udfId.name.value)))
 
   private def freshJobId(id: BQJobId): F[JobId] = {
-    val withDefaults = id.withDefaults(defaults)
+    val withDefaults = id.withDefaults(config.defaults)
 
     F.delay(
       JobId
@@ -622,6 +622,19 @@ class BigQueryClient[F[_]](
 object BigQueryClient {
   val readTimeoutSecs = 20L
   val connectTimeoutSecs = 60L
+
+  case class Config(
+      jobTimeout: FiniteDuration,
+      defaults: Option[BQClientDefaults]
+  )
+
+  object Config {
+    val default: Config =
+      Config(
+        jobTimeout = new FiniteDuration(20, TimeUnit.MINUTES),
+        defaults = None
+      )
+  }
 
   def defaultConfigure(
       builder: BigQueryOptions.Builder
@@ -695,12 +708,12 @@ object BigQueryClient {
       credentials: Credentials,
       metricsOps: MetricsOps[F],
       configure: Option[BigQueryOptions.Builder => BigQueryOptions.Builder] = None,
-      clientDefaults: Option[BQClientDefaults] = None
+      clientConfig: Option[BigQueryClient.Config] = None
   ): Resource[F, BigQueryClient[F]] =
     for {
       bq <- Resource.eval(
-        BigQueryClient.fromCredentials(credentials, configure, clientDefaults)
+        BigQueryClient.fromCredentials(credentials, configure, clientConfig.flatMap(_.defaults))
       )
       bqRead <- BigQueryClient.readerResource(credentials)
-    } yield new BigQueryClient(bq, bqRead, metricsOps, clientDefaults)
+    } yield new BigQueryClient(bq, bqRead, metricsOps, clientConfig.getOrElse(BigQueryClient.Config.default))
 }

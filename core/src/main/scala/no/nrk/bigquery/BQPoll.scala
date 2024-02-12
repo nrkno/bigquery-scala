@@ -73,7 +73,8 @@ object BQPoll {
 
     F.sleep(maxDuration).race(go(runningJob, Nil, Nil)).flatMap {
       case Left(_) =>
-        F.raiseError(BQExecutionException(runningJob.getJobId, None, Nil))
+        val error = new BigQueryError("job-wait-timeout", "", s"timeout after ${maxDuration.toMinutes} minutes")
+        F.raiseError(BQExecutionException(runningJob.getJobId, Some(error), Nil))
       case Right(finished) => F.pure(finished)
     }
   }
