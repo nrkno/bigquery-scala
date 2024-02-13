@@ -105,9 +105,10 @@ object RoutineUpdateOperation {
   private def recreateRoutine(r: RoutineInfo) =
     RoutineInfo
       .newBuilder(r.getRoutineId)
-      .setRoutineType(UdfRoutineType)
+      .setRoutineType(r.getRoutineType)
       .setArguments(r.getArguments)
       .setReturnType(r.getReturnType)
+      .setReturnTableType(r.getReturnTableType)
       .setLanguage(r.getLanguage)
       .setBody(r.getBody)
       .setImportedLibraries(r.getImportedLibraries)
