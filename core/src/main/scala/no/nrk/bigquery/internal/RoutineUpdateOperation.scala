@@ -80,6 +80,7 @@ object RoutineUpdateOperation {
               .asJava)
           .build()
       )
+      .setImportedLibraries(List.empty.asJava)
       .build()
 
   private def createUdfRoutineInfo(udf: UDF.Persistent[_]) = {
@@ -94,6 +95,7 @@ object RoutineUpdateOperation {
         baseBuilder
           .setLanguage("SQL")
           .setBody(s.asFragment.asString)
+          .setImportedLibraries(List.empty.asJava)
       case Body.Js(javascriptSnippet, gsLibraryPath) =>
         baseBuilder
           .setLanguage("JAVASCRIPT")
@@ -106,12 +108,12 @@ object RoutineUpdateOperation {
     RoutineInfo
       .newBuilder(r.getRoutineId)
       .setRoutineType(r.getRoutineType)
-      .setArguments(r.getArguments)
+      .setArguments(Option(r.getArguments).getOrElse(List.empty.asJava))
       .setReturnType(r.getReturnType)
       .setReturnTableType(r.getReturnTableType)
       .setLanguage(r.getLanguage)
       .setBody(r.getBody)
-      .setImportedLibraries(r.getImportedLibraries)
+      .setImportedLibraries(Option(r.getImportedLibraries).getOrElse(List.empty.asJava))
       .build()
 
   private def toRoutineId(id: BQPersistentRoutine.Id) =

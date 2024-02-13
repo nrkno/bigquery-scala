@@ -6,13 +6,15 @@
 
 package no.nrk.bigquery.internal
 
-import com.google.cloud.bigquery.{RoutineId, RoutineInfo}
+import com.google.cloud.bigquery.{RoutineId, RoutineInfo, StandardSQLDataType, StandardSQLField, StandardSQLTableType}
 import munit.FunSuite
 import no.nrk.bigquery.UpdateOperation.{CreatePersistentUdf, Illegal, UpdatePersistentUdf}
 import no.nrk.bigquery._
 import no.nrk.bigquery.BQRoutine.{Param, Params}
 import no.nrk.bigquery.syntax._
 import no.nrk.bigquery.util.nat._
+
+import scala.jdk.CollectionConverters._
 
 class RoutineUpdateOperationTest extends FunSuite {
 
@@ -82,6 +84,59 @@ class RoutineUpdateOperationTest extends FunSuite {
     }
 
     assertEquals(existingRoutine.getArguments.get(0).getDataType.getTypeKind, "ARRAY")
+  }
+
+  test("noop udf") {
+    val routine = RoutineInfo
+      .newBuilder(routineId)
+      .setRoutineType("SCALAR_FUNCTION")
+      .setLanguage("SQL")
+      .setBody("((1))")
+      .setReturnType(StandardSQLDataType.newBuilder().setTypeKind(BQType.INT64.tpe.name).build())
+      .build()
+
+    RoutineUpdateOperation.from(udf, Some(routine)) match {
+      case _: UpdateOperation.Noop =>
+      case other => fail(other.toString)
+    }
+  }
+
+  test("noop tvf") {
+    val routine = RoutineInfo
+      .newBuilder(routineId)
+      .setRoutineType("TABLE_VALUED_FUNCTION")
+      .setLanguage("SQL")
+      .setBody("select 1 as n")
+      .setReturnTableType(
+        StandardSQLTableType
+          .newBuilder()
+          .setColumns(
+            List(
+              StandardSQLField
+                .newBuilder()
+                .setName("n")
+                .setDataType(StandardSQLDataType.newBuilder().setTypeKind(BQType.INT64.tpe.name).build())
+                .build()
+            ).asJava
+          )
+          .build()
+      )
+      .build()
+
+    val tvf = TVF(
+      TVF.TVFId(BQDataset.Ref(ProjectId("p1"), "ds1"), ident"foo"),
+      BQPartitionType.NotPartitioned,
+      Params.empty,
+      bqfr"select 1 as n",
+      BQSchema.of(
+        BQField("n", BQField.Type.INT64, BQField.Mode.NULLABLE)
+      )
+    )
+
+    RoutineUpdateOperation.from(tvf, Some(routine)) match {
+      case _: UpdateOperation.Noop =>
+      case other => fail(other.toString)
+    }
   }
 
 }
