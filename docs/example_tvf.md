@@ -11,7 +11,7 @@ object MyTvf {
   val schema: BQSchema = BQSchema.of(
     BQField("id", BQField.Type.STRING, BQField.Mode.NULLABLE)
   )
-  val dataset: BQDataset = BQDataset.unsafeOf(ProjectId.unsafeFromString("some-project"), "my_dataset", None)
+  val dataset: BQDataset.Ref = BQDataset.Ref.unsafeOf(ProjectId.unsafeFromString("some-project"), "my_dataset")
   val sourceTable = BQTableDef.Table(
     BQTableId.unsafeOf(dataset, "source-table"),
     schema,

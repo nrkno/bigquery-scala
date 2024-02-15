@@ -120,7 +120,7 @@ class BQSqlFragTest extends FunSuite {
     val partitionField = BQField("partitionDate", BQField.Type.DATE, BQField.Mode.REQUIRED)
 
     BQTableDef.Table(
-      BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId("foo"), "bar").toRef, name),
+      BQTableId.unsafeOf(BQDataset.Ref.unsafeOf(ProjectId("foo"), "bar"), name),
       BQSchema.of(partitionField, BQField("num", BQField.Type.FLOAT64, BQField.Mode.REQUIRED)),
       BQPartitionType.DatePartitioned(partitionField.ident)
     )

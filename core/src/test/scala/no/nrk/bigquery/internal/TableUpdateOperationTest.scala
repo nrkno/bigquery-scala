@@ -19,7 +19,7 @@ class TableUpdateOperationTest extends FunSuite {
   private val a = BQField("a", BQField.Type.INT64, BQField.Mode.REQUIRED)
   private val b = BQField("b", BQField.Type.INT64, BQField.Mode.REQUIRED)
   private val c = BQField("c", BQField.Type.INT64, BQField.Mode.REQUIRED)
-  private val dataset: BQDataset.Ref = BQDataset.unsafeOf(ProjectId("project"), "dataset").toRef
+  private val dataset: BQDataset.Ref = BQDataset.Ref.unsafeOf(ProjectId("project"), "dataset")
   private val viewId = BQTableId.unsafeOf(dataset, "view")
   private val tableId = BQTableId.unsafeOf(dataset, "table")
   private val materializedViewId =
