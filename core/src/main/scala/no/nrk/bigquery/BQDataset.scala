@@ -37,8 +37,15 @@ object BQDataset {
     of(project, dataset, location).fold(err => throw new IllegalArgumentException(err), identity)
 
   def of(project: ProjectId, dataset: String, location: Option[LocationId] = None): Either[String, BQDataset] =
-    if (regex.matcher(dataset).matches()) Right(BQDataset(project, dataset, location))
-    else Left(s"invalid project ID '$dataset' - must match ${regex.pattern()}")
+    Ref.of(project, dataset).map(ref => BQDataset(ref.project, ref.id, location))
 
   final case class Ref private[bigquery] (project: ProjectId, id: String)
+  object Ref {
+    def unsafeOf(project: ProjectId, dataset: String): Ref =
+      of(project, dataset).fold(err => throw new IllegalArgumentException(err), identity)
+
+    def of(project: ProjectId, dataset: String): Either[String, Ref] =
+      if (regex.matcher(dataset).matches()) Right(Ref(project, dataset))
+      else Left(s"invalid project ID '$dataset' - must match ${regex.pattern()}")
+  }
 }

@@ -32,7 +32,7 @@ import no.nrk.bigquery._
 import no.nrk.bigquery.syntax._
 
 object MyPersistentSQLUdfs {
-  val dataset = BQDataset.unsafeOf(ProjectId.unsafeFromString("my-project"), "ds1", None)
+  val dataset = BQDataset.Ref.unsafeOf(ProjectId.unsafeFromString("my-project"), "ds1")
   val addOneUdf = UDF.persistent(
     ident"addOneSqlUdf",
     dataset,

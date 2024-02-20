@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets
 
 class BQTableIdTest extends munit.ScalaCheckSuite {
 
-  val dataset = BQDataset.unsafeOf(ProjectId.unsafeFromString("com-example"), "test").toRef
+  val dataset = BQDataset.Ref.unsafeOf(ProjectId.unsafeFromString("com-example"), "test")
 
   property("valid tableId") {
     Prop.forAll(Generators.validTableIdGen) { (input: String) =>

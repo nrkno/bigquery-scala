@@ -17,7 +17,7 @@ object Schemas {
   object UserEventSchema {
     private val timestamp: BQField = BQField("timestamp", BQField.Type.TIMESTAMP, BQField.Mode.REQUIRED)
     val tableDef: BQTableDef.Table[LocalDate] = BQTableDef.Table(
-      BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId.unsafeFromString("my-gcp-project"), "prod", Some(LocationId.EU)), "user_log"),
+      BQTableId.unsafeOf(BQDataset.Ref.unsafeOf(ProjectId.unsafeFromString("my-gcp-project"), "prod"), "user_log"),
       BQSchema.of(
         BQField("eventId", BQField.Type.STRING, BQField.Mode.REQUIRED),
         timestamp,
@@ -38,7 +38,7 @@ object Schemas {
       BQField("lastName", BQField.Type.STRING, BQField.Mode.REQUIRED)
     )
     val tableDef: BQTableDef.Table[Unit] = BQTableDef.Table(
-      BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId.unsafeFromString("my-gcp-project"), "prod", Some(LocationId.EU)), "users"),
+      BQTableId.unsafeOf(BQDataset.Ref.unsafeOf(ProjectId.unsafeFromString("my-gcp-project"), "prod"), "users"),
       BQSchema.of(
         BQField("userId", BQField.Type.STRING, BQField.Mode.REQUIRED),
         namesStruct
@@ -87,7 +87,7 @@ object UserEventView {
   private val timestamp: BQField = BQField("timestamp", BQField.Type.TIMESTAMP, BQField.Mode.REQUIRED)
 
   val viewDef: BQTableDef.View[LocalDate] = BQTableDef.View(
-    BQTableId.unsafeOf(BQDataset.unsafeOf(ProjectId.unsafeFromString("my-gcp-project"), "prod", Some(LocationId.EU)), "user_activity_view"),
+    BQTableId.unsafeOf(BQDataset.Ref.unsafeOf(ProjectId.unsafeFromString("my-gcp-project"), "prod"), "user_activity_view"),
     BQPartitionType.DatePartitioned(timestamp.ident),
     query,
     BQSchema.of(
