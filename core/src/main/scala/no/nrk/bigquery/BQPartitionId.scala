@@ -40,7 +40,7 @@ sealed trait BQPartitionId[+P] {
 
 object BQPartitionId {
   val localDateTimeNoDash: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("yyyyMMddhh")
+    DateTimeFormatter.ofPattern("yyyyMMddHH")
 
   val localDateNoDash: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyyMMdd")
