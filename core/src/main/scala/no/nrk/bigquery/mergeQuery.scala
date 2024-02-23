@@ -6,7 +6,7 @@
 
 package no.nrk.bigquery
 
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 
 import scala.annotation.tailrec
 
@@ -14,7 +14,7 @@ object mergeQuery {
   def into[Pid <: BQPartitionId[Any]](source: Pid, target: Pid, primaryKey: Ident, morePrimaryKeys: Ident*): BQSqlFrag =
     (source.wholeTable, target.wholeTable) match {
       case (from: BQTableDef[Any], to: BQTableDef[Any]) =>
-        into(from, to, primaryKey, morePrimaryKeys *)
+        into(from, to, primaryKey, morePrimaryKeys*)
       case (from, into) =>
         sys.error(s"Cannot merge $from into $into")
     }

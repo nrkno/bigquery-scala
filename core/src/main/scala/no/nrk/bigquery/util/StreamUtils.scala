@@ -9,12 +9,12 @@ package util
 
 import cats.Functor
 import cats.effect.Sync
-import cats.syntax.all._
+import cats.syntax.all.*
 
 import fs2.compression.Compression
 import fs2.{Chunk, Pipe}
 import io.circe.Encoder
-import io.circe.syntax._
+import io.circe.syntax.*
 import org.typelevel.log4cats.Logger
 
 object StreamUtils {

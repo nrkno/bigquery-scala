@@ -6,8 +6,8 @@
 
 package no.nrk.bigquery
 
-import cats.syntax.all._
-import no.nrk.bigquery.syntax._
+import cats.syntax.all.*
+import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.BQSqlFrag.asSubQuery
 
 import scala.annotation.tailrec
@@ -78,7 +78,7 @@ sealed trait BQSqlFrag {
     }
 
   final lazy val asStringWithUDFs: String = {
-    val udfs = allReferencedUDFs.collect { case udf: UDF.Temporary[_] => udf.definition.asString }
+    val udfs = allReferencedUDFs.collect { case udf: UDF.Temporary[?] => udf.definition.asString }
     val udfsAsString = udfs.mkString("\n\n") + (if (udfs.nonEmpty) "\n\n" else "")
     udfsAsString + asString
   }
@@ -130,9 +130,9 @@ sealed trait BQSqlFrag {
     def pf(outerRef: Option[BQPartitionId[Any]]): PartialFunction[BQSqlFrag, List[BQPartitionId[Any]]] = {
       case BQSqlFrag.PartitionRef(partitionRef) =>
         partitionRef.wholeTable match {
-          case tableDef: BQTableDef.View[_] if expandAndExcludeViews =>
+          case tableDef: BQTableDef.View[?] if expandAndExcludeViews =>
             tableDef.query.collect(pf(Some(partitionRef))).flatten
-          case tvf: BQAppliedTableValuedFunction[_] if expandAndExcludeViews =>
+          case tvf: BQAppliedTableValuedFunction[?] if expandAndExcludeViews =>
             tvf.query.collect(pf(Some(partitionRef))).flatten
           case _ => List(partitionRef)
         }
@@ -163,13 +163,13 @@ sealed trait BQSqlFrag {
   final def allReferencedTables: Seq[BQTableLike[Any]] =
     allReferencedAsPartitions
       .map(_.wholeTable)
-      .filterNot(tableLike => tableLike.isInstanceOf[BQTableDef.View[_]])
+      .filterNot(tableLike => tableLike.isInstanceOf[BQTableDef.View[?]])
 
   final def allReferencedTablesAsPartitions: Seq[BQPartitionId[Any]] =
     allReferencedAsPartitions(expandAndExcludeViews = true)
-      .filterNot(pid => pid.wholeTable.isInstanceOf[BQTableDef.View[_]])
+      .filterNot(pid => pid.wholeTable.isInstanceOf[BQTableDef.View[?]])
 
-  final def allReferencedUDFs: Seq[UDF[UDF.UDFId, _]] =
+  final def allReferencedUDFs: Seq[UDF[UDF.UDFId, ?]] =
     this.collect { case BQSqlFrag.Call(udf, _) => udf }.distinct
 
   override def toString: String = asString
@@ -180,7 +180,7 @@ object BQSqlFrag {
   def backticks(string: String): BQSqlFrag = Frag("`" + string + "`")
 
   case class Frag(string: String) extends BQSqlFrag
-  case class Call(udf: UDF[UDF.UDFId, _], args: List[BQSqlFrag]) extends BQSqlFrag {
+  case class Call(udf: UDF[UDF.UDFId, ?], args: List[BQSqlFrag]) extends BQSqlFrag {
     require(
       udf.params.length == args.length,
       show"UDF ${udf.name}: Expected ${udf.params.length} arguments, got ${args.length}"

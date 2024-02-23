@@ -8,10 +8,10 @@ package no.nrk.bigquery
 
 import cats.Show
 import cats.data.OptionT
-import cats.effect.implicits._
+import cats.effect.implicits.*
 import cats.effect.kernel.Outcome
 import cats.effect.{Async, Resource}
-import cats.syntax.all._
+import cats.syntax.all.*
 import com.google.api.gax.core.FixedCredentialsProvider
 import com.google.api.gax.retrying.RetrySettings
 import com.google.api.gax.rpc.ServerStream
@@ -19,13 +19,13 @@ import com.google.auth.Credentials
 import com.google.cloud.bigquery.BigQuery.{JobOption, TableOption}
 import com.google.cloud.bigquery.JobInfo.WriteDisposition
 import com.google.cloud.bigquery.JobStatistics.LoadStatistics
-import com.google.cloud.bigquery.storage.v1._
-import com.google.cloud.bigquery.{Option => _, _}
+import com.google.cloud.bigquery.storage.v1.*
+import com.google.cloud.bigquery.{Option as _, *}
 import com.google.cloud.http.HttpTransportOptions
 import fs2.{Chunk, Stream}
 import io.circe.Encoder
 import no.nrk.bigquery.internal.{PartitionTypeHelper, SchemaHelper, TableUpdateOperation}
-import no.nrk.bigquery.internal.GoogleTypeHelper._
+import no.nrk.bigquery.internal.GoogleTypeHelper.*
 import no.nrk.bigquery.metrics.{BQMetrics, MetricsOps}
 import no.nrk.bigquery.util.StreamUtils
 import org.apache.avro
@@ -37,8 +37,8 @@ import org.typelevel.log4cats.LoggerFactory
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration._
-import scala.jdk.CollectionConverters._
+import scala.concurrent.duration.*
+import scala.jdk.CollectionConverters.*
 
 class BigQueryClient[F[_]](
     bigQuery: BigQuery,
@@ -130,7 +130,7 @@ class BigQueryClient[F[_]](
       submitJob(jobId)(jobId =>
         F.blocking(
           Option(
-            bigQuery.create(JobInfo.of(jobId, queryRequest), jobOptions: _*)
+            bigQuery.create(JobInfo.of(jobId, queryRequest), jobOptions*)
           )
         )).flatMap {
         case Some(job) => F.pure(job)
@@ -448,7 +448,7 @@ class BigQueryClient[F[_]](
 
       F.interruptible(
         Option(
-          bigQuery.create(JobInfo.of(jobId, jobConfiguration), jobOptions: _*)
+          bigQuery.create(JobInfo.of(jobId, jobConfiguration), jobOptions*)
         )
       )
     }.flatMap {
@@ -505,12 +505,12 @@ class BigQueryClient[F[_]](
       tableOptions: TableOption*
   ): F[Option[Table]] =
     F.interruptible(
-      Option(bigQuery.getTable(tableId.underlying, tableOptions: _*))
+      Option(bigQuery.getTable(tableId.underlying, tableOptions*))
         .filter(_.exists())
     )
 
   def getTableLike(tableId: BQTableId, tableOptions: TableOption*): F[Option[BQTableDef[Any]]] =
-    OptionT(getTable(tableId, tableOptions: _*)).mapFilter(t => SchemaHelper.fromTable(t).toOption).value
+    OptionT(getTable(tableId, tableOptions*)).mapFilter(t => SchemaHelper.fromTable(t).toOption).value
 
   def tableExists(tableId: BQTableId): F[Table] =
     getTable(tableId).flatMap {
@@ -561,7 +561,7 @@ class BigQueryClient[F[_]](
       dataset: BQDataset.Ref,
       datasetOptions: BigQuery.TableListOption*
   ): F[Vector[BQTableRef[Any]]] =
-    F.interruptible(bigQuery.listTables(dataset.underlying, datasetOptions: _*)).flatMap { tables =>
+    F.interruptible(bigQuery.listTables(dataset.underlying, datasetOptions*)).flatMap { tables =>
       tables
         .iterateAll()
         .asScala

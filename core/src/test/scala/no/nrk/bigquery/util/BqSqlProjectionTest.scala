@@ -7,8 +7,8 @@
 package no.nrk.bigquery.util
 
 import munit.FunSuite
-import no.nrk.bigquery._
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.*
+import no.nrk.bigquery.syntax.*
 
 class BqSqlProjectionTest extends FunSuite {
 

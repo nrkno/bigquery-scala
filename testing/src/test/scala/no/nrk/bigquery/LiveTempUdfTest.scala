@@ -7,7 +7,7 @@
 package no.nrk.bigquery
 
 import no.nrk.bigquery.BQRoutine.{Param, Params}
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.testing.{BQSmokeTest, BigQueryTestClient}
 
 class LiveTempUdfTest extends BQSmokeTest(BigQueryTestClient.testClient) {

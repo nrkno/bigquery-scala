@@ -8,16 +8,16 @@ package no.nrk.bigquery
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
-import cats.syntax.traverse._
+import cats.syntax.traverse.*
 import com.google.api.gax.core.FixedCredentialsProvider
 import com.google.auth.oauth2.ServiceAccountCredentials
-import com.google.cloud.bigquery.datatransfer.v1._
+import com.google.cloud.bigquery.datatransfer.v1.*
 import com.google.protobuf.{Struct, Value}
 import no.nrk.bigquery.BigQueryTransferClient.{TransferConfigFailed, TransferFailed, TransferStatus, TransferSucceeded}
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 class BigQueryTransferClient(transferClient: DataTransferServiceClient) {
   protected lazy val logger = Slf4jFactory.create[IO].getLogger

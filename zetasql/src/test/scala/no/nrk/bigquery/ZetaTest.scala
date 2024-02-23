@@ -6,9 +6,9 @@
 
 package no.nrk.bigquery
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.effect.IO
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 import com.google.zetasql.toolkit.AnalysisException
 
 import java.time.LocalDate

@@ -6,10 +6,10 @@
 
 package no.nrk.bigquery
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import munit.FunSuite
 import no.nrk.bigquery.BQPartitionType.DatePartitioned
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.BQRoutine.{Param, Params}
 
 import java.time.LocalDate

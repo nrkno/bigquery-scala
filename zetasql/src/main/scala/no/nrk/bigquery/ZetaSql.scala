@@ -41,7 +41,7 @@ import scala.jdk.CollectionConverters.*
 import scala.jdk.OptionConverters.*
 
 class ZetaSql[F[_]](implicit F: Sync[F]) {
-  import ZetaSql._
+  import ZetaSql.*
   def parse(frag: BQSqlFrag): F[Either[SqlException, BQSqlFrag]] = parseScript(frag).map(_.as(frag))
 
   def parseScript(frag: BQSqlFrag): F[Either[SqlException, ASTNodes.ASTScript]] =
@@ -58,7 +58,7 @@ class ZetaSql[F[_]](implicit F: Sync[F]) {
   def parseAndBuildAnalysableFragment(
       query: String,
       allTables: immutable.Seq[BQTableLike[Any]],
-      allTVF: immutable.Seq[TVF[Any, _]],
+      allTVF: immutable.Seq[TVF[Any, ?]],
       toTableFragment: BQTableLike[Any] => BQSqlFrag = _.unpartitioned.bqShow,
       tableIdEqv: (BQTableId, BQTableId) => Boolean = _ == _,
       tvfIdEqv: (TVFId, TVFId) => Boolean = _ == _
@@ -171,7 +171,7 @@ class ZetaSql[F[_]](implicit F: Sync[F]) {
   def analyzeFirst(frag: BQSqlFrag): F[Either[AnalysisException, AnalyzedStatement]] =
     F.interruptible {
       val tables = frag.allReferencedTables
-      val catalog = toCatalog(tables: _*)
+      val catalog = toCatalog(tables*)
       val rendered = frag.asString
 
       val options = BigQueryLanguageOptions.get()
@@ -194,12 +194,12 @@ object ZetaSql {
   def toCatalog(tables: BQTableLike[Any]*): BasicCatalogWrapper = {
     val catalog = new BasicCatalogWrapper()
     tables.foreach {
-      case tableDef: BQTableDef[_] =>
+      case tableDef: BQTableDef[?] =>
         catalog.register(
           toSimpleTable(tableDef.tableId, Some(tableDef.schema)),
           CreateMode.CREATE_IF_NOT_EXISTS,
           CreateScope.CREATE_DEFAULT_SCOPE)
-      case tableRef: BQTableRef[_] =>
+      case tableRef: BQTableRef[?] =>
         catalog.register(
           toSimpleTable(tableRef.tableId, None),
           CreateMode.CREATE_IF_NOT_EXISTS,
@@ -226,7 +226,7 @@ object ZetaSql {
           .getFieldList
           .asScala
           .map(subField => fromColumnNameAndType(subField.getName, subField.getType))
-          .toList: _*)
+          .toList*)
     } else {
       val kind = typ.getKind match {
         case TypeKind.TYPE_BOOL => BQField.Type.BOOL

@@ -9,10 +9,10 @@ package metrics
 
 import cats.data.NonEmptyList
 import cats.effect.{Resource, Sync}
-import cats.syntax.apply._
+import cats.syntax.apply.*
 import com.google.cloud.bigquery.JobStatistics
 import com.google.cloud.bigquery.JobStatistics.QueryStatistics
-import io.prometheus.client._
+import io.prometheus.client.*
 
 object Prometheus {
   def collectorRegistry[F[_]](implicit
@@ -206,7 +206,7 @@ object Prometheus {
       val jobDuration: Resource[F, Histogram] = registerCollector(
         Histogram
           .build()
-          .buckets(jobDurationSecondsHistogramBuckets.toList: _*)
+          .buckets(jobDurationSecondsHistogramBuckets.toList*)
           .name(prefix + "_" + "job_duration_seconds")
           .help("Job Duration in seconds.")
           .labelNames("classifier")

@@ -7,15 +7,15 @@
 package no.nrk.bigquery
 package testing
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.effect.{IO, Resource}
 import cats.effect.kernel.Outcome
 import io.circe.Json
 import io.circe.parser.decode
-import io.circe.syntax._
+import io.circe.syntax.*
 import munit.{CatsEffectSuite, Location}
-import no.nrk.bigquery.syntax._
-import org.typelevel.log4cats.slf4j._
+import no.nrk.bigquery.syntax.*
+import org.typelevel.log4cats.slf4j.*
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
@@ -61,9 +61,9 @@ object BQUdfSmokeTest {
       call: BQSqlFrag.Call
   ): BigQueryClient[IO] => IO[Json] = { bqClient =>
     val temporaryUdfCall = call.udf match {
-      case _: UDF.Temporary[_] => call
-      case _: UDF.Reference[_] => call
-      case udf: UDF.Persistent[_] => call.copy(udf = udf.convertToTemporary)
+      case _: UDF.Temporary[?] => call
+      case _: UDF.Reference[?] => call
+      case udf: UDF.Persistent[?] => call.copy(udf = udf.convertToTemporary)
     }
 
     val query = bqfr"SELECT TO_JSON_STRING($temporaryUdfCall)"

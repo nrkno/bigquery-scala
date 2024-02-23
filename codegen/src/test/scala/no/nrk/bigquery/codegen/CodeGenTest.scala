@@ -7,7 +7,7 @@
 package no.nrk.bigquery
 package codegen
 
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 
 class CodeGenTest extends munit.FunSuite with testing.GeneratedTest {
   val table = BQTableDef.Table(

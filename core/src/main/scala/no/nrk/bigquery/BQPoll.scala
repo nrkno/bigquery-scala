@@ -7,14 +7,14 @@
 package no.nrk.bigquery
 
 import cats.effect.Async
-import cats.effect.implicits._
-import cats.syntax.all._
+import cats.effect.implicits.*
+import cats.syntax.all.*
 import com.google.cloud.bigquery.{BigQueryError, Job, JobStatus}
 import org.typelevel.log4cats.LoggerFactory
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.Random
 
 sealed trait BQPoll

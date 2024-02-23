@@ -6,9 +6,9 @@
 
 package no.nrk.bigquery
 
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.testing.{BQSmokeTest, BigQueryTestClient}
-import no.nrk.bigquery.util._
+import no.nrk.bigquery.util.*
 
 class TvfSmokeTest extends BQSmokeTest(BigQueryTestClient.testClient) {
 

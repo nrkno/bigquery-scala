@@ -6,8 +6,8 @@
 
 package no.nrk.bigquery
 
-import no.nrk.bigquery._
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.*
+import no.nrk.bigquery.syntax.*
 import munit.FunSuite
 
 class TVFTest extends FunSuite {

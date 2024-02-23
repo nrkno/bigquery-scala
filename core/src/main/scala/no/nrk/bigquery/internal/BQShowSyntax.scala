@@ -8,7 +8,7 @@ package no.nrk.bigquery.internal
 
 import no.nrk.bigquery.{BQFill, BQFilledTable, BQShow, BQSqlFrag}
 import cats.Foldable
-import cats.syntax.all._
+import cats.syntax.all.*
 
 import java.time.LocalDate
 

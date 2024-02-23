@@ -62,7 +62,7 @@ object BQShow extends BQShowInstances {
       }
     }
 
-    def bqfr(args: BQSqlFrag.Magnet*): BQSqlFrag = bqsql(args: _*)
+    def bqfr(args: BQSqlFrag.Magnet*): BQSqlFrag = bqsql(args*)
   }
 
 }

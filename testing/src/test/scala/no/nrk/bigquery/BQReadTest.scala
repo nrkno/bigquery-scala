@@ -6,7 +6,7 @@
 
 package no.nrk.bigquery
 
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.testing.{BQSmokeTest, BigQueryTestClient}
 
 class BQReadTest extends BQSmokeTest(BigQueryTestClient.testClient) {

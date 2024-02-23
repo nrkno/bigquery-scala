@@ -7,16 +7,16 @@
 package no.nrk.bigquery
 package internal
 
-import com.google.cloud.bigquery.{Option => _, _}
+import com.google.cloud.bigquery.{Option as _, *}
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 object SchemaHelper {
   def fromType(typ: BQField.Type): StandardSQLTypeName = StandardSQLTypeName.valueOf(typ.name)
   def fromMode(mode: BQField.Mode): Field.Mode = Field.Mode.valueOf(mode.name)
 
   def toSchema(schema: BQSchema): Schema =
-    Schema.of(schema.fields.map(toField): _*)
+    Schema.of(schema.fields.map(toField)*)
 
   sealed trait TableConversionError
   object TableConversionError {
@@ -95,7 +95,7 @@ object SchemaHelper {
     }
 
   def toField(field: BQField): Field = {
-    val b = Field.newBuilder(field.name, fromType(field.tpe), field.subFields.map(toField): _*)
+    val b = Field.newBuilder(field.name, fromType(field.tpe), field.subFields.map(toField)*)
     b.setMode(fromMode(field.mode))
     field.description.foreach(b.setDescription)
     if (field.policyTags.nonEmpty) {

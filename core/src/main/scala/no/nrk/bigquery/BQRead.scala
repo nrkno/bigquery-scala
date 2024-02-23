@@ -11,9 +11,9 @@ import io.circe.Json
 import org.apache.avro.util.Utf8
 import org.apache.avro
 
-import java.time._
-import scala.collection.compat._
-import scala.jdk.CollectionConverters._
+import java.time.*
+import scala.collection.compat.*
+import scala.jdk.CollectionConverters.*
 
 import scala.reflect.ClassTag
 
@@ -72,9 +72,9 @@ object BQRead extends BQReadCompat {
       override def read(transportSchema: avro.Schema, value: Any): I[A] = {
         val b = cb.newBuilder
         value match {
-          case coll: scala.Array[_] =>
+          case coll: scala.Array[?] =>
             coll.foreach(elem => b += BQRead[A].read(transportSchema.getElementType, elem))
-          case coll: java.util.Collection[_] =>
+          case coll: java.util.Collection[?] =>
             coll.forEach(elem => b += BQRead[A].read(transportSchema.getElementType, elem))
           case other =>
             sys.error(
@@ -93,9 +93,9 @@ object BQRead extends BQReadCompat {
       override def read(transportSchema: avro.Schema, value: Any): Array[A] = {
         val b = Array.newBuilder[A]
         value match {
-          case coll: scala.Array[_] =>
+          case coll: scala.Array[?] =>
             coll.foreach(elem => b += BQRead[A].read(transportSchema.getElementType, elem))
-          case coll: java.util.Collection[_] =>
+          case coll: java.util.Collection[?] =>
             coll.forEach(elem => b += BQRead[A].read(transportSchema.getElementType, elem))
           case other =>
             sys.error(

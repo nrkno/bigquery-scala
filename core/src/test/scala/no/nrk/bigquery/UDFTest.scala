@@ -7,7 +7,7 @@
 package no.nrk.bigquery
 
 import munit.FunSuite
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.util.nat._0
 import no.nrk.bigquery.BQRoutine.{Param, Params}
 
