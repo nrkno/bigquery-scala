@@ -6,101 +6,23 @@
 
 package no.nrk.bigquery
 
-import cats.{Applicative, MonadThrow, Show}
+import cats.{Applicative, MonadThrow}
 import cats.syntax.all.*
-import com.google.cloud.bigquery.{Option as _, *}
 import no.nrk.bigquery.internal.{RoutineUpdateOperation, TableUpdateOperation}
 import org.typelevel.log4cats.LoggerFactory
-
-sealed trait OperationMeta {
-  def identifier: String
-}
-case class TableDefOperationMeta(
-    existingRemoteTable: TableInfo,
-    localTableDef: BQTableDef[Any]
-) extends OperationMeta {
-  def identifier: String = existingRemoteTable.getTableId.toString
-}
-case class PersistentRoutineOperationMeta(
-    routine: RoutineInfo,
-    persistentRoutine: BQPersistentRoutine[?, ?]
-) extends OperationMeta {
-  override def identifier: String = persistentRoutine.name.asString
-}
-
-sealed trait UpdateOperation
-object UpdateOperation {
-  case class Noop(meta: OperationMeta) extends UpdateOperation
-
-  sealed trait Success extends UpdateOperation
-
-  /** @param maybePatchedTable
-    *   It's not allowed to provide schema when creating a view
-    */
-  case class CreateTable(
-      localTableDef: BQTableDef[Any],
-      table: TableInfo,
-      maybePatchedTable: Option[TableInfo]
-  ) extends Success
-
-  case class UpdateTable(
-      existingRemoteTable: TableInfo,
-      localTableDef: BQTableDef.Table[Any],
-      table: TableInfo
-  ) extends Success
-
-  case class RecreateView(
-      existingRemoteTable: TableInfo,
-      localTableDef: BQTableDef.ViewLike[Any],
-      create: CreateTable
-  ) extends Success
-
-  case class CreateTvf(
-      tvf: TVF[Any, ?],
-      routine: RoutineInfo
-  ) extends Success
-
-  case class UpdateTvf(
-      tvf: TVF[Any, ?],
-      routine: RoutineInfo
-  ) extends Success
-
-  case class CreatePersistentUdf(
-      persistentUdf: UDF.Persistent[?],
-      routine: RoutineInfo
-  ) extends Success
-
-  case class UpdatePersistentUdf(
-      persistentUdf: UDF.Persistent[?],
-      routine: RoutineInfo
-  ) extends Success
-
-  sealed trait Error extends UpdateOperation
-
-  case class Illegal(meta: OperationMeta, reason: String) extends Error
-  case class UnsupportedPartitioning(meta: OperationMeta, msg: String) extends Error
-  case class IllegalSchemaExtension(meta: OperationMeta, reason: String) extends Error
-
-}
 
 class EnsureUpdated[F[_]](
     bqClient: BigQueryClient[F]
 )(implicit F: MonadThrow[F], lf: LoggerFactory[F]) {
   private val logger = lf.getLogger
 
-  private def bqFormatTableId(tableId: TableId): BQSqlFrag = BQSqlFrag(
-    s"`${tableId.getProject}.${tableId.getDataset}.${tableId.getTable}`"
-  )
-
-  private implicit val showTableId: Show[TableId] = Show.show(tid => s"`${bqFormatTableId(tid)}`")
-
   def check(template: BQTableDef[Any]): F[UpdateOperation] =
-    bqClient.getTable(template.tableId).map { maybeExisting =>
+    bqClient.getExistingTableImpl(template.tableId).map { maybeExisting =>
       TableUpdateOperation.from(template, maybeExisting)
     }
 
   def check(persistentRoutine: BQPersistentRoutine[?, ?]): F[UpdateOperation] =
-    bqClient.getRoutine(persistentRoutine.name).map { maybeExisting =>
+    bqClient.getExistingRoutineImpl(persistentRoutine.name).map { maybeExisting =>
       RoutineUpdateOperation.from(persistentRoutine, maybeExisting)
     }
 
@@ -109,43 +31,43 @@ class EnsureUpdated[F[_]](
       case UpdateOperation.Noop(_) =>
         Applicative[F].unit
 
-      case UpdateOperation.CreateTable(to, table, maybePatchedTable) =>
+      case UpdateOperation.CreateTable(to, maybePatchedTable) =>
         for {
-          _ <- logger.warn(show"Creating ${table.getTableId} of type ${to.getClass.getSimpleName}")
-          _ <- bqClient.create(table)
+          _ <- logger.warn(show"Creating ${to.tableId} of type ${to.getClass.getSimpleName}")
+          _ <- bqClient.createTable(to)
           _ <- maybePatchedTable match {
-            case Some(patchedTable) => bqClient.update(patchedTable).void
+            case Some(patchedTable) => bqClient.updateTable(patchedTable).void
             case None => Applicative[F].unit
           }
         } yield ()
 
-      case UpdateOperation.UpdateTable(from, to, table) =>
+      case UpdateOperation.UpdateTable(from, to) =>
         val msg =
-          show"Updating ${table.getTableId} of type ${to.getClass.getSimpleName} from ${from.toString}, to ${to.toString}"
-        logger.warn(msg) >> bqClient.update(table).void
+          show"Updating ${from.our.tableId} of type ${to.getClass.getSimpleName} from ${from.toString}, to ${to.toString}"
+        logger.warn(msg) >> bqClient.updateTableWithExisting(from, to).void
 
-      case UpdateOperation.CreateTvf(tvf, routine) =>
+      case UpdateOperation.CreateTvf(tvf) =>
         for {
           _ <- logger.warn(show"Creating ${tvf.name.asString} of type Tvf")
-          _ <- bqClient.create(routine)
+          _ <- bqClient.createRoutine(tvf)
         } yield ()
 
-      case UpdateOperation.UpdateTvf(tvf, routine) =>
+      case UpdateOperation.UpdateTvf(existing, tvf) =>
         for {
           _ <- logger.warn(show"Updating ${tvf.name.asString} of type Tvf")
-          _ <- bqClient.update(routine)
+          _ <- bqClient.updateRoutineWithExisting(existing, tvf)
         } yield ()
 
-      case UpdateOperation.CreatePersistentUdf(udf, routine) =>
+      case UpdateOperation.CreatePersistentUdf(udf) =>
         for {
           _ <- logger.warn(show"Creating ${udf.name} of type PersistentUdf")
-          _ <- bqClient.create(routine)
+          _ <- bqClient.createRoutine(udf)
         } yield ()
 
-      case UpdateOperation.UpdatePersistentUdf(udf, routine) =>
+      case UpdateOperation.UpdatePersistentUdf(existing, udf) =>
         for {
           _ <- logger.warn(show"Updating ${udf.name} of type PersistentUdf")
-          _ <- bqClient.update(routine)
+          _ <- bqClient.updateRoutineWithExisting(existing, udf)
         } yield ()
 
       case UpdateOperation.RecreateView(from, to, createNew) =>
@@ -153,7 +75,7 @@ class EnsureUpdated[F[_]](
           show"Recreating ${to.tableId} of type ${to.getClass.getSimpleName} from ${from.toString}, to ${to.toString}"
         for {
           _ <- logger.warn(msg)
-          _ <- bqClient.delete(createNew.localTableDef.tableId)
+          _ <- bqClient.deleteTable(createNew.local.tableId)
           updated <- perform(createNew)
         } yield updated
 

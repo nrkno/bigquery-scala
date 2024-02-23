@@ -31,3 +31,8 @@ object Sized {
     def length: Int = sized.unsized.length
   }
 }
+
+object ToSized {
+  def apply[A](list: List[A]): Sized[IndexedSeq[A], NatUnknown] =
+    Sized.wrap(list.toIndexedSeq)
+}

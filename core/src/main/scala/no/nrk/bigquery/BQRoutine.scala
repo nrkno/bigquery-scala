@@ -25,6 +25,8 @@ sealed trait BQPersistentRoutine[N <: Nat, C] extends BQRoutine[N, C] {
 }
 
 object BQPersistentRoutine {
+  type Unknown = BQPersistentRoutine[?, ?]
+
   trait Id {
     def dataset: BQDataset.Ref
     def name: Ident
@@ -65,6 +67,11 @@ case class TVF[+P, N <: Nat](
     schema: BQSchema,
     description: Option[String] = None
 ) extends BQPersistentRoutine[N, BQSqlFrag.TableRef] {
+  def withParitionType[NewParam](
+      tpe: BQPartitionType[NewParam]
+  ): TVF[NewParam, N] =
+    TVF(name, tpe, params, query, schema, description)
+
   def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]): BQSqlFrag.TableRef =
     BQSqlFrag.TableRef(BQAppliedTableValuedFunction(this, args.map(_.frag)))
 }
