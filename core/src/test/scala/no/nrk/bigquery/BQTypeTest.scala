@@ -7,7 +7,7 @@
 package no.nrk.bigquery
 
 import munit.FunSuite
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 
 class BQTypeTest extends FunSuite {
 

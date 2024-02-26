@@ -7,7 +7,7 @@
 package no.nrk.bigquery.internal
 
 import no.nrk.bigquery.{BQRoutine, BQSqlFrag}
-import no.nrk.bigquery.util.nat._
+import no.nrk.bigquery.util.nat.*
 import no.nrk.bigquery.util.IndexSeqSizedBuilder
 
 trait RoutineSyntax {

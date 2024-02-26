@@ -8,7 +8,7 @@ package no.nrk.bigquery.metrics
 
 import cats.effect.kernel.Outcome
 import cats.effect.{Clock, Concurrent, Resource}
-import cats.syntax.all._
+import cats.syntax.all.*
 import com.google.cloud.bigquery.{Job, JobStatistics}
 import no.nrk.bigquery.BQJobId
 

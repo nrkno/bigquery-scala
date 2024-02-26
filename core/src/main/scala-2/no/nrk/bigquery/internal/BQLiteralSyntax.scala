@@ -28,7 +28,7 @@ object BQLiteralOps {
       Ident.fromString(s).map(_ => c.Expr(q"Ident.unsafeFromString($s)"))
     }
 
-    def make(c: Context)(args: c.Expr[Any]*): c.Expr[Ident] = apply(c)(args: _*)
+    def make(c: Context)(args: c.Expr[Any]*): c.Expr[Ident] = apply(c)(args*)
   }
 
   object LabelKeyLiteral extends Literally[Labels.Key] {
@@ -38,7 +38,7 @@ object BQLiteralOps {
       Labels.Key.apply(s).toEither.left.map(_.toList.mkString("\n")).map(_ => c.Expr(q"Labels.Key.make($s)"))
     }
 
-    def make(c: Context)(args: c.Expr[Any]*): c.Expr[Labels.Key] = apply(c)(args: _*)
+    def make(c: Context)(args: c.Expr[Any]*): c.Expr[Labels.Key] = apply(c)(args*)
   }
 
   object LabelValueLiteral extends Literally[Labels.Value] {
@@ -48,7 +48,7 @@ object BQLiteralOps {
       Labels.Value.apply(s).toEither.left.map(_.toList.mkString("\n")).map(_ => c.Expr(q"Labels.Value.make($s)"))
     }
 
-    def make(c: Context)(args: c.Expr[Any]*): c.Expr[Labels.Value] = apply(c)(args: _*)
+    def make(c: Context)(args: c.Expr[Any]*): c.Expr[Labels.Value] = apply(c)(args*)
   }
 
 }

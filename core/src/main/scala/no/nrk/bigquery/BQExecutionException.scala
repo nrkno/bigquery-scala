@@ -7,9 +7,9 @@
 package no.nrk.bigquery
 
 import cats.Show
-import cats.syntax.show._
+import cats.syntax.show.*
 import com.google.cloud.bigquery.{BigQueryError, JobId, Jsonify}
-import BQExecutionExceptionInstances._
+import BQExecutionExceptionInstances.*
 
 case class BQExecutionException(
     jobId: JobId,

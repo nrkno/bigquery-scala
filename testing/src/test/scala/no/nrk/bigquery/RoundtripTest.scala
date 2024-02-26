@@ -8,7 +8,7 @@ package no.nrk.bigquery
 
 import cats.effect.IO
 import munit.CatsEffectSuite
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.testing.BigQueryTestClient
 
 import java.time.{Instant, LocalDate, LocalTime}

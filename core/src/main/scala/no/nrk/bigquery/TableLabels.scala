@@ -63,7 +63,7 @@ object TableLabels {
   def from(params: scala.collection.immutable.Seq[(Labels.Key, Labels.Value)]): TableLabels = TableLabels(
     SortedMap(params.map { case (k, v) =>
       k.value -> v.value
-    }: _*))
+    }*))
 
   /* nicer syntax for creating instances */
   def apply(values: (String, String)*): TableLabels =

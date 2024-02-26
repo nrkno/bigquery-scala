@@ -7,8 +7,8 @@
 package no.nrk.bigquery
 
 import cats.{Applicative, MonadThrow, Show}
-import cats.syntax.all._
-import com.google.cloud.bigquery.{Option => _, _}
+import cats.syntax.all.*
+import com.google.cloud.bigquery.{Option as _, *}
 import no.nrk.bigquery.internal.{RoutineUpdateOperation, TableUpdateOperation}
 import org.typelevel.log4cats.LoggerFactory
 
@@ -23,7 +23,7 @@ case class TableDefOperationMeta(
 }
 case class PersistentRoutineOperationMeta(
     routine: RoutineInfo,
-    persistentRoutine: BQPersistentRoutine[_, _]
+    persistentRoutine: BQPersistentRoutine[?, ?]
 ) extends OperationMeta {
   override def identifier: String = persistentRoutine.name.asString
 }
@@ -56,22 +56,22 @@ object UpdateOperation {
   ) extends Success
 
   case class CreateTvf(
-      tvf: TVF[Any, _],
+      tvf: TVF[Any, ?],
       routine: RoutineInfo
   ) extends Success
 
   case class UpdateTvf(
-      tvf: TVF[Any, _],
+      tvf: TVF[Any, ?],
       routine: RoutineInfo
   ) extends Success
 
   case class CreatePersistentUdf(
-      persistentUdf: UDF.Persistent[_],
+      persistentUdf: UDF.Persistent[?],
       routine: RoutineInfo
   ) extends Success
 
   case class UpdatePersistentUdf(
-      persistentUdf: UDF.Persistent[_],
+      persistentUdf: UDF.Persistent[?],
       routine: RoutineInfo
   ) extends Success
 
@@ -99,7 +99,7 @@ class EnsureUpdated[F[_]](
       TableUpdateOperation.from(template, maybeExisting)
     }
 
-  def check(persistentRoutine: BQPersistentRoutine[_, _]): F[UpdateOperation] =
+  def check(persistentRoutine: BQPersistentRoutine[?, ?]): F[UpdateOperation] =
     bqClient.getRoutine(persistentRoutine.name).map { maybeExisting =>
       RoutineUpdateOperation.from(persistentRoutine, maybeExisting)
     }

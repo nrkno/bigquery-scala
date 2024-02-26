@@ -11,7 +11,7 @@ final class Sized[+Repr, N <: Nat](val unsized: Repr) {
 
   override def equals(other: Any): Boolean =
     other match {
-      case o: Sized[_, _] => unsized == o.unsized
+      case o: Sized[?, ?] => unsized == o.unsized
       case _ => false
     }
 
@@ -25,8 +25,9 @@ object Sized {
   def wrap[Repr, L <: Nat](r: Repr): Sized[Repr, L] =
     new Sized[Repr, L](r)
 
-  extension [A, N <: Nat](sized: Sized[IndexedSeq[A], N])
+  extension [A, N <: Nat](sized: Sized[IndexedSeq[A], N]) {
     def map[B](f: A => B): Sized[IndexedSeq[B], N] =
       new Sized[IndexedSeq[B], N](sized.unsized.map(f(_)))
     def length: Int = sized.unsized.length
+  }
 }

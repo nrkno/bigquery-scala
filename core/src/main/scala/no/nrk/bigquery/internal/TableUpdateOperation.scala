@@ -6,13 +6,13 @@
 
 package no.nrk.bigquery.internal
 
-import com.google.cloud.bigquery.{Option => _, _}
-import no.nrk.bigquery._
+import com.google.cloud.bigquery.{Option as _, *}
+import no.nrk.bigquery.*
 
-import scala.jdk.CollectionConverters._
-import GoogleTypeHelper._
+import scala.jdk.CollectionConverters.*
+import GoogleTypeHelper.*
 import cats.Eq
-import cats.syntax.all._
+import cats.syntax.all.*
 
 object TableUpdateOperation {
 

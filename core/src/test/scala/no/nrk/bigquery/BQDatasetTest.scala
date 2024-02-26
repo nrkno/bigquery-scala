@@ -6,7 +6,7 @@
 
 package no.nrk.bigquery
 
-import org.scalacheck._
+import org.scalacheck.*
 
 class BQDatasetTest extends munit.ScalaCheckSuite {
   val project = ProjectId.unsafeFromString("test-123")

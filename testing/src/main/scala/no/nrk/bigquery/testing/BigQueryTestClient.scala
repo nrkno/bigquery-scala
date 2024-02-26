@@ -9,7 +9,7 @@ package testing
 
 import cats.data.OptionT
 import cats.effect.{IO, Resource}
-import cats.syntax.all._
+import cats.syntax.all.*
 import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
 import com.google.cloud.bigquery.BigQuery.JobOption
 import fs2.Stream
@@ -23,7 +23,7 @@ import org.typelevel.log4cats.slf4j.Slf4jFactory
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 import scala.util.Properties
 
 object BigQueryTestClient {

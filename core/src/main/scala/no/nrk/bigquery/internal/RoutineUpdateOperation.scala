@@ -6,7 +6,7 @@
 
 package no.nrk.bigquery.internal
 
-import com.google.cloud.bigquery.{Option => _, _}
+import com.google.cloud.bigquery.{Option as _, *}
 import no.nrk.bigquery.UDF.Body
 import no.nrk.bigquery.{
   BQField,
@@ -27,20 +27,20 @@ object RoutineUpdateOperation {
   private val TvfRoutineType = "TABLE_VALUED_FUNCTION"
 
   def from(
-      routine: BQPersistentRoutine[_, _],
+      routine: BQPersistentRoutine[?, ?],
       maybeExisting: Option[RoutineInfo]
   ): UpdateOperation = maybeExisting match {
     case None =>
       routine match {
-        case tvf: TVF[Any, _] =>
+        case tvf: TVF[Any, ?] =>
           UpdateOperation.CreateTvf(tvf, createTvfRoutineInfo(tvf))
-        case udf: UDF.Persistent[_] =>
+        case udf: UDF.Persistent[?] =>
           UpdateOperation.CreatePersistentUdf(udf, createUdfRoutineInfo(udf))
       }
     case Some(value) =>
       val tpe = routine match {
-        case _: TVF[Any, _] => TvfRoutineType
-        case _: UDF.Persistent[_] => UdfRoutineType
+        case _: TVF[Any, ?] => TvfRoutineType
+        case _: UDF.Persistent[?] => UdfRoutineType
       }
       if (value.getRoutineType != tpe)
         UpdateOperation.Illegal(
@@ -49,21 +49,21 @@ object RoutineUpdateOperation {
       else {
         val recreated = recreateRoutine(value)
         val routineInfo = routine match {
-          case tvf: TVF[Any, _] => createTvfRoutineInfo(tvf)
-          case udf: UDF.Persistent[_] => createUdfRoutineInfo(udf)
+          case tvf: TVF[Any, ?] => createTvfRoutineInfo(tvf)
+          case udf: UDF.Persistent[?] => createUdfRoutineInfo(udf)
         }
         if (recreated == routineInfo)
           UpdateOperation.Noop(PersistentRoutineOperationMeta(value, routine))
         else {
           routine match {
-            case tvf: TVF[Any, _] => UpdateOperation.UpdateTvf(tvf, routineInfo)
-            case udf: UDF.Persistent[_] => UpdateOperation.UpdatePersistentUdf(udf, routineInfo)
+            case tvf: TVF[Any, ?] => UpdateOperation.UpdateTvf(tvf, routineInfo)
+            case udf: UDF.Persistent[?] => UpdateOperation.UpdatePersistentUdf(udf, routineInfo)
           }
         }
       }
   }
 
-  private def createTvfRoutineInfo(tvf: TVF[Any, _]) =
+  private def createTvfRoutineInfo(tvf: TVF[Any, ?]) =
     RoutineInfo
       .newBuilder(toRoutineId(tvf.name))
       .setRoutineType(TvfRoutineType)
@@ -83,7 +83,7 @@ object RoutineUpdateOperation {
       .setImportedLibraries(List.empty.asJava)
       .build()
 
-  private def createUdfRoutineInfo(udf: UDF.Persistent[_]) = {
+  private def createUdfRoutineInfo(udf: UDF.Persistent[?]) = {
     val baseBuilder = RoutineInfo
       .newBuilder(toRoutineId(udf.name))
       .setRoutineType(UdfRoutineType)

@@ -9,12 +9,12 @@ package no.nrk.bigquery.internal
 import com.google.cloud.bigquery.{RoutineId, RoutineInfo, StandardSQLDataType, StandardSQLField, StandardSQLTableType}
 import munit.FunSuite
 import no.nrk.bigquery.UpdateOperation.{CreatePersistentUdf, Illegal, UpdatePersistentUdf}
-import no.nrk.bigquery._
+import no.nrk.bigquery.*
 import no.nrk.bigquery.BQRoutine.{Param, Params}
-import no.nrk.bigquery.syntax._
-import no.nrk.bigquery.util.nat._
+import no.nrk.bigquery.syntax.*
+import no.nrk.bigquery.util.nat.*
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 class RoutineUpdateOperationTest extends FunSuite {
 

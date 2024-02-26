@@ -1,4 +1,4 @@
-import com.typesafe.tools.mima.core._
+import com.typesafe.tools.mima.core.*
 
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
 ThisBuild / tlBaseVersion := "0.16" // your current series x.y
@@ -54,9 +54,9 @@ val commonSettings = Seq(
   scalacOptions -= "-source:3.0-migration",
   scalacOptions ++= {
     if (scalaVersion.value.startsWith("3")) {
-      Seq("-source:3.2-migration")
+      Seq("-source:3.2-migration", "-old-syntax", "-no-indent")
     } else {
-      Seq("-feature", "-language:implicitConversions", "-language:experimental.macros")
+      Nil
     }
   },
   sonatypeProfileName := "no.nrk"

@@ -7,7 +7,7 @@
 package no.nrk.bigquery
 
 import munit.FunSuite
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 
 /** Examples from: https://cloud.google.com/bigquery/docs/reference/standard-sql/lexical#identifier_examples
   */

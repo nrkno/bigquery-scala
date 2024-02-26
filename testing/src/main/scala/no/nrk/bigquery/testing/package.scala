@@ -6,7 +6,7 @@
 
 package no.nrk.bigquery
 
-import cats.syntax.show._
+import cats.syntax.show.*
 import io.circe.{Decoder, Encoder}
 import no.nrk.bigquery
 

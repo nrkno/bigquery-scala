@@ -7,12 +7,12 @@
 package no.nrk.bigquery.internal
 
 import com.google.cloud.bigquery.TimePartitioning.Type
-import com.google.cloud.bigquery.{Option => _, _}
+import com.google.cloud.bigquery.{Option as _, *}
 import munit.FunSuite
-import no.nrk.bigquery.syntax._
-import no.nrk.bigquery._
-import GoogleTypeHelper._
-import scala.concurrent.duration._
+import no.nrk.bigquery.syntax.*
+import no.nrk.bigquery.*
+import GoogleTypeHelper.*
+import scala.concurrent.duration.*
 
 class TableUpdateOperationTest extends FunSuite {
 

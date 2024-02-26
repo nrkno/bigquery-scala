@@ -9,19 +9,19 @@ package testing
 
 import cats.effect.{IO, Resource}
 import cats.effect.kernel.Outcome
-import cats.syntax.alternative._
+import cats.syntax.alternative.*
 import com.google.cloud.bigquery.JobStatistics.QueryStatistics
 import com.google.cloud.bigquery.BigQueryException
 import io.circe.parser.decode
-import io.circe.syntax._
+import io.circe.syntax.*
 import munit.Assertions.{clues, fail}
 import munit.{CatsEffectSuite, Clues, Location}
 import no.nrk.bigquery.UDF.Body
-import no.nrk.bigquery._
+import no.nrk.bigquery.*
 import no.nrk.bigquery.internal.SchemaHelper
 import no.nrk.bigquery.testing.BQSmokeTest.{CheckType, bqCheckFragment}
-import org.typelevel.log4cats.slf4j._
-import no.nrk.bigquery.syntax._
+import org.typelevel.log4cats.slf4j.*
+import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.util.{IndexSeqSizedBuilder, Nat, Sized}
 import org.typelevel.log4cats.SelfAwareStructuredLogger
 
@@ -219,7 +219,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
         }
     }
 
-  protected def bqCheckTableValueFunction[N <: Nat](testName: String, tvf: TVF[_, N])(
+  protected def bqCheckTableValueFunction[N <: Nat](testName: String, tvf: TVF[?, N])(
       args: IndexSeqSizedBuilder[BQSqlFrag.Magnet] => Sized[IndexedSeq[BQSqlFrag.Magnet], N]
   )(implicit loc: Location): Unit = {
     val values =

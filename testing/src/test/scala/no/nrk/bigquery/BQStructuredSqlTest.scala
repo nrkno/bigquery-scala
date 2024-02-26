@@ -7,7 +7,7 @@
 package no.nrk.bigquery
 
 import munit.{FunSuite, Location}
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.testing.BQStructuredSql.{Segment, SegmentList}
 import no.nrk.bigquery.testing.{BQStructuredSql, CTE, CTEList}
 

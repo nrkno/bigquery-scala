@@ -6,8 +6,8 @@
 
 package no.nrk.bigquery.util
 
-import no.nrk.bigquery._
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.*
+import no.nrk.bigquery.syntax.*
 
 object BqSqlProjection {
   case class TypedFragment(fragment: BQSqlFrag, tpe: BQField)

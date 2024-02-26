@@ -12,7 +12,7 @@ import org.apache.commons.text.translate.LookupTranslator
 import java.nio.charset.StandardCharsets
 import java.nio.file.*
 import scala.collection.immutable
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 object Generators {
   private val escaper = new LookupTranslator(
@@ -125,9 +125,9 @@ object Generators {
 object CodeGen {
   def generate(tables: immutable.Seq[BQTableDef[Any]], basePackage: List[String]) =
     tables.collect {
-      case table: BQTableDef.Table[_] =>
+      case table: BQTableDef.Table[?] =>
         Source(SourceLocation(table.tableId, basePackage, "Table"), Generators.genTableDef(table))
-      case view: BQTableDef.View[_] =>
+      case view: BQTableDef.View[?] =>
         Source(SourceLocation(view.tableId, basePackage, "View"), Generators.genViewDef(view))
     }
 }

@@ -13,7 +13,7 @@ import no.nrk.bigquery.TableLabels.Empty
 import java.util.concurrent.TimeUnit
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.FiniteDuration
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 object GoogleTypeHelper {
 
@@ -54,7 +54,7 @@ object GoogleTypeHelper {
 
   def tableLabelsfromTableInfo(tableInfo: TableInfo): TableLabels =
     Option(tableInfo.getLabels) match {
-      case Some(values) => new TableLabels(SortedMap(values.asScala.toList: _*))
+      case Some(values) => new TableLabels(SortedMap(values.asScala.toList*))
       case None => Empty
     }
 }

@@ -6,9 +6,9 @@
 
 package no.nrk.bigquery
 
-import no.nrk.bigquery.syntax._
+import no.nrk.bigquery.syntax.*
 import cats.effect.Concurrent
-import cats.syntax.all._
+import cats.syntax.all.*
 import no.nrk.bigquery.util.{Nat, Sized}
 
 /** @tparam P

@@ -45,11 +45,11 @@ object JobLabels {
   def from(params: scala.collection.immutable.Seq[(Labels.Key, Labels.Value)]): JobLabels = JobLabels(
     SortedMap(params.map { case (k, v) =>
       k.value -> v.value
-    }: _*))
+    }*))
 
   def apply(params: (Labels.Key, Labels.Value)*): JobLabels = from(params.toList)
 
   def unsafeFrom(params: (String, String)*): JobLabels =
-    validated(SortedMap(params: _*))
+    validated(SortedMap(params*))
       .fold(messages => throw new IllegalArgumentException(messages.toList.mkString("\n")), identity)
 }
