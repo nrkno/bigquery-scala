@@ -8,7 +8,7 @@ package no.nrk.bigquery.internal
 
 import com.google.cloud.bigquery.{RoutineId, RoutineInfo, StandardSQLDataType, StandardSQLField, StandardSQLTableType}
 import munit.FunSuite
-import no.nrk.bigquery.UpdateOperation.{CreatePersistentUdf, Illegal, UpdatePersistentUdf}
+import no.nrk.bigquery.UpdateOperation.{CreatePersistentUdf, UpdatePersistentUdf}
 import no.nrk.bigquery.*
 import no.nrk.bigquery.BQRoutine.{Param, Params}
 import no.nrk.bigquery.syntax.*
@@ -29,37 +29,22 @@ class RoutineUpdateOperationTest extends FunSuite {
 
   test("should create when it does not exist") {
     RoutineUpdateOperation.from(udf, None) match {
-      case CreatePersistentUdf(_, routine) =>
-        assertEquals(routine.getRoutineId, routineId)
+      case CreatePersistentUdf(routine) =>
+        assertEquals(RoutineHelper.toGoogle(routine, None).getRoutineId, routineId)
       case other => fail(other.toString)
     }
   }
 
   test("should update udf when changed") {
-    val existingRoutine = RoutineUpdateOperation.from(udf, None) match {
-      case CreatePersistentUdf(_, routine) => routine
-      case other => fail(s"test setup failed: ${other.toString}")
-    }
+    val existingRoutine = ExistingRoutine(udf, RoutineHelper.toGoogle(udf, None))
 
     RoutineUpdateOperation.from(
       udf.copy(params = Params(Param(ident"foo", Some(BQType.INT64)))),
       Some(existingRoutine)
     ) match {
-      case UpdatePersistentUdf(newUdf, newRoutine) =>
-        assertNotEquals(newUdf.params.unsized.toList, udf.params.unsized.toList)
-        assertNotEquals(newRoutine, existingRoutine)
-      case other => fail(other.toString)
-    }
-  }
-
-  test("should not attempt to update non udf routine types") {
-    val routine = RoutineInfo
-      .newBuilder(routineId)
-      .setRoutineType("PROCEDURE")
-      .build()
-
-    RoutineUpdateOperation.from(udf, Some(routine)) match {
-      case Illegal(_, _) =>
+      case UpdatePersistentUdf(existing, newRoutine) =>
+        assertNotEquals(existing.our.params.unsized.toList, newRoutine.params.unsized.toList)
+        assert(newRoutine != udf)
       case other => fail(other.toString)
     }
   }
@@ -78,11 +63,7 @@ class RoutineUpdateOperationTest extends FunSuite {
         Some(BQType.INT64)
       )
 
-    val existingRoutine = RoutineUpdateOperation.from(udf, None) match {
-      case CreatePersistentUdf(_, routine) => routine
-      case other => fail(s"test setup failed: ${other.toString}")
-    }
-
+    val existingRoutine = RoutineHelper.toGoogle(udf, None)
     assertEquals(existingRoutine.getArguments.get(0).getDataType.getTypeKind, "ARRAY")
   }
 
@@ -95,7 +76,7 @@ class RoutineUpdateOperationTest extends FunSuite {
       .setReturnType(StandardSQLDataType.newBuilder().setTypeKind(BQType.INT64.tpe.name).build())
       .build()
 
-    RoutineUpdateOperation.from(udf, Some(routine)) match {
+    RoutineUpdateOperation.from(udf, Some(ExistingRoutine(udf, routine))) match {
       case _: UpdateOperation.Noop =>
       case other => fail(other.toString)
     }
@@ -133,10 +114,9 @@ class RoutineUpdateOperationTest extends FunSuite {
       )
     )
 
-    RoutineUpdateOperation.from(tvf, Some(routine)) match {
+    RoutineUpdateOperation.from(tvf, Some(ExistingRoutine(tvf, routine))) match {
       case _: UpdateOperation.Noop =>
       case other => fail(other.toString)
     }
   }
-
 }

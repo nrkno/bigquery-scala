@@ -35,3 +35,4 @@ object nat {
   type _21 = 21 with NatImpl
   type _22 = 22 with NatImpl
 }
+final class NatUnknown extends NatImpl

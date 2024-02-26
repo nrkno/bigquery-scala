@@ -16,7 +16,7 @@ import com.google.api.gax.core.FixedCredentialsProvider
 import com.google.api.gax.retrying.RetrySettings
 import com.google.api.gax.rpc.ServerStream
 import com.google.auth.Credentials
-import com.google.cloud.bigquery.BigQuery.{JobOption, TableOption}
+import com.google.cloud.bigquery.BigQuery.JobOption
 import com.google.cloud.bigquery.JobInfo.WriteDisposition
 import com.google.cloud.bigquery.JobStatistics.LoadStatistics
 import com.google.cloud.bigquery.storage.v1.*
@@ -24,7 +24,7 @@ import com.google.cloud.bigquery.{Option as _, *}
 import com.google.cloud.http.HttpTransportOptions
 import fs2.{Chunk, Stream}
 import io.circe.Encoder
-import no.nrk.bigquery.internal.{PartitionTypeHelper, SchemaHelper, TableUpdateOperation}
+import no.nrk.bigquery.internal.{PartitionTypeHelper, RoutineHelper, SchemaHelper, TableHelper}
 import no.nrk.bigquery.internal.GoogleTypeHelper.*
 import no.nrk.bigquery.metrics.{BQMetrics, MetricsOps}
 import no.nrk.bigquery.util.StreamUtils
@@ -372,7 +372,7 @@ class BigQueryClient[F[_]](
     }
     .flatMap(tmp =>
       F.interruptible {
-        val tempTableBqDef = TableUpdateOperation.createNew(tmp).table
+        val tempTableBqDef = TableHelper.createNew(tmp)
         val expirationTime =
           Instant.now.plusMillis(expirationDuration.getOrElse(1.hour).toMillis)
 
@@ -386,7 +386,7 @@ class BigQueryClient[F[_]](
   def createTempTableResource[Param](
       table: BQTableDef.Table[Param],
       tmpDataset: BQDataset.Ref): Resource[F, BQTableDef.Table[Param]] =
-    Resource.make(createTempTable(table, tmpDataset))(tmp => delete(tmp.tableId).attempt.void)
+    Resource.make(createTempTable(table, tmpDataset))(tmp => deleteTable(tmp.tableId).attempt.void)
 
   def submitQuery[P](jobId: BQJobId, query: BQSqlFrag): F[Job] =
     submitQuery(jobId, query, None)
@@ -500,27 +500,24 @@ class BigQueryClient[F[_]](
       .flatMap(id => BQMetrics(metricOps, jobId)(loggedJob(id)))
   }
 
-  def getTable(
-      tableId: BQTableId,
-      tableOptions: TableOption*
+  private def getTableImpl(
+      tableId: BQTableId
   ): F[Option[Table]] =
     F.interruptible(
-      Option(bigQuery.getTable(tableId.underlying, tableOptions*))
+      Option(bigQuery.getTable(tableId.underlying))
         .filter(_.exists())
     )
 
-  def getTableLike(tableId: BQTableId, tableOptions: TableOption*): F[Option[BQTableDef[Any]]] =
-    OptionT(getTable(tableId, tableOptions*)).mapFilter(t => SchemaHelper.fromTable(t).toOption).value
+  private[bigquery] def getExistingTableImpl(tableId: BQTableId): F[Option[ExistingTable]] =
+    OptionT(getTableImpl(tableId))
+      .mapFilter(t => TableHelper.fromTable(t).toOption.map(converted => ExistingTable(converted, t)))
+      .value
 
-  def tableExists(tableId: BQTableId): F[Table] =
+  def getTable(tableId: BQTableId): F[Option[BQTableDef[Any]]] =
+    getExistingTableImpl(tableId).map(_.map(_.our))
+
+  def getExistingTable(tableId: BQTableId): F[BQTableDef[Any]] =
     getTable(tableId).flatMap {
-      case None =>
-        F.raiseError(new RuntimeException(s"Table $tableId does not exists"))
-      case Some(table) => F.pure(table)
-    }
-
-  def tableLikeExists(tableId: BQTableId): F[BQTableDef[Any]] =
-    getTableLike(tableId).flatMap {
       case None =>
         F.raiseError(new RuntimeException(s"Table $tableId does not exists"))
       case Some(table) => F.pure(table)
@@ -542,14 +539,17 @@ class BigQueryClient[F[_]](
       F.interruptible(bigQuery.create(jobInfo))
     }
 
-  def create(table: TableInfo): F[Table] =
-    F.blocking(bigQuery.create(table))
+  def createTable(table: BQTableDef[Any]) =
+    F.interruptible(bigQuery.create(TableHelper.from(table, None))).as(table)
 
-  def update(table: TableInfo): F[Table] =
-    F.blocking(bigQuery.update(table))
+  def updateTable(table: BQTableDef[Any]) =
+    F.interruptible(bigQuery.update(TableHelper.from(table, None))).as(table)
 
-  def delete(tableId: BQTableId): F[Boolean] =
-    F.blocking(bigQuery.delete(tableId.underlying))
+  private[bigquery] def updateTableWithExisting(existingTable: ExistingTable, table: BQTableDef[Any]) =
+    F.interruptible(bigQuery.update(TableHelper.from(table, Some(existingTable.table)))).as(table)
+
+  def deleteTable(tableId: BQTableId): F[Boolean] =
+    F.interruptible(bigQuery.delete(tableId.underlying))
 
   def datasetsInProject(project: ProjectId): F[Vector[BQDataset]] =
     F.interruptible(
@@ -590,20 +590,40 @@ class BigQueryClient[F[_]](
         }
     }
 
-  def getRoutine(persistentId: BQPersistentRoutine.Id): F[Option[Routine]] =
-    F.interruptible {
+  private def getRoutineImpl(persistentId: BQPersistentRoutine.Id): F[Option[RoutineInfo]] =
+    runWithBigquery { bq =>
       val routineId = RoutineId.of(persistentId.dataset.project.value, persistentId.dataset.id, persistentId.name.value)
-      Option(bigQuery.getRoutine(routineId)).filter(_.exists())
+      Option(bq.getRoutine(routineId)).filter(_.exists())
     }
 
-  def create(info: RoutineInfo): F[Routine] =
-    F.blocking(bigQuery.create(info))
+  private[bigquery] def getExistingRoutineImpl(persistentId: BQPersistentRoutine.Id): F[Option[ExistingRoutine]] =
+    OptionT(getRoutineImpl(persistentId))
+      .semiflatMap(t => F.delay(RoutineHelper.fromGoogle(t)).map(converted => ExistingRoutine(converted, t)))
+      .value
+
+  def getRoutine(persistentId: BQPersistentRoutine.Id): F[Option[BQPersistentRoutine.Unknown]] =
+    getExistingRoutineImpl(persistentId).map(_.map(_.our))
+
+  def createRoutine(routine: BQPersistentRoutine.Unknown) =
+    runWithBigquery(_.create(RoutineHelper.toGoogle(routine, None)))
+
+  def updateRoutine(routine: BQPersistentRoutine.Unknown) =
+    runWithBigquery(_.update(RoutineHelper.toGoogle(routine, None)))
+
+  private[bigquery] def updateRoutineWithExisting(existing: ExistingRoutine, routine: BQPersistentRoutine.Unknown) =
+    runWithBigquery(_.update(RoutineHelper.toGoogle(routine, Some(existing.routine)))).as(routine)
+
+  /*def create(info: RoutineInfo): F[Routine] =
+    runWithBigquery(_.create(info))
 
   def update(info: RoutineInfo): F[Routine] =
-    F.blocking(bigQuery.update(info))
-
+    runWithBigquery(_.update(info))
+   */
   def delete(udfId: UDF.UDFId.PersistentId): F[Boolean] =
-    F.blocking(bigQuery.delete(RoutineId.of(udfId.dataset.project.value, udfId.dataset.id, udfId.name.value)))
+    runWithBigquery(_.delete(RoutineId.of(udfId.dataset.project.value, udfId.dataset.id, udfId.name.value)))
+
+  private def runWithBigquery[A](run: BigQuery => A) =
+    F.interruptible(run(bigQuery))
 
   private def freshJobId(id: BQJobId): F[JobId] = {
     val withDefaults = id.withDefaults(config.defaults)

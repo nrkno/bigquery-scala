@@ -38,7 +38,7 @@ class TableUpdateOperationTest extends FunSuite {
     val remote = None
 
     TableUpdateOperation.from(testView, remote) match {
-      case UpdateOperation.CreateTable(_, _, maybePatchedTable) =>
+      case UpdateOperation.CreateTable(_, maybePatchedTable) =>
         assert(
           maybePatchedTable.nonEmpty,
           "Expected create with patched table when we have schema"
@@ -59,7 +59,7 @@ class TableUpdateOperationTest extends FunSuite {
       Some(description),
       TableLabels.Empty
     )
-    val remote = Some(
+    val remote =
       TableInfo
         .newBuilder(
           viewId.underlying,
@@ -69,12 +69,11 @@ class TableUpdateOperationTest extends FunSuite {
             .build()
         )
         .build()
-    )
 
-    TableUpdateOperation.from(testView, remote) match {
+    TableUpdateOperation.from(testView, Some(ExistingTable(testView.copy(description = None), remote))) match {
       case UpdateOperation.RecreateView(from, to, createNew) =>
         assert(
-          Option(from.getDescription).isEmpty,
+          Option(from.table.getDescription).isEmpty,
           "Expected `from` table to not have description"
         )
         assert(
@@ -82,7 +81,7 @@ class TableUpdateOperationTest extends FunSuite {
           "Expected `to` to have description"
         )
         assert(
-          createNew.table.getDescription == description,
+          createNew.local.description.contains(description),
           "Expected `updatedTable` to have description"
         )
       case other => fail(other.toString)
@@ -102,20 +101,18 @@ class TableUpdateOperationTest extends FunSuite {
       TableLabels.Empty
     )
     val remote =
-      Some(
-        TableInfo
-          .newBuilder(
-            viewId.underlying,
-            ViewDefinition
-              .newBuilder(query.asStringWithUDFs)
-              .setSchema(SchemaHelper.toSchema(schema))
-              .build()
-          )
-          .setDescription(description)
-          .build()
-      )
+      TableInfo
+        .newBuilder(
+          viewId.underlying,
+          ViewDefinition
+            .newBuilder(query.asStringWithUDFs)
+            .setSchema(SchemaHelper.toSchema(schema))
+            .build()
+        )
+        .setDescription(description)
+        .build()
 
-    TableUpdateOperation.from(testView, remote) match {
+    TableUpdateOperation.from(testView, Some(ExistingTable(testView, remote))) match {
       case UpdateOperation.Noop(_) =>
       case other => fail(other.toString)
     }
@@ -133,7 +130,7 @@ class TableUpdateOperationTest extends FunSuite {
       TableLabels.Empty
     )
     val friendlyName = "friendlyName"
-    val remote = Some(
+    val remote =
       TableInfo
         .newBuilder(
           viewId.underlying,
@@ -141,12 +138,12 @@ class TableUpdateOperationTest extends FunSuite {
         )
         .setFriendlyName(friendlyName)
         .build()
-    )
 
-    TableUpdateOperation.from(testTable, remote) match {
-      case UpdateOperation.UpdateTable(_, _, updatedTable) =>
+    TableUpdateOperation.from(testTable, Some(ExistingTable(testTable.copy(description = None), remote))) match {
+      case UpdateOperation.UpdateTable(existing, updatedTable) =>
+        val convertedTable = TableHelper.from(updatedTable, Some(existing.table))
         assert(
-          updatedTable.getFriendlyName == friendlyName,
+          convertedTable.getFriendlyName == friendlyName,
           "Expected `updatedTable` to contain friendly name"
         )
       case other => fail(other.toString)
@@ -162,7 +159,7 @@ class TableUpdateOperationTest extends FunSuite {
       clustering = Nil,
       TableLabels.Empty
     )
-    val actualTable = Some(
+    val actualTable =
       TableInfo
         .newBuilder(
           viewId.underlying,
@@ -171,10 +168,11 @@ class TableUpdateOperationTest extends FunSuite {
             .build()
         )
         .build()
-    )
 
-    TableUpdateOperation.from(givenTable, actualTable) match {
-      case UpdateOperation.UpdateTable(_, _, _) => assert(cond = true)
+    TableUpdateOperation.from(
+      givenTable,
+      Some(ExistingTable(givenTable.copy(schema = BQSchema.of(a, b)), actualTable))) match {
+      case UpdateOperation.UpdateTable(_, _) => assert(cond = true)
       case other => fail(other.toString)
     }
   }
@@ -188,7 +186,7 @@ class TableUpdateOperationTest extends FunSuite {
       clustering = Nil,
       TableLabels.Empty
     )
-    val actualTable = Some(
+    val actualTable =
       TableInfo
         .newBuilder(
           tableId.underlying,
@@ -198,9 +196,8 @@ class TableUpdateOperationTest extends FunSuite {
             .build()
         )
         .build()
-    )
 
-    TableUpdateOperation.from(givenTable, actualTable) match {
+    TableUpdateOperation.from(givenTable, Some(ExistingTable(givenTable, actualTable))) match {
       case UpdateOperation.Noop(_) => assert(cond = true)
       case other => fail(other.toString)
     }
@@ -215,7 +212,7 @@ class TableUpdateOperationTest extends FunSuite {
       clustering = Nil,
       TableLabels.Empty
     )
-    val actualTable = Some(
+    val actualTable =
       TableInfo
         .newBuilder(
           viewId.underlying,
@@ -224,9 +221,10 @@ class TableUpdateOperationTest extends FunSuite {
             .build()
         )
         .build()
-    )
 
-    TableUpdateOperation.from(givenTable, actualTable) match {
+    TableUpdateOperation.from(
+      givenTable,
+      Some(ExistingTable(givenTable.copy(schema = BQSchema.of(a, b)), actualTable))) match {
       case UpdateOperation.IllegalSchemaExtension(_, reason) =>
         assertEquals(reason, "Expected field `b`, got field `c`")
       case other => fail(other.toString)
@@ -245,7 +243,7 @@ class TableUpdateOperationTest extends FunSuite {
       clustering = Nil,
       TableLabels.Empty
     )
-    val actualTable = Some(
+    val actualTable =
       TableInfo
         .newBuilder(
           viewId.underlying,
@@ -254,10 +252,11 @@ class TableUpdateOperationTest extends FunSuite {
             .build()
         )
         .build()
-    )
 
-    TableUpdateOperation.from(givenTable, actualTable) match {
-      case UpdateOperation.UpdateTable(_, _, _) => assert(cond = true)
+    TableUpdateOperation.from(
+      givenTable,
+      Some(ExistingTable(givenTable.copy(schema = BQSchema.of(ba)), actualTable))) match {
+      case UpdateOperation.UpdateTable(_, _) => assert(cond = true)
       case other => fail(other.toString)
     }
   }
@@ -274,7 +273,7 @@ class TableUpdateOperationTest extends FunSuite {
       clustering = Nil,
       TableLabels.Empty
     )
-    val actualTable = Some(
+    val actualTable =
       TableInfo
         .newBuilder(
           viewId.underlying,
@@ -283,9 +282,10 @@ class TableUpdateOperationTest extends FunSuite {
             .build()
         )
         .build()
-    )
 
-    TableUpdateOperation.from(givenTable, actualTable) match {
+    TableUpdateOperation.from(
+      givenTable,
+      Some(ExistingTable(givenTable.copy(schema = BQSchema.of(bab)), actualTable))) match {
       case UpdateOperation.IllegalSchemaExtension(_, reason) =>
         assertEquals(reason, "Expected field `b.b`, got field `b.c`")
       case other => fail(other.toString)
@@ -307,7 +307,7 @@ class TableUpdateOperationTest extends FunSuite {
     )
     val friendlyName = "friendlyName"
     val expirationTime: java.lang.Long = 100L
-    val remote = Some(
+    val remote =
       TableInfo
         .newBuilder(
           materializedViewId.underlying,
@@ -319,41 +319,9 @@ class TableUpdateOperationTest extends FunSuite {
         .setFriendlyName(friendlyName)
         .setExpirationTime(expirationTime)
         .build()
-    )
 
-    TableUpdateOperation.from(testView, remote) match {
+    TableUpdateOperation.from(testView, Some(ExistingTable(TableHelper.fromTable(remote).toOption.get, remote))) match {
       case UpdateOperation.RecreateView(_, _, _) => assert(cond = true)
-      case other => fail(other.toString)
-    }
-  }
-
-  test("should fail when faced with unrecognized partition scheme") {
-    val testTable = BQTableDef.Table(
-      tableId,
-      BQSchema.of(a),
-      BQPartitionType.NotPartitioned,
-      description = None,
-      clustering = Nil,
-      TableLabels.Empty
-    )
-    val remote = Some(
-      TableInfo
-        .newBuilder(
-          viewId.underlying,
-          StandardTableDefinition.newBuilder
-            .setSchema(SchemaHelper.toSchema(BQSchema.of(a)))
-            .setTimePartitioning(TimePartitioning.of(Type.HOUR))
-            .build()
-        )
-        .build()
-    )
-
-    TableUpdateOperation.from(testTable, remote) match {
-      case UpdateOperation.UnsupportedPartitioning(_, msg) =>
-        assertEquals(
-          msg,
-          "Need to implement support in `BQPartitionType` for Some(TimePartitioning{type=HOUR, expirationMs=null, field=null, requirePartitionFilter=null})"
-        )
       case other => fail(other.toString)
     }
   }
@@ -367,7 +335,7 @@ class TableUpdateOperationTest extends FunSuite {
       clustering = Nil,
       TableLabels.Empty
     )
-    val remote = Some(
+    val remote =
       TableInfo
         .newBuilder(
           viewId.underlying,
@@ -379,9 +347,10 @@ class TableUpdateOperationTest extends FunSuite {
             .build()
         )
         .build()
-    )
 
-    TableUpdateOperation.from(testTable, remote) match {
+    TableUpdateOperation.from(
+      testTable,
+      Some(ExistingTable(TableHelper.fromTable(remote).toOption.get, remote))) match {
       case UpdateOperation.UnsupportedPartitioning(_, msg) =>
         assertEquals(
           msg,
@@ -400,7 +369,7 @@ class TableUpdateOperationTest extends FunSuite {
       clustering = Nil,
       TableLabels.Empty
     )
-    val remote = Some(
+    val remote =
       TableInfo
         .newBuilder(
           viewId.underlying,
@@ -409,9 +378,10 @@ class TableUpdateOperationTest extends FunSuite {
             .build()
         )
         .build()
-    )
 
-    TableUpdateOperation.from(testTable, remote) match {
+    TableUpdateOperation.from(
+      testTable,
+      Some(ExistingTable(testTable.copy(schema = BQSchema.of(a, c, b)), remote))) match {
       case UpdateOperation.IllegalSchemaExtension(_, reason) =>
         assertEquals(
           reason,
@@ -431,8 +401,8 @@ class TableUpdateOperationTest extends FunSuite {
       TableLabels.Empty,
       tableOptions = TableOptions.Empty.copy(partitionFilterRequired = filter)
     )
-    def remote(filter: Option[Boolean]) = Some(
-      TableInfo
+    def remote(filter: Option[Boolean]) = {
+      val info = TableInfo
         .newBuilder(
           tableId.underlying,
           StandardTableDefinition.newBuilder
@@ -447,16 +417,17 @@ class TableUpdateOperationTest extends FunSuite {
         )
         .setRequirePartitionFilter(filter.map(Boolean.box).orNull)
         .build()
-    )
+      Some(ExistingTable(TableHelper.fromTable(info).toOption.get, info))
+    }
 
     TableUpdateOperation.from(testTable(true), remote(Some(false))) match {
-      case UpdateOperation.UpdateTable(_, _, table) =>
-        assert(table.getRequirePartitionFilter)
+      case UpdateOperation.UpdateTable(existing, table) =>
+        assert(TableHelper.from(table, Some(existing.table)).getRequirePartitionFilter)
       case other => fail(other.toString)
     }
     TableUpdateOperation.from(testTable(false), remote(Some(true))) match {
-      case UpdateOperation.UpdateTable(_, _, table) =>
-        assert(!table.getRequirePartitionFilter)
+      case UpdateOperation.UpdateTable(existing, table) =>
+        assert(!TableHelper.from(table, Some(existing.table)).getRequirePartitionFilter)
       case other => fail(other.toString)
     }
     TableUpdateOperation.from(testTable(true), remote(Some(true))) match {
@@ -480,8 +451,8 @@ class TableUpdateOperationTest extends FunSuite {
       tableOptions = TableOptions.Empty.copy(partitionExpiration = expiration)
     )
 
-    def remote(expiration: Option[FiniteDuration]) = Some(
-      TableInfo
+    def remote(expiration: Option[FiniteDuration]) = {
+      val info = TableInfo
         .newBuilder(
           tableId.underlying,
           StandardTableDefinition.newBuilder
@@ -496,21 +467,25 @@ class TableUpdateOperationTest extends FunSuite {
             .build()
         )
         .build()
-    )
+      Some(ExistingTable(TableHelper.fromTable(info).toOption.get, info))
+    }
 
     TableUpdateOperation.from(testTable(Some(1.day)), remote(None)) match {
-      case UpdateOperation.UpdateTable(_, _, table) =>
-        assert(table.getDefinition[StandardTableDefinition].getTimePartitioning.getExpirationMs == 1.day.toMillis)
+      case UpdateOperation.UpdateTable(existing, table) =>
+        val converted = TableHelper.from(table, Some(existing.table))
+        assert(converted.getDefinition[StandardTableDefinition].getTimePartitioning.getExpirationMs == 1.day.toMillis)
       case other => fail(other.toString)
     }
     TableUpdateOperation.from(testTable(None), remote(Some(1.day))) match {
-      case UpdateOperation.UpdateTable(_, _, table) =>
-        assert(Option(table.getDefinition[StandardTableDefinition].getTimePartitioning.getExpirationMs).isEmpty)
+      case UpdateOperation.UpdateTable(existing, table) =>
+        val converted = TableHelper.from(table, Some(existing.table))
+        assert(Option(converted.getDefinition[StandardTableDefinition].getTimePartitioning.getExpirationMs).isEmpty)
       case other => fail(other.toString)
     }
     TableUpdateOperation.from(testTable(Some(2.day)), remote(Some(1.day))) match {
-      case UpdateOperation.UpdateTable(_, _, table) =>
-        assert(table.getDefinition[StandardTableDefinition].getTimePartitioning.getExpirationMs == 2.day.toMillis)
+      case UpdateOperation.UpdateTable(existing, table) =>
+        val converted = TableHelper.from(table, Some(existing.table))
+        assert(converted.getDefinition[StandardTableDefinition].getTimePartitioning.getExpirationMs == 2.day.toMillis)
       case other => fail(other.toString)
     }
     TableUpdateOperation.from(testTable(Some(2.day)), remote(Some(2.day))) match {
