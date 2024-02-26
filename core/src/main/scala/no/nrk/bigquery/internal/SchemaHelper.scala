@@ -18,16 +18,17 @@ object SchemaHelper {
   def toSchema(schema: BQSchema): Schema =
     Schema.of(schema.fields.map(toField)*)
 
-  def typeFrom(dt: StandardSQLDataType): Option[BQType] = for {
-    typ <- BQField.Type.fromString(dt.getTypeKind)
-    arr = Option(dt.getArrayElementType).flatMap(e => typeFrom(e))
-    struct = Option(dt.getStructType).map(e =>
-      e.getFields.asScala.flatMap(f => typeFrom(f.getDataType).map(t => f.getName -> t)).toList)
-  } yield BQType(
-    if (arr.isDefined) BQField.Mode.REPEATED else BQField.Mode.NULLABLE,
-    arr.map(_.tpe).getOrElse(typ),
-    struct.orElse(arr.map(_.subFields)).getOrElse(Nil)
-  )
+  def typeFrom(dt: StandardSQLDataType): Option[BQType] =
+    for {
+      typ <- BQField.Type.fromString(dt.getTypeKind)
+      arr = Option(dt.getArrayElementType).flatMap(e => typeFrom(e))
+      struct = Option(dt.getStructType).map(e =>
+        e.getFields.asScala.flatMap(f => typeFrom(f.getDataType).map(t => f.getName -> t)).toList)
+    } yield BQType(
+      if (arr.isDefined) BQField.Mode.REPEATED else BQField.Mode.NULLABLE,
+      arr.map(_.tpe).getOrElse(typ),
+      struct.orElse(arr.map(_.subFields)).getOrElse(Nil)
+    )
 
   def fromSchema(schema: Schema): BQSchema =
     schema match {
