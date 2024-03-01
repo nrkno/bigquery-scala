@@ -11,7 +11,7 @@ import no.nrk.bigquery.BQRoutine.{Param, Params}
 import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.testing.BQUdfSmokeTest
 
-class LiveBqUdfSmokeTest extends BQUdfSmokeTest(GoogleTestClient.testClient) {
+class LiveBqUdfSmokeTest extends BQUdfSmokeTest(Http4sTestClient.testClient) {
 
   private val doubleUdf = UDF.temporary(
     Ident("xxdouble_TMP"),

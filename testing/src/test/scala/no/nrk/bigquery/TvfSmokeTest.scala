@@ -10,7 +10,7 @@ import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.testing.BQSmokeTest
 import no.nrk.bigquery.util.*
 
-class TvfSmokeTest extends BQSmokeTest(GoogleTestClient.testClient) {
+class TvfSmokeTest extends BQSmokeTest(Http4sTestClient.testClient) {
 
   private val schema: BQSchema = BQSchema.of(
     BQField("id", BQField.Type.STRING, BQField.Mode.NULLABLE)

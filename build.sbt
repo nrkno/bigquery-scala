@@ -65,7 +65,17 @@ val commonSettings = Seq(
 lazy val root = tlCrossRootProject
   .settings(name := "bigquery-scala")
   .settings(commonSettings)
-  .aggregate(core, `google-client`, testing, prometheus, zetasql, codegen, codegenTests, `transfer-client`, docs)
+  .aggregate(
+    core,
+    `google-client`,
+    `http4s-client`,
+    testing,
+    prometheus,
+    zetasql,
+    codegen,
+    codegenTests,
+    `transfer-client`,
+    docs)
 
 lazy val core = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -136,6 +146,29 @@ lazy val `google-client` = crossProject(JVMPlatform)
     mimaBinaryIssueFilters := Nil
   )
 
+lazy val `http4s-client` = crossProject(JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("http4s-client"))
+  .dependsOn(core)
+  .settings(commonSettings)
+  .settings(
+    resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
+    name := "bigquery-http4s-client",
+    libraryDependencies ++= Seq(
+      "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
+      "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
+      "io.chrisdavenport" %% "http4s-grpc-google-cloud-bigquerystorage-v1" % "3.0.0+0.0.6",
+      "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.3-a13d31c-v2-20240214-SNAPSHOT",
+      "org.http4s" %% "http4s-netty-client" % "0.5.12",
+      "com.permutive" %% "gcp-auth" % "0.1.0"
+    ),
+    Compile / doc / scalacOptions ++= Seq(
+      "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
+    ),
+    mimaBinaryIssueFilters := Nil
+  )
+
 lazy val prometheus = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
@@ -185,7 +218,7 @@ lazy val testing = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("testing"))
-  .dependsOn(core, `google-client` % Test)
+  .dependsOn(core, `google-client` % Test, `http4s-client` % Test)
   .settings(commonSettings)
   .settings(
     name := "bigquery-testing",

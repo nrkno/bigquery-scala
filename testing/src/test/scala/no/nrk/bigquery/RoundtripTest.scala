@@ -23,7 +23,7 @@ class RoundtripTest extends CatsEffectSuite {
 
   def roundtrip[P: BQShow: BQRead](expectedValues: P*): IO[Unit] =
     BigQueryTestClient
-      .cachingClient(BigQueryTestClient.queryCachePath, GoogleTestClient.testClient)
+      .cachingClient(BigQueryTestClient.queryCachePath, Http4sTestClient.testClient)
       .use(
         _.synchronousQuery(
           BQJobId.auto,
