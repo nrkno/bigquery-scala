@@ -5,14 +5,15 @@
  */
 
 package no.nrk.bigquery
-package internal
+package client.google.internal
 
 import com.google.cloud.bigquery.{Option as _, *}
+import no.nrk.bigquery.BQField.Type
 
 import scala.jdk.CollectionConverters.*
 
 object SchemaHelper {
-  def fromType(typ: BQField.Type): StandardSQLTypeName = StandardSQLTypeName.valueOf(typ.name)
+  def fromType(typ: Type): StandardSQLTypeName = StandardSQLTypeName.valueOf(typ.name)
   def fromMode(mode: BQField.Mode): Field.Mode = Field.Mode.valueOf(mode.name)
 
   def toSchema(schema: BQSchema): Schema =

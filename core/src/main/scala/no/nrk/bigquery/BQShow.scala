@@ -7,7 +7,6 @@
 package no.nrk.bigquery
 
 import no.nrk.bigquery.syntax.*
-import com.google.cloud.bigquery.{Field, TimePartitioning}
 
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, YearMonth}
@@ -140,14 +139,6 @@ trait BQShowInstances {
 
   implicit val bqShowInstant: BQShow[Instant] =
     x => BQSqlFrag(s"TIMESTAMP('${x.truncatedTo(ChronoUnit.MICROS)}')")
-
-  // todo: remove
-  implicit val bqShowField: BQShow[Field] =
-    x => BQSqlFrag(x.getName)
-
-  // todo: remove
-  implicit val bqShowTimePartitioning: BQShow[TimePartitioning] =
-    x => BQSqlFrag(x.getField)
 
   implicit def bqShowBQSqlFrag[F <: BQSqlFrag]: BQShow[F] =
     x => x

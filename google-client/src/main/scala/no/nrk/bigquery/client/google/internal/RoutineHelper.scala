@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-package no.nrk.bigquery.internal
+package no.nrk.bigquery
+package client.google.internal
 
 import com.google.cloud.bigquery.{Option as _, *}
 import no.nrk.bigquery.UDF.Body
-import no.nrk.bigquery.*
 import no.nrk.bigquery.util.ToSized
 
 import scala.jdk.CollectionConverters.*

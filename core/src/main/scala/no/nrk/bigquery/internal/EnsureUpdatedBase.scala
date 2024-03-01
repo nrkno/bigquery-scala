@@ -4,29 +4,29 @@
  * SPDX-License-Identifier: MIT
  */
 
-package no.nrk.bigquery
+package no.nrk.bigquery.internal
 
-import cats.{Applicative, MonadThrow}
 import cats.syntax.all.*
-import no.nrk.bigquery.internal.{RoutineUpdateOperation, TableUpdateOperation}
+import cats.{Applicative, MonadThrow}
+import no.nrk.bigquery.*
 import org.typelevel.log4cats.LoggerFactory
 
-class EnsureUpdated[F[_]](
-    bqClient: BigQueryClient[F]
+abstract class EnsureUpdatedBase[F[_], R, T](
+    bqClient: BQAdminClientWithUnderlying[F, R, T]
 )(implicit F: MonadThrow[F], lf: LoggerFactory[F]) {
   private val logger = lf.getLogger
 
-  def check(template: BQTableDef[Any]): F[UpdateOperation] =
-    bqClient.getExistingTableImpl(template.tableId).map { maybeExisting =>
-      TableUpdateOperation.from(template, maybeExisting)
+  def check(template: BQTableDef[Any]): F[UpdateOperation[Nothing, T]] =
+    bqClient.getTableWithUnderlying(template.tableId).map { maybeExisting =>
+      TableUpdateOperation.from[T](template, maybeExisting)
     }
 
-  def check(persistentRoutine: BQPersistentRoutine[?, ?]): F[UpdateOperation] =
-    bqClient.getExistingRoutineImpl(persistentRoutine.name).map { maybeExisting =>
-      RoutineUpdateOperation.from(persistentRoutine, maybeExisting)
+  def check(persistentRoutine: BQPersistentRoutine.Unknown): F[UpdateOperation[R, Nothing]] =
+    bqClient.getRoutineWithUnderlying(persistentRoutine.name).map { maybeExisting =>
+      RoutineUpdateOperation.from[R](persistentRoutine, maybeExisting)
     }
 
-  def perform(updateOperation: UpdateOperation): F[Unit] =
+  def perform(updateOperation: UpdateOperation[R, T]): F[Unit] =
     updateOperation match {
       case UpdateOperation.Noop(_) =>
         Applicative[F].unit
@@ -43,8 +43,9 @@ class EnsureUpdated[F[_]](
 
       case UpdateOperation.UpdateTable(from, to) =>
         val msg =
-          show"Updating ${from.our.tableId} of type ${to.getClass.getSimpleName} from ${from.toString}, to ${to.toString}"
-        logger.warn(msg) >> bqClient.updateTableWithExisting(from, to).void
+          show"Updating ${from.our.tableId} of type ${to.getClass.getSimpleName} from ${from.our.toString}, to ${to.toString}"
+        // for some obscure reason we need to create a new ExistingTable for Scala 3
+        logger.warn(msg) >> bqClient.updateTableWithExisting(ExistingTable(from.our, from.table), to).void
 
       case UpdateOperation.CreateTvf(tvf) =>
         for {
@@ -55,7 +56,8 @@ class EnsureUpdated[F[_]](
       case UpdateOperation.UpdateTvf(existing, tvf) =>
         for {
           _ <- logger.warn(show"Updating ${tvf.name.asString} of type Tvf")
-          _ <- bqClient.updateRoutineWithExisting(existing, tvf)
+          // for some obscure reason we need to create a new ExistingRoutine for Scala 3
+          _ <- bqClient.updateRoutineWithExisting(ExistingRoutine(existing.our, existing.routine), tvf)
         } yield ()
 
       case UpdateOperation.CreatePersistentUdf(udf) =>
@@ -67,7 +69,8 @@ class EnsureUpdated[F[_]](
       case UpdateOperation.UpdatePersistentUdf(existing, udf) =>
         for {
           _ <- logger.warn(show"Updating ${udf.name} of type PersistentUdf")
-          _ <- bqClient.updateRoutineWithExisting(existing, udf)
+          // for some obscure reason we need to create a new ExistingRoutine for Scala 3
+          _ <- bqClient.updateRoutineWithExisting(ExistingRoutine(existing.our, existing.routine), udf)
         } yield ()
 
       case UpdateOperation.RecreateView(from, to, createNew) =>

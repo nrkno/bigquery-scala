@@ -32,18 +32,18 @@ ThisBuild / githubWorkflowBuild := {
     case step: WorkflowStep.Sbt if step.name.contains("Test") =>
       step.copy(env = Map(
         "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}",
+        "BIGQUERY_DEFAULT_PROJECT" -> "${{secrets.BIGQUERY_DEFAULT_PROJECT}}",
+        "BIGQUERY_DEFAULT_LOCATION" -> "${{secrets.BIGQUERY_DEFAULT_LOCATION}}",
         "ASSERT_CURRENT_GENERATED_FILES" -> "1"
       ))
     case s => s
   }
 }
 
-val Scala212 = "2.12.19"
 val Scala213 = "2.13.13"
-ThisBuild / crossScalaVersions := Seq(Scala213, Scala212, "3.3.3")
+ThisBuild / crossScalaVersions := Seq(Scala213, "3.3.3")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 ThisBuild / tlVersionIntroduced := Map(
-  "2.12" -> "0.9.0",
   "3" -> "0.9.0",
   "2.13" -> "0.9.0"
 )
@@ -65,7 +65,7 @@ val commonSettings = Seq(
 lazy val root = tlCrossRootProject
   .settings(name := "bigquery-scala")
   .settings(commonSettings)
-  .aggregate(core, testing, prometheus, zetasql, codegen, codegenTests, `transfer-client`, docs)
+  .aggregate(core, `google-client`, testing, prometheus, zetasql, codegen, codegenTests, `transfer-client`, docs)
 
 lazy val core = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -81,8 +81,6 @@ lazy val core = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
-      "com.google.cloud" % "google-cloud-bigquery" % "2.38.0",
-      "com.google.cloud" % "google-cloud-bigquerystorage" % "3.2.0",
       "org.apache.avro" % "avro" % "1.11.3",
       "com.lihaoyi" %% "sourcecode" % "0.3.1",
       "org.typelevel" %% "log4cats-slf4j" % "2.6.0",
@@ -108,9 +106,27 @@ lazy val core = crossProject(JVMPlatform)
     Compile / doc / scalacOptions ++= Seq(
       "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
     ),
-    mimaBinaryIssueFilters := List(
-      ProblemFilters.exclude[MissingTypesProblem]("no.nrk.bigquery.BQDataset$Ref$")
-    )
+    mimaBinaryIssueFilters := Nil
+  )
+
+lazy val `google-client` = crossProject(JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("google-client"))
+  .dependsOn(core)
+  .settings(commonSettings)
+  .settings(
+    name := "bigquery-google-client",
+    libraryDependencies ++= Seq(
+      "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
+      "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
+      "com.google.cloud" % "google-cloud-bigquery" % "2.38.0",
+      "com.google.cloud" % "google-cloud-bigquerystorage" % "3.2.0"
+    ),
+    Compile / doc / scalacOptions ++= Seq(
+      "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
+    ),
+    mimaBinaryIssueFilters := Nil
   )
 
 lazy val prometheus = crossProject(JVMPlatform)
@@ -118,7 +134,7 @@ lazy val prometheus = crossProject(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("prometheus"))
   .settings(commonSettings)
-  .dependsOn(core)
+  .dependsOn(`google-client`)
   .settings(
     name := "bigquery-prometheus",
     libraryDependencies ++= Seq(
@@ -162,13 +178,14 @@ lazy val testing = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("testing"))
-  .dependsOn(core)
+  .dependsOn(core, `google-client` % Test)
   .settings(commonSettings)
   .settings(
     name := "bigquery-testing",
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % "0.7.29",
-      "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
+      "org.typelevel" %% "munit-cats-effect-3" % "1.0.7",
+      "ch.qos.logback" % "logback-classic" % "1.2.13" % Test
     ),
     mimaBinaryIssueFilters := Nil
   )

@@ -6,7 +6,6 @@
 
 package no.nrk.bigquery.testing
 
-import com.google.cloud.bigquery.UserDefinedFunction
 import no.nrk.bigquery.UDF.Temporary
 import no.nrk.bigquery.*
 
@@ -29,13 +28,13 @@ case class BQStructuredSql(
         case Nil => None
         case nonEmpty =>
           val nonEmptyStrings = nonEmpty.map {
-            case f if f.getType == UserDefinedFunction.Type.INLINE =>
+            case InlineFunction(content) =>
               require(
-                f.getContent.endsWith(";"),
-                s"${f.getContent} should end with `;`"
+                content.endsWith(";"),
+                s"${content} should end with `;`"
               )
-              f.getContent
-            case f => sys.error(s"UDF of type ${f.getType} not supported yet")
+              content
+            case UnknownFunction => sys.error(s"UDF not supported yet")
           }
           Some(nonEmptyStrings.mkString("", "\n", "\n"))
       }
@@ -61,8 +60,8 @@ object BQStructuredSql {
 
     val functions: List[UserDefinedFunction] = {
       val fs1 = fullQuery.allReferencedUDFs
-        .collect { case udf: Temporary[?] => UserDefinedFunction.inline(udf.definition.asString) }
-      val fs2 = functionSegmentLists.map(segmentList => UserDefinedFunction.inline(segmentList.asString + ";"))
+        .collect { case udf: Temporary[?] => InlineFunction(udf.definition.asString) }
+      val fs2 = functionSegmentLists.map(segmentList => InlineFunction(segmentList.asString + ";"))
       fs1.toList ++ fs2
     }
     val (ctes, queryPartSegments) = extractCTEs(querySegmentList)
@@ -321,3 +320,7 @@ object BQStructuredSql {
     }
   }
 }
+
+sealed trait UserDefinedFunction
+case class InlineFunction(value: String) extends UserDefinedFunction
+case object UnknownFunction extends UserDefinedFunction

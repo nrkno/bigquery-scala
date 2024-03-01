@@ -44,10 +44,10 @@ object TableUpdateOperation {
     a.tableOptions == b.tableOptions
   }
 
-  def from(
+  def from[T](
       tableDef: BQTableDef[Any],
-      maybeExisting: Option[ExistingTable]
-  ): UpdateOperation =
+      maybeExisting: Option[ExistingTable[T]]
+  ): UpdateOperation[Nothing, T] =
     maybeExisting match {
       case None =>
         tableDef match {

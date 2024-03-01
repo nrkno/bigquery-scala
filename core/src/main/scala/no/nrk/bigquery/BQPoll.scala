@@ -6,76 +6,77 @@
 
 package no.nrk.bigquery
 
+import cats.syntax.all.*
 import cats.effect.Async
 import cats.effect.implicits.*
-import cats.syntax.all.*
-import com.google.cloud.bigquery.{BigQueryError, Job, JobStatus}
 import org.typelevel.log4cats.LoggerFactory
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
-import scala.jdk.CollectionConverters.*
 import scala.util.Random
 
 sealed trait BQPoll
 
 object BQPoll {
   sealed trait NotFinished extends BQPoll
+
   case object Unknown extends NotFinished
   case object Pending extends NotFinished
   case object Running extends NotFinished
 
-  sealed trait Finished extends BQPoll
-  case class Failed(error: BQExecutionException) extends Finished
-  case class Success(job: Job) extends Finished
+  sealed trait Finished[+Job] extends BQPoll
+  case class Failed(error: BQExecutionException) extends Finished[Nothing]
+  case class Success[Job](job: Job) extends Finished[Job]
 
-  def poll[F[_]](
-      runningJob: Job,
-      baseDelay: FiniteDuration,
-      maxDuration: FiniteDuration,
-      maxErrorsTolerated: Int
-  )(
-      retry: F[Job]
-  )(implicit F: Async[F], lf: LoggerFactory[F]): F[BQPoll.Finished] = {
-    val logger = lf.getLogger
-    def go(
-        runningJob: Job,
-        seenErrors: List[Throwable],
-        seenNotFinished: List[BQPoll.NotFinished]
-    ): F[BQPoll.Finished] =
-      fromJob(runningJob) match {
-        case x: BQPoll.Finished => F.pure(x)
-        case notFinished: BQPoll.NotFinished =>
-          val jobId = runningJob.getJobId
-          val newSeenNotFinished = notFinished :: seenNotFinished
-          val waitFor = fullJitter(baseDelay, seenErrors.length)
+  trait FromJob[Job] {
+    def reference(job: Job): BQJobId
+    def id(job: Job): Option[String]
+    def toPoll(job: Job): BQPoll
+  }
 
-          logger.info(
-            s"sleeping ${waitFor.toMillis}ms before polling ${jobId.getJob}. Current status $notFinished"
-          ) >> F.sleep(waitFor) >> retry.attempt
-            .flatMap {
-              case Left(error) =>
-                val newSeenErrors = error :: seenErrors
+  private[bigquery] class Poller[F[_]](config: QueryClient.PollConfig)(implicit F: Async[F], lf: LoggerFactory[F]) {
+    def poll[Job](runningJob: Job, retry: F[Option[Job]])(implicit fromJob: FromJob[Job]): F[BQPoll.Finished[Job]] = {
+      val logger = lf.getLogger
+      def go(
+          runningJob: Job,
+          seenErrors: List[Throwable],
+          seenNotFinished: List[BQPoll.NotFinished]
+      ): F[BQPoll.Finished[Job]] =
+        fromJob.toPoll(runningJob) match {
+          case x: BQPoll.Finished[?] => F.pure(x.asInstanceOf[BQPoll.Finished[Job]])
+          case notFinished: BQPoll.NotFinished =>
+            val jobId = fromJob.id(runningJob)
+            val newSeenNotFinished = notFinished :: seenNotFinished
+            val waitFor = fullJitter(config.baseDelay, seenErrors.length)
 
-                if (newSeenErrors.length == maxErrorsTolerated) {
-                  F.raiseError(error) // will be logged later
-                } else {
-                  logger.info(error)(
-                    s"Network error while polling $jobId. Retrying"
-                  ) >>
-                    go(runningJob, newSeenErrors, newSeenNotFinished)
-                }
+            logger.info(
+              s"sleeping ${waitFor.toMillis}ms before polling ${jobId.getOrElse("")}. Current status $notFinished"
+            ) >> F.sleep(waitFor) >> retry.attempt
+              .flatMap {
+                case Left(error) =>
+                  val newSeenErrors = error :: seenErrors
 
-              case Right(runningJob) =>
-                go(runningJob, seenErrors, newSeenNotFinished)
-            }
+                  if (newSeenErrors.length == config.maxErrorsTolerated) {
+                    F.raiseError(error) // will be logged later
+                  } else {
+                    logger.info(error)(
+                      s"Network error while polling $jobId. Retrying"
+                    ) >>
+                      go(runningJob, newSeenErrors, newSeenNotFinished)
+                  }
+
+                case Right(Some(runningJob)) =>
+                  go(runningJob, seenErrors, newSeenNotFinished)
+                case Right(None) =>
+                  go(runningJob, seenErrors, seenNotFinished)
+              }
+        }
+
+      F.sleep(config.maxDuration).race(go(runningJob, Nil, Nil)).flatMap {
+        case Left(_) =>
+          F.raiseError(BQExecutionException(fromJob.reference(runningJob), None, Nil))
+        case Right(finished) => F.pure(finished)
       }
-
-    F.sleep(maxDuration).race(go(runningJob, Nil, Nil)).flatMap {
-      case Left(_) =>
-        val error = new BigQueryError("job-wait-timeout", "", s"timeout after ${maxDuration.toMinutes} minutes")
-        F.raiseError(BQExecutionException(runningJob.getJobId, Some(error), Nil))
-      case Right(finished) => F.pure(finished)
     }
   }
 
@@ -107,40 +108,5 @@ object BQPoll {
     val resultNanos = durationNanos * BigInt(multiplier)
     val safeResultNanos = resultNanos.min(LongMax)
     FiniteDuration(safeResultNanos.toLong, TimeUnit.NANOSECONDS)
-  }
-
-  def fromJob(pulledJob: Job): BQPoll = {
-    val jobId = pulledJob.getJobId
-
-    val maybeStatus: Option[JobStatus] =
-      Option(pulledJob.getStatus)
-
-    val maybeFailed: Option[BQPoll.Failed] =
-      maybeStatus.flatMap { (s: JobStatus) =>
-        val primary: Option[BigQueryError] =
-          Option(s.getError)
-
-        val details: List[BigQueryError] =
-          Option(s.getExecutionErrors) match {
-            case Some(values) => values.asScala.toList
-            case None => Nil
-          }
-
-        if (primary.isEmpty && details.isEmpty) None
-        else Some(BQPoll.Failed(BQExecutionException(jobId, primary, details)))
-      }
-
-    maybeFailed.getOrElse {
-      maybeStatus match {
-        case Some(status) =>
-          status.getState match {
-            case JobStatus.State.DONE => BQPoll.Success(pulledJob)
-            case JobStatus.State.PENDING => BQPoll.Pending
-            case JobStatus.State.RUNNING => BQPoll.Running
-            case _ => BQPoll.Unknown
-          }
-        case None => BQPoll.Unknown
-      }
-    }
   }
 }

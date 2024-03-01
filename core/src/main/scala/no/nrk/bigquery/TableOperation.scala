@@ -6,8 +6,6 @@
 
 package no.nrk.bigquery
 
-import com.google.cloud.bigquery.{RoutineInfo, TableInfo}
-
 sealed trait OperationMeta {
   def identifier: String
 }
@@ -24,36 +22,36 @@ case class PersistentRoutineOperationMeta(
   override def identifier: String = local.name.asString
 }
 
-case class ExistingTable(our: BQTableDef[Any], table: TableInfo)
-case class ExistingRoutine(our: BQPersistentRoutine.Unknown, routine: RoutineInfo)
+case class ExistingTable[T](our: BQTableDef[Any], table: T)
+case class ExistingRoutine[R](our: BQPersistentRoutine.Unknown, routine: R)
 
-sealed trait UpdateOperation
+sealed trait UpdateOperation[+R, +T]
 object UpdateOperation {
-  case class Noop(meta: OperationMeta) extends UpdateOperation
+  case class Noop(meta: OperationMeta) extends UpdateOperation[Nothing, Nothing]
 
-  sealed trait Success extends UpdateOperation
+  sealed trait Success[+R, +T] extends UpdateOperation[R, T]
 
   /** @param patched
     *   It's not allowed to provide schema when creating a view
     */
-  case class CreateTable(local: BQTableDef[Any], patched: Option[BQTableDef[Any]]) extends Success
+  case class CreateTable(local: BQTableDef[Any], patched: Option[BQTableDef[Any]]) extends Success[Nothing, Nothing]
 
-  case class UpdateTable(existing: ExistingTable, local: BQTableDef.Table[Any]) extends Success
+  case class UpdateTable[T](existing: ExistingTable[T], local: BQTableDef.Table[Any]) extends Success[Nothing, T]
 
-  case class RecreateView(
-      existingRemoteTable: ExistingTable,
+  case class RecreateView[T](
+      existingRemoteTable: ExistingTable[T],
       localTableDef: BQTableDef.ViewLike[Any],
       create: CreateTable)
-      extends Success
+      extends Success[Nothing, T]
 
-  case class CreateTvf(tvf: TVF[Any, ?]) extends Success
+  case class CreateTvf(tvf: TVF[Any, ?]) extends Success[Nothing, Nothing]
 
-  case class UpdateTvf(existing: ExistingRoutine, tvf: TVF[Any, ?]) extends Success
+  case class UpdateTvf[R](existing: ExistingRoutine[R], tvf: TVF[Any, ?]) extends Success[R, Nothing]
 
-  case class CreatePersistentUdf(udf: UDF.Persistent[?]) extends Success
-  case class UpdatePersistentUdf(existing: ExistingRoutine, udf: UDF.Persistent[?]) extends Success
+  case class CreatePersistentUdf(udf: UDF.Persistent[?]) extends Success[Nothing, Nothing]
+  case class UpdatePersistentUdf[R](existing: ExistingRoutine[R], udf: UDF.Persistent[?]) extends Success[R, Nothing]
 
-  sealed trait Error extends UpdateOperation
+  sealed trait Error extends UpdateOperation[Nothing, Nothing]
 
   case class Illegal(meta: OperationMeta, reason: String) extends Error
   case class UnsupportedPartitioning(meta: OperationMeta, msg: String) extends Error

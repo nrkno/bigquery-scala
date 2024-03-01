@@ -9,9 +9,9 @@ package no.nrk.bigquery
 import io.circe.Json
 import no.nrk.bigquery.BQRoutine.{Param, Params}
 import no.nrk.bigquery.syntax.*
-import no.nrk.bigquery.testing.{BQUdfSmokeTest, BigQueryTestClient}
+import no.nrk.bigquery.testing.BQUdfSmokeTest
 
-class LiveBqUdfSmokeTest extends BQUdfSmokeTest(BigQueryTestClient.testClient) {
+class LiveBqUdfSmokeTest extends BQUdfSmokeTest(GoogleTestClient.testClient) {
 
   private val doubleUdf = UDF.temporary(
     Ident("xxdouble_TMP"),

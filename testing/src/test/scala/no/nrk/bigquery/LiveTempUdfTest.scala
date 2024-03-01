@@ -8,9 +8,9 @@ package no.nrk.bigquery
 
 import no.nrk.bigquery.BQRoutine.{Param, Params}
 import no.nrk.bigquery.syntax.*
-import no.nrk.bigquery.testing.{BQSmokeTest, BigQueryTestClient}
+import no.nrk.bigquery.testing.BQSmokeTest
 
-class LiveTempUdfTest extends BQSmokeTest(BigQueryTestClient.testClient) {
+class LiveTempUdfTest extends BQSmokeTest(GoogleTestClient.testClient) {
   val udf1 = UDF.temporary(
     Ident("xxdouble_TMP"),
     Params(Param("input", BQType.INT64)),

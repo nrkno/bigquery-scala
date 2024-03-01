@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: MIT
  */
 
-package no.nrk.bigquery.internal
+package no.nrk.bigquery
+package client.google.internal
 
 import com.google.cloud.bigquery.{Option as _, *}
 import no.nrk.bigquery.*
 
 import scala.jdk.CollectionConverters.*
 import GoogleTypeHelper.*
-import no.nrk.bigquery.internal.SchemaHelper.fromSchema
 
 object TableHelper {
   sealed trait TableConversionError
@@ -21,7 +21,7 @@ object TableHelper {
     final case class UnsupportedTableType(msg: String) extends TableConversionError
   }
 
-  def fromTable(table: TableInfo): Either[TableConversionError, BQTableDef[Any]] = {
+  def fromGoogle(table: TableInfo): Either[TableConversionError, BQTableDef[Any]] = {
     val id = List(
       Option(table.getTableId.getProject),
       Option(table.getTableId.getDataset),
@@ -35,7 +35,7 @@ object TableHelper {
           tableId <- parsedId
         } yield BQTableDef.Table(
           tableId = tableId,
-          schema = fromSchema(st.getSchema),
+          schema = SchemaHelper.fromSchema(st.getSchema),
           partitionType = typ,
           description = Option(table.getDescription),
           clustering = Option(st.getClustering).toList
@@ -49,7 +49,7 @@ object TableHelper {
         parsedId.map(tableId =>
           BQTableDef.View(
             tableId = tableId,
-            schema = fromSchema(v.getSchema),
+            schema = SchemaHelper.fromSchema(v.getSchema),
             partitionType = BQPartitionType.NotPartitioned,
             description = Option(table.getDescription),
             labels = GoogleTypeHelper.tableLabelsfromTableInfo(table),
@@ -63,7 +63,7 @@ object TableHelper {
 
         } yield BQTableDef.MaterializedView(
           tableId = tableId,
-          schema = fromSchema(v.getSchema),
+          schema = SchemaHelper.fromSchema(v.getSchema),
           partitionType = typ,
           description = Option(table.getDescription),
           enableRefresh = Option(v.getEnableRefresh).forall(_.booleanValue()),
@@ -83,7 +83,7 @@ object TableHelper {
     }
   }
 
-  def from(
+  def toGoogle(
       tableDef: BQTableDef[Any],
       maybeExisting: Option[TableInfo]
   ): TableInfo =

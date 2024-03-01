@@ -20,7 +20,7 @@ trait TableOps[P] {
 
   def loadPartitions[F[_]: Concurrent](
       table: BQTableLike[P],
-      client: BigQueryClient[F],
+      client: QueryClient[F],
       startPartition: StartPartition[P],
       requireRowNums: Boolean
   ): F[Vector[(BQPartitionId[P], PartitionMetadata)]]
@@ -41,7 +41,7 @@ object TableOps {
 
     override def loadPartitions[F[_]: Concurrent](
         table: BQTableLike[LocalDateTime],
-        client: BigQueryClient[F],
+        client: QueryClient[F],
         startPartition: StartPartition[LocalDateTime],
         requireRowNums: Boolean
     ): F[Vector[(BQPartitionId[LocalDateTime], PartitionMetadata)]] =
@@ -73,7 +73,7 @@ object TableOps {
 
     override def loadPartitions[F[_]: Concurrent](
         table: BQTableLike[LocalDate],
-        client: BigQueryClient[F],
+        client: QueryClient[F],
         startPartition: StartPartition[LocalDate],
         requireRowNums: Boolean
     ): F[Vector[(BQPartitionId[LocalDate], PartitionMetadata)]] =
@@ -102,7 +102,7 @@ object TableOps {
 
     override def loadPartitions[F[_]: Concurrent](
         table: BQTableLike[YearMonth],
-        client: BigQueryClient[F],
+        client: QueryClient[F],
         startPartition: StartPartition[YearMonth],
         requireRowNums: Boolean
     ): F[Vector[(BQPartitionId[YearMonth], PartitionMetadata)]] =
@@ -132,7 +132,7 @@ object TableOps {
 
     override def loadPartitions[F[_]: Concurrent](
         table: BQTableLike[Long],
-        client: BigQueryClient[F],
+        client: QueryClient[F],
         startPartition: StartPartition[Long],
         requireRowNums: Boolean
     ): F[Vector[(BQPartitionId[Long], PartitionMetadata)]] =
@@ -159,7 +159,7 @@ object TableOps {
 
     override def loadPartitions[F[_]: Concurrent](
         table: BQTableLike[Unit],
-        client: BigQueryClient[F],
+        client: QueryClient[F],
         startPartition: StartPartition[Unit],
         requireRowNums: Boolean
     ): F[Vector[(BQPartitionId[Unit], PartitionMetadata)]] =

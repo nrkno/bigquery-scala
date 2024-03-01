@@ -5,7 +5,7 @@
  */
 
 package no.nrk.bigquery
-package internal
+package client.google.internal
 
 import com.google.cloud.bigquery.{
   MaterializedViewDefinition,

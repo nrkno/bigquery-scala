@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: MIT
  */
 
-package no.nrk.bigquery.internal
+package no.nrk.bigquery
+package client.google.internal
 
 import com.google.cloud.bigquery.{RoutineId, RoutineInfo, StandardSQLDataType, StandardSQLField, StandardSQLTableType}
 import munit.FunSuite
 import no.nrk.bigquery.UpdateOperation.{CreatePersistentUdf, UpdatePersistentUdf}
-import no.nrk.bigquery.*
 import no.nrk.bigquery.BQRoutine.{Param, Params}
+import no.nrk.bigquery.internal.RoutineUpdateOperation
 import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.util.nat.*
 
