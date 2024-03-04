@@ -134,7 +134,7 @@ lazy val prometheus = crossProject(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("prometheus"))
   .settings(commonSettings)
-  .dependsOn(`google-client`)
+  .dependsOn(core)
   .settings(
     name := "bigquery-prometheus",
     libraryDependencies ++= Seq(

@@ -10,8 +10,6 @@ package metrics
 import cats.data.NonEmptyList
 import cats.effect.{Resource, Sync}
 import cats.syntax.apply.*
-import com.google.cloud.bigquery.JobStatistics
-import com.google.cloud.bigquery.JobStatistics.QueryStatistics
 import io.prometheus.client.*
 
 object Prometheus {
@@ -169,23 +167,20 @@ object Prometheus {
           }
 
         override def recordComplete(
-            jobStats: Option[JobStatistics],
+            jobStats: Option[JobMetricStats],
             jobId: BQJobId
         ): F[Unit] =
           jobStats
-            .collect { case stats: QueryStatistics =>
-              Option(stats.getTotalBytesBilled) -> Option(stats.getTotalSlotMs)
-            }
-            .map { case (maybeBilled, maybeTotalSlotsMs) =>
+            .map { stats =>
               F.delay {
-                maybeBilled.foreach(totalBytes =>
+                stats.totalBytesBilled.foreach(totalBytes =>
                   metrics.bytesBilled
                     .labels(
                       label(classifierF(jobId))
                     )
                     .inc(totalBytes.toDouble))
 
-                maybeTotalSlotsMs.foreach(total =>
+                stats.totalSlotMs.foreach(total =>
                   metrics.totalSlotsMs
                     .labels(
                       label(classifierF(jobId))

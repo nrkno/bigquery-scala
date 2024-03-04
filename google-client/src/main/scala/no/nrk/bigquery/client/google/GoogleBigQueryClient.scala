@@ -26,7 +26,7 @@ import fs2.{Chunk, Stream}
 import io.circe.Encoder
 import no.nrk.bigquery.client.google.internal.GoogleTypeHelper.*
 import no.nrk.bigquery.client.google.internal.{PartitionTypeHelper, RoutineHelper, SchemaHelper, TableHelper}
-import no.nrk.bigquery.metrics.{BQMetrics, MetricsOps}
+import no.nrk.bigquery.metrics.{BQMetrics, JobMetricStats, MetricsOps}
 import no.nrk.bigquery.util.StreamUtils
 import org.apache.avro
 import org.apache.avro.generic.{GenericDatumReader, GenericRecord}
@@ -340,7 +340,14 @@ class GoogleBigQueryClient[F[_]](
       }
 
     freshJobId(jobId)
-      .flatMap(id => BQMetrics(metricOps, jobId)(loggedJob(id)))
+      .flatMap(id => BQMetrics[F, Job](metricOps, jobId, toMetricStats)(loggedJob(id)))
+  }
+
+  private def toMetricStats(job: Job) = {
+    val stats = job.getStatistics[QueryStatistics]
+    JobMetricStats(
+      Option(stats.getTotalBytesBilled).map(_.longValue()),
+      Option(stats.getTotalSlotMs).map(_.longValue()))
   }
 
   override def getTable(tableId: BQTableId): F[Option[BQTableDef[Any]]] =

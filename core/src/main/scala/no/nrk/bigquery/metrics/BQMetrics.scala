@@ -9,29 +9,30 @@ package no.nrk.bigquery.metrics
 import cats.effect.kernel.Outcome
 import cats.effect.{Clock, Concurrent, Resource}
 import cats.syntax.all.*
-import com.google.cloud.bigquery.{Job, JobStatistics}
 import no.nrk.bigquery.BQJobId
 
 import scala.concurrent.TimeoutException
 
 object BQMetrics {
-  def apply[F[_]](
+  def apply[F[_], Job](
       ops: MetricsOps[F],
-      jobId: BQJobId
+      jobId: BQJobId,
+      toStats: Job => JobMetricStats
   )(
       job: F[Option[Job]]
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
-    effect(ops, jobId)(job)
+    effect(ops, jobId, toStats)(job)
 
-  def effect[F[_]](ops: MetricsOps[F], jobId: BQJobId)(
+  def effect[F[_], Job](ops: MetricsOps[F], jobId: BQJobId, toStats: Job => JobMetricStats)(
       job: F[Option[Job]]
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
-    withMetrics(job, ops, jobId)
+    withMetrics(job, ops, jobId, toStats)
 
-  private def withMetrics[F[_]](
+  private def withMetrics[F[_], Job](
       job: F[Option[Job]],
       ops: MetricsOps[F],
-      jobId: BQJobId
+      jobId: BQJobId,
+      toStats: Job => JobMetricStats
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
     (for {
       start <- Resource.eval(F.monotonic)
@@ -39,15 +40,17 @@ object BQMetrics {
         job,
         ops,
         jobId,
-        start.toNanos
+        start.toNanos,
+        toStats
       )
     } yield resp).use(C.pure)
 
-  private def executeRequestAndRecordMetrics[F[_]](
+  private def executeRequestAndRecordMetrics[F[_], Job](
       job: F[Option[Job]],
       ops: MetricsOps[F],
       jobId: BQJobId,
-      start: Long
+      start: Long,
+      toStats: Job => JobMetricStats
   )(implicit F: Clock[F], C: Concurrent[F]): Resource[F, Option[Job]] =
     (for {
       _ <- Resource.make(ops.increaseActiveJobs(jobId))(_ => ops.decreaseActiveJobs(jobId))
@@ -57,7 +60,7 @@ object BQMetrics {
       jobResult <- Resource.eval(job)
       _ <- Resource.eval(
         ops.recordComplete(
-          jobResult.map(_.getStatistics[JobStatistics]),
+          jobResult.map(toStats),
           jobId
         )
       )
