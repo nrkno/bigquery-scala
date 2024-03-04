@@ -88,6 +88,8 @@ object TVF {
   }
 
   object TVFId {
+    implicit val bqShow: Show[TVFId] = Show.show(_.asFragment.asString)
+
     def apply(tableId: BQTableId): TVFId =
       TVFId(tableId.dataset, Ident(tableId.tableName))
   }

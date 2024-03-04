@@ -16,7 +16,6 @@ import org.apache.avro.generic.GenericRecord
 import scala.concurrent.duration.*
 
 trait QueryClient[F[_]] {
-  type LoadStatistics
   type Job
   def synchronousQuery[A](
       jobId: BQJobId,
@@ -83,7 +82,7 @@ trait QueryClient[F[_]] {
       partition: P,
       stream: fs2.Stream[F, A],
       writeDisposition: WriteDisposition
-  ): F[Option[LoadStatistics]] = loadJson(
+  ): F[Option[BQJobStatistics.Load]] = loadJson(
     jobId = jobId,
     table = table,
     partition = partition,
@@ -99,7 +98,7 @@ trait QueryClient[F[_]] {
       stream: fs2.Stream[F, A],
       writeDisposition: WriteDisposition,
       logStream: Boolean
-  ): F[Option[LoadStatistics]] =
+  ): F[Option[BQJobStatistics.Load]] =
     loadJson(
       jobId = jobId,
       table = table,
@@ -114,7 +113,7 @@ trait QueryClient[F[_]] {
       jobId: BQJobId,
       table: BQTableDef.Table[Long],
       stream: fs2.Stream[F, A]
-  )(implicit hashedEncoder: HashedPartitionEncoder[A]): F[Option[LoadStatistics]] =
+  )(implicit hashedEncoder: HashedPartitionEncoder[A]): F[Option[BQJobStatistics.Load]] =
     loadToHashedPartition(jobId, table, stream, logStream = false)
 
   def loadToHashedPartition[A](
@@ -122,7 +121,7 @@ trait QueryClient[F[_]] {
       table: BQTableDef.Table[Long],
       stream: fs2.Stream[F, A],
       logStream: Boolean
-  )(implicit hashedEncoder: HashedPartitionEncoder[A]): F[Option[LoadStatistics]] =
+  )(implicit hashedEncoder: HashedPartitionEncoder[A]): F[Option[BQJobStatistics.Load]] =
     loadToHashedPartition(jobId, table, stream, logStream, chunkSize = 10 * StreamUtils.Megabyte)
 
   def loadToHashedPartition[A](
@@ -131,7 +130,7 @@ trait QueryClient[F[_]] {
       stream: fs2.Stream[F, A],
       logStream: Boolean,
       chunkSize: Int
-  )(implicit hashedEncoder: HashedPartitionEncoder[A]): F[Option[LoadStatistics]]
+  )(implicit hashedEncoder: HashedPartitionEncoder[A]): F[Option[BQJobStatistics.Load]]
 
   /** @return
     *   None, if `chunkedStream` is empty
@@ -144,16 +143,16 @@ trait QueryClient[F[_]] {
       writeDisposition: WriteDisposition,
       logStream: Boolean,
       chunkSize: Int
-  ): F[Option[LoadStatistics]]
+  ): F[Option[BQJobStatistics.Load]]
 
-  def submitQuery[P](jobId: BQJobId, query: BQSqlFrag): F[Job] =
+  def submitQuery[P](jobId: BQJobId, query: BQSqlFrag): F[JobWithStats[Job]] =
     submitQuery(jobId, query, None)
 
   def submitQuery[P](
       id: BQJobId,
       query: BQSqlFrag,
       destination: Option[BQPartitionId[P]]
-  ): F[Job] =
+  ): F[JobWithStats[Job]] =
     submitQuery(id, query, destination, None)
 
   def submitQuery[P](
@@ -161,12 +160,12 @@ trait QueryClient[F[_]] {
       query: BQSqlFrag,
       destination: Option[BQPartitionId[P]],
       writeDisposition: Option[WriteDisposition]
-  ): F[Job]
+  ): F[JobWithStats[Job]]
 
   def dryRun(
       id: BQJobId,
       query: BQSqlFrag
-  ): F[(BQSchema, Job)]
+  ): F[BQJobStatistics.Query]
 
   def createTempTable[Param](
       table: BQTableDef.Table[Param],
@@ -191,4 +190,8 @@ object QueryClient {
       maxDuration: FiniteDuration = 20.minutes,
       maxErrorsTolerated: Int = 10
   )
+
+  type Aux[F[_], J] = QueryClient[F] {
+    type Job = J
+  }
 }

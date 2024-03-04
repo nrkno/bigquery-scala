@@ -190,7 +190,6 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
       )(bqClient())
     }
 
-  /*
   protected def bqCheckFragmentTestFailing(
       testName: String,
       errorFragment: String
@@ -205,8 +204,10 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
         StaticQueries
       )(bqClient()).attempt
         .flatMap {
-          case Left(e: BigQueryException) if e.getMessage != null =>
-            IO(assert(e.getError.getMessage.contains(errorFragment)))
+          case Left(e: BQExecutionException) =>
+            IO(assert(e.main.flatMap(_.message).getOrElse("").contains(errorFragment)))
+          case Left(e: BQException) if e.message.isDefined =>
+            IO(assert(e.message.getOrElse("").contains(errorFragment)))
           case Left(other) => IO.raiseError(other)
           case Right(_) =>
             IO(
@@ -215,7 +216,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
               )
             )
         }
-    }*/
+    }
 
   protected def bqCheckTableValueFunction[N <: Nat](testName: String, tvf: TVF[?, N])(
       args: IndexSeqSizedBuilder[BQSqlFrag.Magnet] => Sized[IndexedSeq[BQSqlFrag.Magnet], N]
@@ -272,9 +273,7 @@ object BQSmokeTest {
               )
               val run = bqClient
                 .dryRun(BQJobId("smoketest"), staticFrag)
-                .map { case (schema, _) =>
-                  schema
-                }
+                .map(stats => stats.schema.getOrElse(BQSchema.of()))
                 .guaranteeCase {
                   case Outcome.Errored(_) if checkType != CheckType.Failing =>
                     IO(println(s"failed query: ${staticFrag.asStringWithUDFs}"))
@@ -298,9 +297,7 @@ object BQSmokeTest {
               IO(println(s"failed query: ${frag.asStringWithUDFs}"))
             case _ => IO.unit
           }
-          .map { case (schema, _) =>
-            schema
-          }
+          .map(stats => stats.schema.getOrElse(BQSchema.of()))
           .map(checkType.checkSchema)
 
         log *> compareAsIs *> runCheck

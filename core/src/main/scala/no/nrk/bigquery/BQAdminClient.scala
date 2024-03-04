@@ -54,10 +54,10 @@ sealed trait BQAdminClient[F[_]] {
 
 trait BQAdminClientWithUnderlying[F[_], R, T] extends BQAdminClient[F] {
 
-  private[bigquery] def getTableWithUnderlying(id: BQTableId): F[Option[ExistingTable[T]]]
-  private[bigquery] def updateTableWithExisting(existing: ExistingTable[T], table: BQTableDef[Any]): F[BQTableDef[Any]]
-  private[bigquery] def getRoutineWithUnderlying(id: BQPersistentRoutine.Id): F[Option[ExistingRoutine[R]]]
-  private[bigquery] def updateRoutineWithExisting(
+  def getTableWithUnderlying(id: BQTableId): F[Option[ExistingTable[T]]]
+  def updateTableWithExisting(existing: ExistingTable[T], table: BQTableDef[Any]): F[BQTableDef[Any]]
+  def getRoutineWithUnderlying(id: BQPersistentRoutine.Id): F[Option[ExistingRoutine[R]]]
+  def updateRoutineWithExisting(
       existing: ExistingRoutine[R],
       routine: BQPersistentRoutine.Unknown): F[BQPersistentRoutine.Unknown]
 

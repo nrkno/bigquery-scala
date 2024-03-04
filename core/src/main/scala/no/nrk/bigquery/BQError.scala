@@ -28,10 +28,13 @@ object BQError {
   }
 }
 
-case class BQExecutionException(
+final case class BQExecutionException(
     jobId: BQJobId,
     main: Option[BQError],
     details: List[BQError]
 ) extends Exception(
       s"Error while executing job $jobId: ${main.asJson.spaces4}, details: ${details.asJson.spaces4}"
     )
+
+final case class BQException(code: Int, message: Option[String], errors: List[BQError], cause: Option[Throwable])
+    extends Exception(message.orNull, cause.orNull)

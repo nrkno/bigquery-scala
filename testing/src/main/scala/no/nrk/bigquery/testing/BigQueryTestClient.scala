@@ -44,7 +44,6 @@ object BigQueryTestClient {
   ): Resource[IO, QueryClient[IO]] =
     cacheFrom.map(client =>
       new QueryClient[IO] {
-        override type LoadStatistics = client.LoadStatistics
         override type Job = client.Job
 
         override protected[bigquery] def synchronousQueryExecute(
@@ -100,7 +99,7 @@ object BigQueryTestClient {
             table: BQTableDef.Table[Long],
             stream: Stream[IO, A],
             logStream: Boolean,
-            chunkSize: Int)(implicit hashedEncoder: HashedPartitionEncoder[A]): IO[Option[LoadStatistics]] =
+            chunkSize: Int)(implicit hashedEncoder: HashedPartitionEncoder[A]): IO[Option[BQJobStatistics.Load]] =
           client.loadToHashedPartition(jobId, table, stream, logStream, chunkSize)
 
         override def loadJson[A: Encoder, P: TableOps](
@@ -110,17 +109,17 @@ object BigQueryTestClient {
             stream: Stream[IO, A],
             writeDisposition: WriteDisposition,
             logStream: Boolean,
-            chunkSize: Int): IO[Option[LoadStatistics]] =
+            chunkSize: Int): IO[Option[BQJobStatistics.Load]] =
           client.loadJson(jobId, table, partition, stream, writeDisposition, logStream, chunkSize)
 
         override def submitQuery[P](
             id: BQJobId,
             query: BQSqlFrag,
             destination: Option[BQPartitionId[P]],
-            writeDisposition: Option[WriteDisposition]): IO[Job] =
+            writeDisposition: Option[WriteDisposition]): IO[JobWithStats[Job]] =
           client.submitQuery(id, query, destination, writeDisposition)
 
-        override def dryRun(id: BQJobId, query: BQSqlFrag): IO[(BQSchema, Job)] =
+        override def dryRun(id: BQJobId, query: BQSqlFrag): IO[BQJobStatistics.Query] =
           client.dryRun(id, query)
 
         override def createTempTable[Param](

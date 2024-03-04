@@ -17,15 +17,19 @@ import com.google.api.gax.core.FixedCredentialsProvider
 import com.google.api.gax.retrying.RetrySettings
 import com.google.api.gax.rpc.ServerStream
 import com.google.auth.Credentials
-import com.google.cloud.bigquery.JobInfo.WriteDisposition as GoogleWriteDisposition
-import com.google.cloud.bigquery.JobStatistics.QueryStatistics
 import com.google.cloud.bigquery.storage.v1.*
 import com.google.cloud.bigquery.{Job as GoogleJob, Option as _, *}
 import com.google.cloud.http.HttpTransportOptions
 import fs2.{Chunk, Stream}
 import io.circe.Encoder
 import no.nrk.bigquery.client.google.internal.GoogleTypeHelper.*
-import no.nrk.bigquery.client.google.internal.{PartitionTypeHelper, RoutineHelper, SchemaHelper, TableHelper}
+import no.nrk.bigquery.client.google.internal.{
+  GoogleTypeHelper,
+  PartitionTypeHelper,
+  RoutineHelper,
+  SchemaHelper,
+  TableHelper
+}
 import no.nrk.bigquery.metrics.{BQMetrics, JobMetricStats, MetricsOps}
 import no.nrk.bigquery.util.StreamUtils
 import org.apache.avro
@@ -170,7 +174,7 @@ class GoogleBigQueryClient[F[_]](
       stream: fs2.Stream[F, A],
       logStream: Boolean,
       chunkSize: Int
-  )(implicit hashedEncoder: HashedPartitionEncoder[A]): F[Option[LoadStatistics]] = {
+  )(implicit hashedEncoder: HashedPartitionEncoder[A]): F[Option[BQJobStatistics.Load]] = {
     val partitionType = table.partitionType match {
       case x: BQPartitionType.IntegerRangePartitioned => x
     }
@@ -197,7 +201,7 @@ class GoogleBigQueryClient[F[_]](
       writeDisposition: WriteDisposition,
       logStream: Boolean,
       chunkSize: Int
-  ): F[Option[LoadStatistics]] = {
+  ): F[Option[BQJobStatistics.Load]] = {
     val tableId = table.assertPartition(partition).asTableId
     loadJson(jobId, tableId, table.schema, stream, writeDisposition, logStream, chunkSize)
   }
@@ -213,7 +217,7 @@ class GoogleBigQueryClient[F[_]](
       writeDisposition: WriteDisposition,
       logStream: Boolean,
       chunkSize: Int
-  ): F[Option[LoadStatistics]] =
+  ): F[Option[BQJobStatistics.Load]] =
     submitJob(id) { jobId =>
       val formatOptions = FormatOptions.json()
 
@@ -247,7 +251,8 @@ class GoogleBigQueryClient[F[_]](
         }
         .flatMap(_ => F.interruptible(Option(bigQuery.getJob(jobId))))
 
-    }.map(jobOpt => jobOpt.map(_.getStatistics[LoadStatistics]))
+    }.map(jobOpt =>
+      jobOpt.map(job => toLoadStats(GoogleTypeHelper.jobIdFromJob(job), job.getStatistics[LoadStatistics])))
 
   override def createTempTable[Param](
       table: BQTableDef.Table[Param],
@@ -284,7 +289,7 @@ class GoogleBigQueryClient[F[_]](
       query: BQSqlFrag,
       destination: Option[BQPartitionId[P]],
       writeDisposition: Option[WriteDisposition]
-  ): F[Job] = submitJob(id) { jobId =>
+  ): F[JobWithStats[Job]] = submitJob(id) { jobId =>
     val jobConfiguration = {
       val b = QueryJobConfiguration.newBuilder(query.asStringWithUDFs)
       destination.foreach(partitionId => b.setDestinationTable(partitionId.asTableId.underlying))
@@ -299,7 +304,8 @@ class GoogleBigQueryClient[F[_]](
       )
     )
   }.flatMap {
-    case Some(job) => F.pure(job)
+    case Some(job) =>
+      F.pure(JobWithStats(job, toQueryStats(jobIdFromJob(job), job.getStatistics[JobStatistics.QueryStatistics])))
     case None =>
       F.raiseError(
         new Exception(s"Unexpected: got no job after submitting ${id.name}")
@@ -318,7 +324,7 @@ class GoogleBigQueryClient[F[_]](
             poller
               .poll[Job](
                 runningJob = runningJob,
-                retry = F.interruptible(bigQuery.getJob(runningJob.getJobId).some)
+                retry = runWithClient(_.getJob(runningJob.getJobId).some)
               )
               .flatMap {
                 case BQPoll.Failed(error) => F.raiseError[Job](error)
@@ -344,7 +350,7 @@ class GoogleBigQueryClient[F[_]](
   }
 
   private def toMetricStats(job: Job) = {
-    val stats = job.getStatistics[QueryStatistics]
+    val stats = job.getStatistics[JobStatistics.QueryStatistics]
     JobMetricStats(
       Option(stats.getTotalBytesBilled).map(_.longValue()),
       Option(stats.getTotalSlotMs).map(_.longValue()))
@@ -365,14 +371,12 @@ class GoogleBigQueryClient[F[_]](
   private def getTableImpl(tableId: BQTableId): F[Option[TableInfo]] =
     runWithClient(bq => Option(bq.getTable(tableId.underlying)).filter(_.exists()))
 
-  override private[bigquery] def getTableWithUnderlying(tableId: BQTableId): F[Option[ExistingTable[TableInfo]]] =
+  override def getTableWithUnderlying(tableId: BQTableId): F[Option[ExistingTable[TableInfo]]] =
     OptionT(getTableImpl(tableId))
       .mapFilter(t => TableHelper.fromGoogle(t).toOption.map(tbl => ExistingTable(tbl, t)))
       .value
 
-  override private[bigquery] def updateTableWithExisting(
-      existing: ExistingTable[TableInfo],
-      table: BQTableDef[Any]): F[BQTableDef[Any]] =
+  override def updateTableWithExisting(existing: ExistingTable[TableInfo], table: BQTableDef[Any]): F[BQTableDef[Any]] =
     F.delay(TableHelper.toGoogle(table, Some(existing.table)))
       .flatMap(info => runWithClient(_.update(info)))
       .as(table)
@@ -380,7 +384,7 @@ class GoogleBigQueryClient[F[_]](
   def dryRun(
       id: BQJobId,
       query: BQSqlFrag
-  ): F[(BQSchema, Job)] =
+  ): F[BQJobStatistics.Query] =
     freshJobId(id).flatMap { jobId =>
       val jobInfo = JobInfo.of(
         jobId,
@@ -390,8 +394,8 @@ class GoogleBigQueryClient[F[_]](
           .setLabels(id.labels.value.asJava)
           .build()
       )
-      F.interruptible(bigQuery.create(jobInfo))
-        .map(job => SchemaHelper.fromSchema(job.getStatistics[QueryStatistics].getSchema) -> job)
+      runWithClient(_.create(jobInfo))
+        .map(job => toQueryStats(GoogleTypeHelper.jobIdFromJob(job), job.getStatistics[JobStatistics.QueryStatistics]))
     }
 
   def datasetsInProject(project: ProjectId): F[Vector[BQDataset]] =
@@ -441,11 +445,10 @@ class GoogleBigQueryClient[F[_]](
   override def getRoutine(id: BQPersistentRoutine.Id): F[Option[BQPersistentRoutine.Unknown]] =
     getRoutineWithUnderlying(id).map(_.map(_.our))
 
-  override private[bigquery] def getRoutineWithUnderlying(
-      id: BQPersistentRoutine.Id): F[Option[ExistingRoutine[RoutineInfo]]] =
+  override def getRoutineWithUnderlying(id: BQPersistentRoutine.Id): F[Option[ExistingRoutine[RoutineInfo]]] =
     OptionT(getRoutineImpl(id)).map(r => ExistingRoutine(RoutineHelper.fromGoogle(r), r)).value
 
-  override private[bigquery] def updateRoutineWithExisting(
+  override def updateRoutineWithExisting(
       existing: ExistingRoutine[RoutineInfo],
       routine: BQPersistentRoutine.Unknown): F[BQPersistentRoutine.Unknown] =
     F.delay(RoutineHelper.toGoogle(routine, Some(existing.routine)))
@@ -502,7 +505,20 @@ class GoogleBigQueryClient[F[_]](
   def deleteRoutine(udfId: BQPersistentRoutine.Id): F[Boolean] =
     runWithClient(_.delete(RoutineId.of(udfId.dataset.project.value, udfId.dataset.id, udfId.name.value)))
 
-  private def runWithClient[A](f: BigQuery => A): F[A] = F.interruptible(f(bigQuery))
+  private def runWithClient[A](f: BigQuery => A): F[A] =
+    F.interruptible(f(bigQuery)).recoverWith { case ex: BigQueryException =>
+      F.raiseError(
+        BQException(
+          ex.getCode,
+          Option(ex.getMessage),
+          Option(ex.getErrors)
+            .map(_.asScala
+              .map(err => BQError(Option(err.getLocation), Option(err.getMessage), Option(err.getReason)))
+              .toList)
+            .getOrElse(Nil),
+          Some(ex)
+        ))
+    }
 
   private def freshJobId(id: BQJobId): F[JobId] = {
     val withDefaults = id.withDefaults(config.defaults)
@@ -515,12 +531,6 @@ class GoogleBigQueryClient[F[_]](
         .setProject(withDefaults.projectId.map(_.value).orNull)
         .build()
     )
-  }
-
-  private def toGoogleDisposition(writeDisposition: WriteDisposition) = writeDisposition match {
-    case WriteDisposition.WRITE_TRUNCATE => GoogleWriteDisposition.WRITE_TRUNCATE
-    case WriteDisposition.WRITE_APPEND => GoogleWriteDisposition.WRITE_APPEND
-    case WriteDisposition.WRITE_EMPTY => GoogleWriteDisposition.WRITE_EMPTY
   }
 
   private implicit val showRoutineId: Show[RoutineId] =

@@ -14,24 +14,7 @@ import scala.jdk.CollectionConverters.*
 private[client] object GoogleBQPollImpl {
   implicit val instance: BQPoll.FromJob[Job] = new BQPoll.FromJob[Job] {
     override def reference(job: Job): BQJobId =
-      Option(job.getJobId)
-        .map((ref: JobId) =>
-          BQJobId(
-            Option(ref.getProject).map(ProjectId.unsafeFromString),
-            Option(ref.getLocation).map(LocationId.apply),
-            Option(ref.getJob).getOrElse(""),
-            JobLabels.unsafeFrom((job.getConfiguration[JobConfiguration].getType match {
-              case JobConfiguration.Type.COPY =>
-                Option(job.getConfiguration[CopyJobConfiguration].getLabels).map(_.asScala.toList)
-              case JobConfiguration.Type.EXTRACT =>
-                Option(job.getConfiguration[ExtractJobConfiguration].getLabels).map(_.asScala.toList)
-              case JobConfiguration.Type.LOAD =>
-                Option(job.getConfiguration[LoadJobConfiguration].getLabels).map(_.asScala.toList)
-              case JobConfiguration.Type.QUERY =>
-                Option(job.getConfiguration[QueryJobConfiguration].getLabels).map(_.asScala.toList)
-            }).getOrElse(Nil)*)
-          ))
-        .get
+      GoogleTypeHelper.jobIdFromJob(job)
 
     override def id(job: Job): Option[String] =
       Option(job.getJobId).flatMap(j => Option(j.getJob))
