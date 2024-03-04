@@ -38,9 +38,9 @@ ThisBuild / githubWorkflowBuild := {
   }
 }
 
-val Scala212 = "2.12.18"
+val Scala212 = "2.12.19"
 val Scala213 = "2.13.13"
-ThisBuild / crossScalaVersions := Seq(Scala213, Scala212, "3.3.1")
+ThisBuild / crossScalaVersions := Seq(Scala213, Scala212, "3.3.3")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 ThisBuild / tlVersionIntroduced := Map(
   "2.12" -> "0.9.0",
