@@ -167,8 +167,8 @@ object BqSqlProjection {
                     name
                   } match {
                     case Nil => BQSqlFrag.Empty
-                    case nonEmpty =>
-                      bqfr"(dropped ${nonEmpty.mkFragment(", ")})"
+                    case dropped =>
+                      bqfr"(dropped ${dropped.mkFragment(", ")})"
                   }
                   val frag =
                     bqfr"""|$indent(SELECT AS STRUCT # start struct ${field.ident} $droppedComment

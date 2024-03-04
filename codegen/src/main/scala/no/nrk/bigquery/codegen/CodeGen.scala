@@ -169,8 +169,8 @@ object SourceLocation {
         .mkString
 
       camelCase.filter(_.isLetterOrDigit) match {
-        case str if str.head.isDigit => "x" + str
-        case str => str
+        case x if x.head.isDigit => "x" + x
+        case x => x
       }
     }
 
