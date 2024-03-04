@@ -30,7 +30,7 @@ import no.nrk.bigquery.client.google.internal.{
   SchemaHelper,
   TableHelper
 }
-import no.nrk.bigquery.metrics.{BQMetrics, JobMetricStats, MetricsOps}
+import no.nrk.bigquery.metrics.{BQMetrics, MetricsOps}
 import no.nrk.bigquery.util.StreamUtils
 import org.apache.avro
 import org.apache.avro.generic.{GenericDatumReader, GenericRecord}
@@ -317,18 +317,24 @@ class GoogleBigQueryClient[F[_]](
   def submitJob(jobId: BQJobId)(
       runJob: JobId => F[Option[Job]]
   ): F[Option[Job]] = {
-    val loggedJob: JobId => F[Option[Job]] = id =>
+    val loggedJob: JobId => F[Option[JobWithStats[Job]]] = id =>
       runJob(id).flatMap {
         case Some(runningJob) =>
-          val logged: F[Job] =
+          val logged: F[JobWithStats[Job]] =
             poller
               .poll[Job](
                 runningJob = runningJob,
                 retry = runWithClient(_.getJob(runningJob.getJobId).some)
               )
               .flatMap {
-                case BQPoll.Failed(error) => F.raiseError[Job](error)
-                case BQPoll.Success(job) => F.pure(job)
+                case BQPoll.Failed(error) => F.raiseError[JobWithStats[Job]](error)
+                case BQPoll.Success(job) =>
+                  F.delay(
+                    JobWithStats(
+                      job,
+                      GoogleTypeHelper
+                        .toStats(GoogleTypeHelper.jobIdFromJob(job), job.getStatistics[JobStatistics])
+                        .getOrElse(sys.error("Unsupported job type"))))
               }
               .guaranteeCase {
                 case Outcome.Errored(e) =>
@@ -346,14 +352,11 @@ class GoogleBigQueryClient[F[_]](
       }
 
     freshJobId(jobId)
-      .flatMap(id => BQMetrics[F, Job](metricOps, jobId, toMetricStats)(loggedJob(id)))
-  }
-
-  private def toMetricStats(job: Job) = {
-    val stats = job.getStatistics[JobStatistics.QueryStatistics]
-    JobMetricStats(
-      Option(stats.getTotalBytesBilled).map(_.longValue()),
-      Option(stats.getTotalSlotMs).map(_.longValue()))
+      .flatMap(id =>
+        BQMetrics[F, Job](
+          metricOps,
+          jobId
+        )(loggedJob(id)))
   }
 
   override def getTable(tableId: BQTableId): F[Option[BQTableDef[Any]]] =

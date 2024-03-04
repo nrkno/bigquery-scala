@@ -7,9 +7,7 @@
 package no.nrk.bigquery.metrics
 
 import cats.Applicative
-import no.nrk.bigquery.BQJobId
-
-final case class JobMetricStats(totalBytesBilled: Option[Long], totalSlotMs: Option[Long])
+import no.nrk.bigquery.{BQJobId, BQJobStatistics}
 
 trait MetricsOps[F[_]] {
   def increaseActiveJobs(jobId: BQJobId): F[Unit]
@@ -21,7 +19,7 @@ trait MetricsOps[F[_]] {
       jobId: BQJobId
   ): F[Unit]
   def recordComplete(
-      jobStats: Option[JobMetricStats],
+      jobStats: Option[BQJobStatistics],
       jobId: BQJobId
   ): F[Unit]
 }
@@ -46,7 +44,7 @@ object MetricsOps {
     ): F[Unit] = F.unit
 
     override def recordComplete(
-        jobStats: Option[JobMetricStats],
+        jobStats: Option[BQJobStatistics],
         jobId: BQJobId
     ): F[Unit] = F.unit
   }

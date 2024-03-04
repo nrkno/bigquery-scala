@@ -118,4 +118,10 @@ object GoogleTypeHelper {
       Option(statistics.getOutputRows).map(_.longValue()),
       Option(statistics.getBadRecords).map(_.longValue())
     )
+
+  def toStats(jobId: BQJobId, statistics: JobStatistics): Option[BQJobStatistics] = statistics match {
+    case statistics: JobStatistics.LoadStatistics => Some(toLoadStats(jobId, statistics))
+    case statistics: JobStatistics.QueryStatistics => Some(toQueryStats(jobId, statistics))
+    case _ => None
+  }
 }

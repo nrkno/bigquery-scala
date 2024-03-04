@@ -167,11 +167,11 @@ object Prometheus {
           }
 
         override def recordComplete(
-            jobStats: Option[JobMetricStats],
+            jobStats: Option[BQJobStatistics],
             jobId: BQJobId
         ): F[Unit] =
           jobStats
-            .map { stats =>
+            .collect { case stats: BQJobStatistics.Query =>
               F.delay {
                 stats.totalBytesBilled.foreach(totalBytes =>
                   metrics.bytesBilled

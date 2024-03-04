@@ -9,30 +9,28 @@ package no.nrk.bigquery.metrics
 import cats.effect.kernel.Outcome
 import cats.effect.{Clock, Concurrent, Resource}
 import cats.syntax.all.*
-import no.nrk.bigquery.BQJobId
+import no.nrk.bigquery.{BQJobId, JobWithStats}
 
 import scala.concurrent.TimeoutException
 
 object BQMetrics {
   def apply[F[_], Job](
       ops: MetricsOps[F],
-      jobId: BQJobId,
-      toStats: Job => JobMetricStats
+      jobId: BQJobId
   )(
-      job: F[Option[Job]]
+      job: F[Option[JobWithStats[Job]]]
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
-    effect(ops, jobId, toStats)(job)
+    effect(ops, jobId)(job)
 
-  def effect[F[_], Job](ops: MetricsOps[F], jobId: BQJobId, toStats: Job => JobMetricStats)(
-      job: F[Option[Job]]
+  def effect[F[_], Job](ops: MetricsOps[F], jobId: BQJobId)(
+      job: F[Option[JobWithStats[Job]]]
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
-    withMetrics(job, ops, jobId, toStats)
+    withMetrics(job, ops, jobId)
 
   private def withMetrics[F[_], Job](
-      job: F[Option[Job]],
+      job: F[Option[JobWithStats[Job]]],
       ops: MetricsOps[F],
-      jobId: BQJobId,
-      toStats: Job => JobMetricStats
+      jobId: BQJobId
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
     (for {
       start <- Resource.eval(F.monotonic)
@@ -40,17 +38,15 @@ object BQMetrics {
         job,
         ops,
         jobId,
-        start.toNanos,
-        toStats
+        start.toNanos
       )
     } yield resp).use(C.pure)
 
   private def executeRequestAndRecordMetrics[F[_], Job](
-      job: F[Option[Job]],
+      job: F[Option[JobWithStats[Job]]],
       ops: MetricsOps[F],
       jobId: BQJobId,
-      start: Long,
-      toStats: Job => JobMetricStats
+      start: Long
   )(implicit F: Clock[F], C: Concurrent[F]): Resource[F, Option[Job]] =
     (for {
       _ <- Resource.make(ops.increaseActiveJobs(jobId))(_ => ops.decreaseActiveJobs(jobId))
@@ -60,11 +56,11 @@ object BQMetrics {
       jobResult <- Resource.eval(job)
       _ <- Resource.eval(
         ops.recordComplete(
-          jobResult.map(toStats),
+          jobResult.map(_.statistics),
           jobId
         )
       )
-    } yield jobResult)
+    } yield jobResult.map(_.job))
       .guaranteeCase {
         case Outcome.Succeeded(fa) => fa.void
         case Outcome.Errored(e) =>
