@@ -25,28 +25,6 @@ final case class TableLabels private[bigquery] (values: SortedMap[String, String
         values.get(key).contains(value)
       }
     } else false
-
-  /** This method is needed for the case where we delete a label. It is deleted by setting it to `null`.
-    *
-    * As such, we need to know the labels of a table in production before we compute the new set of labels to use when
-    * updating
-    */
-  def forUpdate(
-      maybeExistingTable: Option[BQTableDef[Any]]
-  ): java.util.Map[String, String] = {
-    val ret = new java.util.TreeMap[String, String]
-
-    // existing table? set all old label keys to `null`
-    for {
-      existingTable <- maybeExistingTable.toList
-      existingKey <- existingTable.labels.values.keySet
-    } ret.put(existingKey, null)
-
-    // and overwrite the ones we want to keep.
-    values.foreach { case (key, value) => ret.put(key, value) }
-
-    ret
-  }
 }
 
 object TableLabels {

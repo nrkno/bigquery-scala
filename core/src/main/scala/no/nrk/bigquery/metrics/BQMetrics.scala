@@ -9,27 +9,26 @@ package no.nrk.bigquery.metrics
 import cats.effect.kernel.Outcome
 import cats.effect.{Clock, Concurrent, Resource}
 import cats.syntax.all.*
-import com.google.cloud.bigquery.{Job, JobStatistics}
-import no.nrk.bigquery.BQJobId
+import no.nrk.bigquery.{BQJobId, JobWithStats}
 
 import scala.concurrent.TimeoutException
 
 object BQMetrics {
-  def apply[F[_]](
+  def apply[F[_], Job](
       ops: MetricsOps[F],
       jobId: BQJobId
   )(
-      job: F[Option[Job]]
+      job: F[Option[JobWithStats[Job]]]
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
     effect(ops, jobId)(job)
 
-  def effect[F[_]](ops: MetricsOps[F], jobId: BQJobId)(
-      job: F[Option[Job]]
+  def effect[F[_], Job](ops: MetricsOps[F], jobId: BQJobId)(
+      job: F[Option[JobWithStats[Job]]]
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
     withMetrics(job, ops, jobId)
 
-  private def withMetrics[F[_]](
-      job: F[Option[Job]],
+  private def withMetrics[F[_], Job](
+      job: F[Option[JobWithStats[Job]]],
       ops: MetricsOps[F],
       jobId: BQJobId
   )(implicit F: Clock[F], C: Concurrent[F]): F[Option[Job]] =
@@ -43,8 +42,8 @@ object BQMetrics {
       )
     } yield resp).use(C.pure)
 
-  private def executeRequestAndRecordMetrics[F[_]](
-      job: F[Option[Job]],
+  private def executeRequestAndRecordMetrics[F[_], Job](
+      job: F[Option[JobWithStats[Job]]],
       ops: MetricsOps[F],
       jobId: BQJobId,
       start: Long
@@ -57,11 +56,11 @@ object BQMetrics {
       jobResult <- Resource.eval(job)
       _ <- Resource.eval(
         ops.recordComplete(
-          jobResult.map(_.getStatistics[JobStatistics]),
+          jobResult.map(_.statistics),
           jobId
         )
       )
-    } yield jobResult)
+    } yield jobResult.map(_.job))
       .guaranteeCase {
         case Outcome.Succeeded(fa) => fa.void
         case Outcome.Errored(e) =>

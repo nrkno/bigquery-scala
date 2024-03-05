@@ -20,8 +20,8 @@ import org.typelevel.log4cats.slf4j.*
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-abstract class BQUdfSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends CatsEffectSuite {
-  val bqClient: Fixture[BigQueryClient[IO]] = ResourceSuiteLocalFixture(
+abstract class BQUdfSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends CatsEffectSuite {
+  val bqClient: Fixture[QueryClient[IO]] = ResourceSuiteLocalFixture(
     "bqClient",
     testClient
   )
@@ -59,7 +59,7 @@ object BQUdfSmokeTest {
   def bqEvaluateCall(
       testName: String,
       call: BQSqlFrag.Call
-  ): BigQueryClient[IO] => IO[Json] = { bqClient =>
+  ): QueryClient[IO] => IO[Json] = { bqClient =>
     val temporaryUdfCall = call.udf match {
       case _: UDF.Temporary[?] => call
       case _: UDF.Reference[?] => call

@@ -7,22 +7,20 @@
 package no.nrk.bigquery
 package testing
 
-import cats.data.OptionT
 import cats.effect.{IO, Resource}
 import cats.syntax.all.*
-import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
-import com.google.cloud.bigquery.BigQuery.JobOption
 import fs2.Stream
-import no.nrk.bigquery.metrics.MetricsOps
+import io.circe.Encoder
 import org.apache.avro
+import org.apache.avro.Schema
 import org.apache.avro.file.{DataFileReader, DataFileWriter}
 import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
 import org.typelevel.log4cats.SelfAwareStructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 
-import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
+import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.*
 import scala.util.Properties
 
@@ -40,46 +38,21 @@ object BigQueryTestClient {
     dir
   }
 
-  private def credentialsFromString(
-      str: String
-  ): IO[ServiceAccountCredentials] =
-    IO.blocking(
-      ServiceAccountCredentials.fromStream(
-        new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8))
-      )
-    )
-
-  def testClient: Resource[IO, BigQueryClient[IO]] =
-    for {
-      credentials <- Resource.eval(
-        OptionT(IO(sys.env.get("BIGQUERY_SERVICE_ACCOUNT")))
-          .semiflatMap(credentialsFromString)
-          .getOrElseF(
-            IO.blocking(GoogleCredentials.getApplicationDefault)
-          )
-      )
-      underlying <- BigQueryClient.resource(credentials, MetricsOps.noop[IO])
-    } yield underlying
-
   def cachingClient(
-      cacheFrom: Resource[IO, BigQueryClient[IO]],
-      config: Option[BigQueryClient.Config]
-  ): Resource[IO, BigQueryClient[IO]] =
+      queryCachePath: Path,
+      cacheFrom: Resource[IO, QueryClient[IO]]
+  ): Resource[IO, QueryClient[IO]] =
     cacheFrom.map(client =>
-      new BigQueryClient(
-        client.underlying,
-        client.reader,
-        client.metricOps,
-        config.getOrElse(BigQueryClient.Config.default)) {
-        override protected def synchronousQueryExecute(
+      new QueryClient[IO] {
+        override type Job = client.Job
+
+        override protected[bigquery] def synchronousQueryExecute(
             jobId: BQJobId,
             query: BQSqlFrag,
             legacySql: Boolean,
-            jobOptions: Seq[JobOption],
-            logStream: Boolean
-        ): Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] = {
+            logStream: Boolean): Resource[IO, (Schema, Stream[IO, GenericRecord])] = {
           val hash =
-            java.util.Objects.hash(query, Boolean.box(legacySql), jobOptions)
+            java.util.Objects.hash(query, Boolean.box(legacySql))
           val hashedSchemaPath =
             queryCachePath.resolve(s"${jobId.name}__$hash.json")
           val hashedRowsPath =
@@ -87,12 +60,11 @@ object BigQueryTestClient {
 
           def runAndStore: Resource[IO, (avro.Schema, Stream[IO, GenericRecord])] =
             for {
-              tuple <- super
+              tuple <- client
                 .synchronousQueryExecute(
                   jobId,
                   query,
                   legacySql,
-                  jobOptions,
                   logStream
                 )
               (schema, rowStream) = tuple
@@ -121,6 +93,45 @@ object BigQueryTestClient {
             }
           } yield res
         }
+
+        override def loadToHashedPartition[A](
+            jobId: BQJobId,
+            table: BQTableDef.Table[Long],
+            stream: Stream[IO, A],
+            logStream: Boolean,
+            chunkSize: Int)(implicit hashedEncoder: HashedPartitionEncoder[A]): IO[Option[BQJobStatistics.Load]] =
+          client.loadToHashedPartition(jobId, table, stream, logStream, chunkSize)
+
+        override def loadJson[A: Encoder, P: TableOps](
+            jobId: BQJobId,
+            table: BQTableDef.Table[P],
+            partition: P,
+            stream: Stream[IO, A],
+            writeDisposition: WriteDisposition,
+            logStream: Boolean,
+            chunkSize: Int): IO[Option[BQJobStatistics.Load]] =
+          client.loadJson(jobId, table, partition, stream, writeDisposition, logStream, chunkSize)
+
+        override def submitQuery[P](
+            id: BQJobId,
+            query: BQSqlFrag,
+            destination: Option[BQPartitionId[P]],
+            writeDisposition: Option[WriteDisposition]): IO[JobWithStats[Job]] =
+          client.submitQuery(id, query, destination, writeDisposition)
+
+        override def dryRun(id: BQJobId, query: BQSqlFrag): IO[BQJobStatistics.Query] =
+          client.dryRun(id, query)
+
+        override def createTempTable[Param](
+            table: BQTableDef.Table[Param],
+            tmpDataset: BQDataset.Ref,
+            expirationDuration: Option[FiniteDuration]): IO[BQTableDef.Table[Param]] =
+          client.createTempTable(table, tmpDataset, expirationDuration)
+
+        override def createTempTableResource[Param](
+            table: BQTableDef.Table[Param],
+            tmpDataset: BQDataset.Ref): Resource[IO, BQTableDef.Table[Param]] =
+          client.createTempTableResource(table, tmpDataset)
       })
 
   def serializeSchema(path: Path, schema: avro.Schema): IO[Unit] =

@@ -4,14 +4,16 @@
  * SPDX-License-Identifier: MIT
  */
 
-package no.nrk.bigquery.internal
+package no.nrk.bigquery
+package client.google.internal
 
 import com.google.cloud.bigquery.TimePartitioning.Type
 import com.google.cloud.bigquery.{Option as _, *}
 import munit.FunSuite
 import no.nrk.bigquery.syntax.*
-import no.nrk.bigquery.*
 import GoogleTypeHelper.*
+import no.nrk.bigquery.internal.TableUpdateOperation
+
 import scala.concurrent.duration.*
 
 class TableUpdateOperationTest extends FunSuite {
@@ -141,7 +143,7 @@ class TableUpdateOperationTest extends FunSuite {
 
     TableUpdateOperation.from(testTable, Some(ExistingTable(testTable.copy(description = None), remote))) match {
       case UpdateOperation.UpdateTable(existing, updatedTable) =>
-        val convertedTable = TableHelper.from(updatedTable, Some(existing.table))
+        val convertedTable = TableHelper.toGoogle(updatedTable, Some(existing.table))
         assert(
           convertedTable.getFriendlyName == friendlyName,
           "Expected `updatedTable` to contain friendly name"
@@ -320,7 +322,9 @@ class TableUpdateOperationTest extends FunSuite {
         .setExpirationTime(expirationTime)
         .build()
 
-    TableUpdateOperation.from(testView, Some(ExistingTable(TableHelper.fromTable(remote).toOption.get, remote))) match {
+    TableUpdateOperation.from(
+      testView,
+      Some(ExistingTable(TableHelper.fromGoogle(remote).toOption.get, remote))) match {
       case UpdateOperation.RecreateView(_, _, _) => assert(cond = true)
       case other => fail(other.toString)
     }
@@ -350,7 +354,7 @@ class TableUpdateOperationTest extends FunSuite {
 
     TableUpdateOperation.from(
       testTable,
-      Some(ExistingTable(TableHelper.fromTable(remote).toOption.get, remote))) match {
+      Some(ExistingTable(TableHelper.fromGoogle(remote).toOption.get, remote))) match {
       case UpdateOperation.UnsupportedPartitioning(_, msg) =>
         assertEquals(
           msg,
@@ -417,17 +421,17 @@ class TableUpdateOperationTest extends FunSuite {
         )
         .setRequirePartitionFilter(filter.map(Boolean.box).orNull)
         .build()
-      Some(ExistingTable(TableHelper.fromTable(info).toOption.get, info))
+      Some(ExistingTable(TableHelper.fromGoogle(info).toOption.get, info))
     }
 
     TableUpdateOperation.from(testTable(true), remote(Some(false))) match {
       case UpdateOperation.UpdateTable(existing, table) =>
-        assert(TableHelper.from(table, Some(existing.table)).getRequirePartitionFilter)
+        assert(TableHelper.toGoogle(table, Some(existing.table)).getRequirePartitionFilter)
       case other => fail(other.toString)
     }
     TableUpdateOperation.from(testTable(false), remote(Some(true))) match {
       case UpdateOperation.UpdateTable(existing, table) =>
-        assert(!TableHelper.from(table, Some(existing.table)).getRequirePartitionFilter)
+        assert(!TableHelper.toGoogle(table, Some(existing.table)).getRequirePartitionFilter)
       case other => fail(other.toString)
     }
     TableUpdateOperation.from(testTable(true), remote(Some(true))) match {
@@ -467,24 +471,24 @@ class TableUpdateOperationTest extends FunSuite {
             .build()
         )
         .build()
-      Some(ExistingTable(TableHelper.fromTable(info).toOption.get, info))
+      Some(ExistingTable(TableHelper.fromGoogle(info).toOption.get, info))
     }
 
     TableUpdateOperation.from(testTable(Some(1.day)), remote(None)) match {
       case UpdateOperation.UpdateTable(existing, table) =>
-        val converted = TableHelper.from(table, Some(existing.table))
+        val converted = TableHelper.toGoogle(table, Some(existing.table))
         assert(converted.getDefinition[StandardTableDefinition].getTimePartitioning.getExpirationMs == 1.day.toMillis)
       case other => fail(other.toString)
     }
     TableUpdateOperation.from(testTable(None), remote(Some(1.day))) match {
       case UpdateOperation.UpdateTable(existing, table) =>
-        val converted = TableHelper.from(table, Some(existing.table))
+        val converted = TableHelper.toGoogle(table, Some(existing.table))
         assert(Option(converted.getDefinition[StandardTableDefinition].getTimePartitioning.getExpirationMs).isEmpty)
       case other => fail(other.toString)
     }
     TableUpdateOperation.from(testTable(Some(2.day)), remote(Some(1.day))) match {
       case UpdateOperation.UpdateTable(existing, table) =>
-        val converted = TableHelper.from(table, Some(existing.table))
+        val converted = TableHelper.toGoogle(table, Some(existing.table))
         assert(converted.getDefinition[StandardTableDefinition].getTimePartitioning.getExpirationMs == 2.day.toMillis)
       case other => fail(other.toString)
     }

@@ -28,7 +28,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [2.13, 2.12, 3]
+        scala: [2.13, 3]
         java: [temurin@11]
         project: [rootJVM]
     runs-on: ${{ matrix.os }}
@@ -62,6 +62,8 @@ jobs:
       - name: Test
         env:
           BIGQUERY_SERVICE_ACCOUNT: ${{secrets.BIGQUERY_SERVICE_ACCOUNT}}
+          BIGQUERY_DEFAULT_PROJECT: ${{secrets.BIGQUERY_DEFAULT_PROJECT}}
+          BIGQUERY_DEFAULT_LOCATION: ${{secrets.BIGQUERY_DEFAULT_LOCATION}}
           ASSERT_CURRENT_GENERATED_FILES: 1
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' test
 
@@ -75,11 +77,11 @@ jobs:
 
       - name: Make target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-        run: mkdir -p transfer-client/.jvm/target codegen/.jvm/target prometheus/.jvm/target testing/.jvm/target core/.jvm/target zetasql/.jvm/target project/target
+        run: mkdir -p transfer-client/.jvm/target google-client/.jvm/target codegen/.jvm/target prometheus/.jvm/target testing/.jvm/target core/.jvm/target zetasql/.jvm/target project/target
 
       - name: Compress target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-        run: tar cf targets.tar transfer-client/.jvm/target codegen/.jvm/target prometheus/.jvm/target testing/.jvm/target core/.jvm/target zetasql/.jvm/target project/target
+        run: tar cf targets.tar transfer-client/.jvm/target google-client/.jvm/target codegen/.jvm/target prometheus/.jvm/target testing/.jvm/target core/.jvm/target zetasql/.jvm/target project/target
 
       - name: Upload target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
@@ -122,16 +124,6 @@ jobs:
           name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-rootJVM
 
       - name: Inflate target directories (2.13, rootJVM)
-        run: |
-          tar xf targets.tar
-          rm targets.tar
-
-      - name: Download target directories (2.12, rootJVM)
-        uses: actions/download-artifact@v4
-        with:
-          name: target-${{ matrix.os }}-${{ matrix.java }}-2.12-rootJVM
-
-      - name: Inflate target directories (2.12, rootJVM)
         run: |
           tar xf targets.tar
           rm targets.tar
@@ -200,5 +192,5 @@ jobs:
       - name: Submit Dependencies
         uses: scalacenter/sbt-dependency-submission@v2
         with:
-          modules-ignore: bigquery-scala_2.13 bigquery-scala_2.12 bigquery-scala_3 docs_2.13 docs_2.12 docs_3 bigquery-scala_2.13 bigquery-scala_2.12 bigquery-scala_3 bigquery-scala_2.13 bigquery-scala_2.12 bigquery-scala_3 codegentests_2.13 codegentests_2.12 codegentests_3
+          modules-ignore: bigquery-scala_2.13 bigquery-scala_3 docs_2.13 docs_3 bigquery-scala_2.13 bigquery-scala_3 bigquery-scala_2.13 bigquery-scala_3 codegentests_2.13 codegentests_3
           configs-ignore: test scala-tool scala-doc-tool test-internal

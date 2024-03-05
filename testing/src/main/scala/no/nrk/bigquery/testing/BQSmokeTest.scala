@@ -10,15 +10,12 @@ package testing
 import cats.effect.{IO, Resource}
 import cats.effect.kernel.Outcome
 import cats.syntax.alternative.*
-import com.google.cloud.bigquery.JobStatistics.QueryStatistics
-import com.google.cloud.bigquery.BigQueryException
 import io.circe.parser.decode
 import io.circe.syntax.*
 import munit.Assertions.{clues, fail}
 import munit.{CatsEffectSuite, Clues, Location}
 import no.nrk.bigquery.UDF.Body
 import no.nrk.bigquery.*
-import no.nrk.bigquery.internal.SchemaHelper
 import no.nrk.bigquery.testing.BQSmokeTest.{CheckType, bqCheckFragment}
 import org.typelevel.log4cats.slf4j.*
 import no.nrk.bigquery.syntax.*
@@ -28,7 +25,7 @@ import org.typelevel.log4cats.SelfAwareStructuredLogger
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends CatsEffectSuite with GeneratedTest {
+abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends CatsEffectSuite with GeneratedTest {
   self =>
 
   override def testType: String = "big-query"
@@ -53,7 +50,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
     override def testType: String = "bq-example-query"
   }
 
-  val bqClient: Fixture[BigQueryClient[IO]] = ResourceSuiteLocalFixture(
+  val bqClient: Fixture[QueryClient[IO]] = ResourceSuiteLocalFixture(
     "bqClient",
     testClient
   )
@@ -207,8 +204,10 @@ abstract class BQSmokeTest(testClient: Resource[IO, BigQueryClient[IO]]) extends
         StaticQueries
       )(bqClient()).attempt
         .flatMap {
-          case Left(e: BigQueryException) if e.getMessage != null =>
-            IO(assert(e.getError.getMessage.contains(errorFragment)))
+          case Left(e: BQExecutionException) =>
+            IO(assert(e.main.flatMap(_.message).getOrElse("").contains(errorFragment)))
+          case Left(e: BQException) if e.message.isDefined =>
+            IO(assert(e.message.getOrElse("").contains(errorFragment)))
           case Left(other) => IO.raiseError(other)
           case Right(_) =>
             IO(
@@ -247,7 +246,7 @@ object BQSmokeTest {
       assertStable: Seq[BQTableLike[Any]],
       target: GeneratedTest,
       static: GeneratedTest
-  ): BigQueryClient[IO] => IO[Unit] = { bqClient =>
+  ): QueryClient[IO] => IO[Unit] = { bqClient =>
     val compareAsIs = IO(
       target.writeAndCompare(
         target.testFileForName(s"$testName.sql"),
@@ -274,10 +273,7 @@ object BQSmokeTest {
               )
               val run = bqClient
                 .dryRun(BQJobId("smoketest"), staticFrag)
-                .map(job =>
-                  SchemaHelper.fromSchema(
-                    job.getStatistics[QueryStatistics]().getSchema
-                  ))
+                .map(stats => stats.schema.getOrElse(BQSchema.of()))
                 .guaranteeCase {
                   case Outcome.Errored(_) if checkType != CheckType.Failing =>
                     IO(println(s"failed query: ${staticFrag.asStringWithUDFs}"))
@@ -301,7 +297,7 @@ object BQSmokeTest {
               IO(println(s"failed query: ${frag.asStringWithUDFs}"))
             case _ => IO.unit
           }
-          .map(job => SchemaHelper.fromSchema(job.getStatistics[QueryStatistics]().getSchema))
+          .map(stats => stats.schema.getOrElse(BQSchema.of()))
           .map(checkType.checkSchema)
 
         log *> compareAsIs *> runCheck

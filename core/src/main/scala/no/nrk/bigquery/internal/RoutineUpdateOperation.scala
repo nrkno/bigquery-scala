@@ -26,10 +26,10 @@ object RoutineUpdateOperation {
     a.query.asString == a.query.asString
   }
 
-  def from(
+  def from[R](
       routine: BQPersistentRoutine.Unknown,
-      maybeExisting: Option[ExistingRoutine]
-  ): UpdateOperation =
+      maybeExisting: Option[ExistingRoutine[R]]
+  ): UpdateOperation[R, Nothing] =
     maybeExisting match {
       case None =>
         routine match {

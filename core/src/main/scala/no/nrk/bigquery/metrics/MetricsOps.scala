@@ -7,8 +7,7 @@
 package no.nrk.bigquery.metrics
 
 import cats.Applicative
-import com.google.cloud.bigquery.JobStatistics
-import no.nrk.bigquery.BQJobId
+import no.nrk.bigquery.{BQJobId, BQJobStatistics}
 
 trait MetricsOps[F[_]] {
   def increaseActiveJobs(jobId: BQJobId): F[Unit]
@@ -20,7 +19,7 @@ trait MetricsOps[F[_]] {
       jobId: BQJobId
   ): F[Unit]
   def recordComplete(
-      jobStats: Option[JobStatistics],
+      jobStats: Option[BQJobStatistics],
       jobId: BQJobId
   ): F[Unit]
 }
@@ -45,7 +44,7 @@ object MetricsOps {
     ): F[Unit] = F.unit
 
     override def recordComplete(
-        jobStats: Option[JobStatistics],
+        jobStats: Option[BQJobStatistics],
         jobId: BQJobId
     ): F[Unit] = F.unit
   }

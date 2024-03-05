@@ -17,7 +17,7 @@ import scala.annotation.nowarn
 private[bigquery] object PartitionLoader {
   def loadGenericPartitions[F[_]: Concurrent](
       table: BQTableLike[Any],
-      client: BigQueryClient[F],
+      client: QueryClient[F],
       startPartition: StartPartition[Any],
       requireRowNums: Boolean = false
   ): F[Vector[(BQPartitionId[Any], PartitionMetadata)]] =
@@ -93,7 +93,7 @@ private[bigquery] object PartitionLoader {
     def apply[F[_]](
         table: BQTableLike[LocalDateTime],
         field: Ident,
-        client: BigQueryClient[F],
+        client: QueryClient[F],
         startPartition: StartPartition[LocalDateTime],
         requireRowNums: Boolean
     )(implicit
@@ -185,7 +185,7 @@ private[bigquery] object PartitionLoader {
     def apply[F[_]](
         table: BQTableLike[LocalDate],
         field: Ident,
-        client: BigQueryClient[F],
+        client: QueryClient[F],
         startPartition: StartPartition[LocalDate],
         requireRowNums: Boolean
     )(implicit
@@ -277,7 +277,7 @@ private[bigquery] object PartitionLoader {
     def apply[F[_]](
         table: BQTableLike[YearMonth],
         field: Ident,
-        client: BigQueryClient[F],
+        client: QueryClient[F],
         start: StartPartition[YearMonth],
         requireRowNums: Boolean
     )(implicit
@@ -370,7 +370,7 @@ private[bigquery] object PartitionLoader {
   object shard {
     def apply[F[_]](
         table: BQTableLike[LocalDate],
-        client: BigQueryClient[F],
+        client: QueryClient[F],
         startPartition: StartPartition[LocalDate]
     )(implicit
         F: Concurrent[F]
@@ -426,7 +426,7 @@ private[bigquery] object PartitionLoader {
     def apply[F[_]](
         table: BQTableLike[Long],
         field: Ident,
-        client: BigQueryClient[F],
+        client: QueryClient[F],
         startPartition: StartPartition[Long],
         requireRowNums: Boolean
     )(implicit
@@ -516,7 +516,7 @@ private[bigquery] object PartitionLoader {
   object unpartitioned {
     def apply[F[_]](
         table: BQTableLike[Unit],
-        client: BigQueryClient[F]
+        client: QueryClient[F]
     )(implicit
         F: Concurrent[F]
     ): F[Option[(BQPartitionId.NotPartitioned, PartitionMetadata)]] =

@@ -26,7 +26,7 @@ sealed trait BQTableLike[+P] {
 object BQTableLike {
   implicit class ExtensionMethods(private val table: BQTableLike[Any]) extends AnyVal {
     def loadGenericPartitions[F[_]: Concurrent](
-        client: BigQueryClient[F],
+        client: QueryClient[F],
         startPartition: StartPartition[Any],
         requireRowNums: Boolean = false
     ): F[Vector[(BQPartitionId[Any], PartitionMetadata)]] =
@@ -47,7 +47,7 @@ object BQTableLike {
       P.assertPartition(table, partition)
 
     def loadPartitions[F[_]](
-        client: BigQueryClient[F],
+        client: QueryClient[F],
         startPartition: StartPartition[P],
         requireRowNums: Boolean = false
     )(implicit
@@ -64,7 +64,7 @@ object BQTableLike {
       TableOps.unit.assertPartition(table, ())
 
     def loadPartition[F[_]: Concurrent](
-        client: BigQueryClient[F]
+        client: QueryClient[F]
     ): F[Option[(BQPartitionId[Unit], PartitionMetadata)]] =
       PartitionLoader.unpartitioned(table, client).widen
   }

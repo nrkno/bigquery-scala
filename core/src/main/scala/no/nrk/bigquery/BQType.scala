@@ -58,6 +58,11 @@ object BQType {
   val GEOGRAPHY: BQType =
     apply(BQField.Mode.REQUIRED, BQField.Type.GEOGRAPHY, Nil)
 
+  val INTERVAL: BQType =
+    apply(BQField.Mode.REQUIRED, BQField.Type.INTERVAL, Nil)
+  val JSON: BQType =
+    apply(BQField.Mode.REQUIRED, BQField.Type.JSON, Nil)
+
   def struct(subFields: (String, BQType)*): BQType =
     BQType(BQField.Mode.REQUIRED, BQField.Type.STRUCT, subFields.toList)
 

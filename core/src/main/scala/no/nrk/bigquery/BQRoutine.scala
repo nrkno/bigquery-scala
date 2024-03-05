@@ -74,6 +74,11 @@ case class TVF[+P, N <: Nat](
 
   def call(args: Sized[IndexedSeq[BQSqlFrag.Magnet], N]): BQSqlFrag.TableRef =
     BQSqlFrag.TableRef(BQAppliedTableValuedFunction(this, args.map(_.frag)))
+
+  def withTableType[NewParam](
+      tpe: BQPartitionType[NewParam]
+  ): TVF[NewParam, N] =
+    TVF(name, tpe, params, query, schema, description)
 }
 
 object TVF {
@@ -83,6 +88,8 @@ object TVF {
   }
 
   object TVFId {
+    implicit val bqShow: Show[TVFId] = Show.show(_.asFragment.asString)
+
     def apply(tableId: BQTableId): TVFId =
       TVFId(tableId.dataset, Ident(tableId.tableName))
   }
