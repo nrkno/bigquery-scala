@@ -159,7 +159,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
       "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       "io.chrisdavenport" %% "http4s-grpc-google-cloud-bigquerystorage-v1" % "3.0.0+0.0.6",
-      "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.3-a13d31c-v2-20240214-SNAPSHOT",
+      "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.3.0-v2-20240214",
       "org.http4s" %% "http4s-netty-client" % "0.5.12",
       "com.permutive" %% "gcp-auth" % "0.1.0"
     ),
