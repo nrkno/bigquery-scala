@@ -23,6 +23,9 @@ object JobHelper {
           JobLabels.unsafeFrom(job.configuration.flatMap(_.labels).getOrElse(Map.empty).toList*)
         ))
 
+  def toStats(jobId: BQJobId, stat: JobStatistics): Option[BQJobStatistics] =
+    toQueryStats(jobId, stat).orElse(toLoadStats(jobId, stat))
+
   def toQueryStats(jobId: BQJobId, stat: JobStatistics) =
     stat.query.map(qstat =>
       BQJobStatistics.Query(

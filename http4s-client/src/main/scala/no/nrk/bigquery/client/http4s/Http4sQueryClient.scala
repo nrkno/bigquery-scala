@@ -212,7 +212,7 @@ class Http4sQueryClient[F[_]] private (
       for {
         id <- JobHelper.jobId(job)
         stats <- job.statistics
-        qstats <- JobHelper.toQueryStats(id, stats)
+        qstats <- JobHelper.toStats(id, stats)
       } yield JobWithStats(job, qstats)
 
     OptionT(submitted)
