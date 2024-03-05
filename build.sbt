@@ -81,7 +81,8 @@ lazy val core = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
-      "org.apache.avro" % "avro" % "1.11.3",
+      ("org.apache.avro" % "avro" % "1.11.3").exclude("org.apache.commons", "commons-compress"),
+      "org.apache.commons" % "commons-compress" % "1.26.0",
       "com.lihaoyi" %% "sourcecode" % "0.3.1",
       "org.typelevel" %% "log4cats-slf4j" % "2.6.0",
       "io.circe" %% "circe-generic" % "0.14.6",
@@ -120,8 +121,13 @@ lazy val `google-client` = crossProject(JVMPlatform)
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
-      "com.google.cloud" % "google-cloud-bigquery" % "2.38.0",
-      "com.google.cloud" % "google-cloud-bigquerystorage" % "3.2.0"
+      ("com.google.cloud" % "google-cloud-bigquery" % "2.38.0")
+        .exclude("org.json", "json")
+        .exclude("com.google.guava", "guava"),
+      ("com.google.cloud" % "google-cloud-bigquerystorage" % "3.2.0")
+        .exclude("com.google.guava", "guava")
+        .exclude("org.json", "json"),
+      "com.google.guava" % "guava" % "33.0.0-jre" // is this really needed?
     ),
     Compile / doc / scalacOptions ++= Seq(
       "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
