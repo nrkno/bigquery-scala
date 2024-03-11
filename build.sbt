@@ -76,13 +76,13 @@ lazy val core = crossProject(JVMPlatform)
     name := "bigquery-core",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "2.10.0",
-      "org.typelevel" %% "cats-effect" % "3.5.3",
+      "org.typelevel" %% "cats-effect" % "3.5.4",
       "org.typelevel" %% "literally" % "1.1.0",
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       ("org.apache.avro" % "avro" % "1.11.3").exclude("org.apache.commons", "commons-compress"),
-      "org.apache.commons" % "commons-compress" % "1.26.0",
+      "org.apache.commons" % "commons-compress" % "1.26.1",
       "com.lihaoyi" %% "sourcecode" % "0.3.1",
       "org.typelevel" %% "log4cats-slf4j" % "2.6.0",
       "io.circe" %% "circe-generic" % "0.14.6",
@@ -126,7 +126,7 @@ lazy val `google-client` = crossProject(JVMPlatform)
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
-      addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.0"),
+      addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
       addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.3.1"),
       "com.google.guava" % "guava" % "33.0.0-jre"
     ),
@@ -174,7 +174,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
-      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.36.0",
+      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.37.0",
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
@@ -192,7 +192,7 @@ lazy val testing = crossProject(JVMPlatform)
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7",
-      "ch.qos.logback" % "logback-classic" % "1.2.13" % Test
+      "ch.qos.logback" % "logback-classic" % "1.5.3" % Test
     ),
     mimaBinaryIssueFilters := Nil
   )
