@@ -377,12 +377,17 @@ class Http4sQueryClient[F[_]] private (
 
   private def resumableUploadUri(projectId: ProjectId, job: Job): F[Uri] = {
     import org.http4s.headers.Location
+    val uploadUri = {
+      val base = jobsClient.baseUri
+      base.withPath(path"/upload".addSegments(base.path.segments)) / "projects"
+    }
 
     client
       .run(
         Request[F](
+          httpVersion = HttpVersion.`HTTP/2`,
           method = Method.POST,
-          uri = (uri"https://bigquery.googleapis.com/upload/bigquery/v2/projects" / projectId.value / "jobs")
+          uri = (uploadUri / projectId.value / "jobs")
             .withQueryParam("uploadType", "resumable")
         )
           .withEntity(job)
