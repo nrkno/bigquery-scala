@@ -18,7 +18,6 @@ object Http4sTestClient {
 
   def testClient: Resource[IO, QueryClient[IO]] =
     for {
-      client <- NettyClientBuilder[IO].withHttp2.resource
       clientDefaults <- Resource.eval(IO {
         val project = sys.env
           .get("BIGQUERY_DEFAULT_PROJECT")
@@ -30,6 +29,12 @@ object Http4sTestClient {
           .getOrElse(LocationId.US)
         BQClientDefaults(project, location)
       })
+      client <- testClient(clientDefaults)
+    } yield client
+
+  def testClient(defaults: BQClientDefaults): Resource[IO, QueryClient[IO]] =
+    for {
+      client <- NettyClientBuilder[IO].withHttp2.resource
       credentials <- Resource.eval(
         OptionT(IO(sys.env.get("BIGQUERY_SERVICE_ACCOUNT")))
           .semiflatMap { env =>
@@ -39,7 +44,7 @@ object Http4sTestClient {
 
       underlying <- Http4sBigQueryClient.resource[IO](
         client,
-        clientDefaults,
+        defaults,
         credentials
       )
     } yield underlying

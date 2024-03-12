@@ -30,6 +30,22 @@ object GoogleTestClient {
 
   def testClient: Resource[IO, QueryClient[IO]] =
     for {
+      clientDefaults <- Resource.eval(IO {
+        val project = sys.env
+          .get("BIGQUERY_DEFAULT_PROJECT")
+          .map(ProjectId.unsafeFromString)
+          .getOrElse(ProjectId.unsafeFromString("bigquery-public-data"))
+        val location = sys.env
+          .get("BIGQUERY_DEFAULT_LOCATION")
+          .map(LocationId.apply)
+          .getOrElse(LocationId.US)
+        BQClientDefaults(project, location)
+      })
+      client <- testClient(clientDefaults)
+    } yield client
+
+  def testClient(defaults: BQClientDefaults): Resource[IO, QueryClient[IO]] =
+    for {
       credentials <- Resource.eval(
         OptionT(IO(sys.env.get("BIGQUERY_SERVICE_ACCOUNT")))
           .semiflatMap(credentialsFromString)
@@ -37,7 +53,10 @@ object GoogleTestClient {
             IO.blocking(GoogleCredentials.getApplicationDefault)
           )
       )
-      underlying <- GoogleBigQueryClient.resource(credentials, MetricsOps.noop[IO])
+      underlying <- GoogleBigQueryClient.resource(
+        credentials,
+        MetricsOps.noop[IO],
+        clientConfig = Some(GoogleBigQueryClient.Config(QueryClient.PollConfig(), Some(defaults))))
     } yield underlying
 
 }

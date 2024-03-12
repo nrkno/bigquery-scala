@@ -14,7 +14,10 @@ import scala.collection.immutable.SortedMap
 
 object TableHelper {
   def toTableReference(tableId: BQTableId) =
-    TableReference(Some(tableId.dataset.project.value), Some(tableId.dataset.id), Some(tableId.tableName))
+    TableReference(
+      projectId = Some(tableId.dataset.project.value),
+      datasetId = Some(tableId.dataset.id),
+      tableId = Some(tableId.tableName))
 
   def fromTableReference(ref: TableReference) =
     (ref.projectId, ref.datasetId, ref.tableId).mapN((p, d, t) => s"$p.$d.$t").flatMap(BQTableId.fromString(_).toOption)

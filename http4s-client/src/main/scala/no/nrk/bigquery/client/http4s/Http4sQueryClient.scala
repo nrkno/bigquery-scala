@@ -29,7 +29,9 @@ import org.apache.avro.generic.{GenericDatumReader, GenericRecord}
 import org.apache.avro.io.DecoderFactory
 import org.http4s.*
 import org.http4s.client.Client
+import org.http4s.headers.`Content-Type`
 import org.http4s.syntax.literals.*
+import org.typelevel.ci.CIStringSyntax
 import org.typelevel.log4cats.LoggerFactory
 
 import java.util.UUID
@@ -257,6 +259,7 @@ class Http4sQueryClient[F[_]] private (
 
   def submitJob(jobId: BQJobId)(runRef: JobReference => F[Option[Job]]): F[Option[Job]] = {
     val project = jobId.projectId.getOrElse(defaults.projectId)
+    val location = jobId.locationId.getOrElse(defaults.locationId)
 
     val run: (JobReference) => F[Option[Job]] = { ref =>
       runRef(ref).flatMap {
@@ -265,8 +268,15 @@ class Http4sQueryClient[F[_]] private (
             .poll[Job](
               runningJob = job,
               retry = OptionT
-                .fromOption[F](job.id)
-                .semiflatMap(id => jobsClient.get(project.value, id))
+                .fromOption[F](job.jobReference.flatMap(_.jobId))
+                .flatMapF(id =>
+                  jobsClient
+                    .get(project.value, id, query = JobsClient.GetGetParams(location = Some(location.value)))
+                    .map(_.some)
+                    .recoverWith {
+                      case err: GoogleError if err.code.contains(Status.NotFound.code) =>
+                        F.pure(None)
+                    })
                 .value
             )
             .flatMap {
@@ -340,7 +350,8 @@ class Http4sQueryClient[F[_]] private (
             ))
           ))
       )
-      resumableUploadUri(jobSpec).flatMap(uri => upload(uri, stream, logStream, chunkSize))
+      resumableUploadUri(id.projectId.getOrElse(defaults.projectId), jobSpec).flatMap(uri =>
+        upload(uri, stream, logStream, chunkSize))
     }
     def toJobStats(job: Job) =
       for {
@@ -364,45 +375,66 @@ class Http4sQueryClient[F[_]] private (
     )
   }
 
-  private def resumableUploadUri(job: Job): F[Uri] = {
+  private def resumableUploadUri(projectId: ProjectId, job: Job): F[Uri] = {
     import org.http4s.headers.Location
 
     client
       .run(
         Request[F](
           method = Method.POST,
-          uri =
-            uri"https://www.googleapis.com/upload/bigquery/v2/projects/jobs".withQueryParam("uploadType", "resumable"))
+          uri = (uri"https://bigquery.googleapis.com/upload/bigquery/v2/projects" / projectId.value / "jobs")
+            .withQueryParam("uploadType", "resumable")
+        )
           .withEntity(job)
           .putHeaders("X-Upload-Content-Value" -> "application/octet-stream"))
       .use(res =>
         res.headers.get[Location] match {
           case Some(value) => F.pure(value.uri)
           case None =>
-            F.raiseError[Uri](
-              new IllegalStateException(
-                s"Not possible to create a upload uri for ${job.asJson.dropNullValues.noSpaces}"))
+            res
+              .as[GoogleError]
+              .attempt
+              .flatMap(err =>
+                F.raiseError[Uri](
+                  new IllegalStateException(
+                    s"Not possible to create a upload uri for ${job.asJson.dropNullValues.noSpaces}",
+                    err.merge)))
         })
   }
 
   private def upload[A: Encoder](uri: Uri, stream: Stream[F, A], logStream: Boolean, chunkSize: Int): F[Option[Job]] = {
-    import org.http4s.headers.{Range, `Content-Range`}
-
     val followRedirects = org.http4s.client.middleware
       .FollowRedirect(1)(client)
 
     def uploadChunk(chunk: Chunk[Byte], destOffset: Long): F[(Long, Option[Job])] = {
       val limit = destOffset + chunk.size
       val last = chunk.size < chunkSize
+
+      val range = {
+        val range = new StringBuilder("bytes ")
+        range.append(destOffset).append('-').append(limit - 1).append('/')
+        if (last) range.append(limit)
+        else range.append('*')
+        range.toString()
+      }
+
       followRedirects
         .run(
           Request[F](uri = uri, method = Method.PUT)
             .withBodyStream(Stream.chunk(chunk))
             .putHeaders(
-              `Content-Range`(RangeUnit.Bytes, Range.SubRange(destOffset, limit), if (last) Some(limit) else None)))
+              `Content-Type`(MediaType.application.`octet-stream`),
+              Header.Raw(ci"Content-Range", range)
+            ))
         .use { res =>
           if (last && res.status == Status.Ok) {
             res.as[Job].map(x => limit -> x.some)
+          } else if (res.status.responseClass == Status.ClientError) {
+            res
+              .as[GoogleError]
+              .attempt
+              .flatMap(err => F.raiseError(new IllegalStateException(s"Unable to upload to ${uri}", err.merge)))
+
           } else F.pure(limit -> none[Job])
         }
     }
