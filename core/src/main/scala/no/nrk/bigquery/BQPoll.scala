@@ -30,7 +30,6 @@ object BQPoll {
 
   trait FromJob[Job] {
     def reference(job: Job): BQJobId
-    def id(job: Job): Option[String]
     def toPoll(job: Job): BQPoll
   }
 
@@ -40,17 +39,18 @@ object BQPoll {
       def go(
           runningJob: Job,
           seenErrors: List[Throwable],
-          seenNotFinished: List[BQPoll.NotFinished]
+          seenNotFinished: List[BQPoll.NotFinished],
+          retryNotFoundCount: Int
       ): F[BQPoll.Finished[Job]] =
         fromJob.toPoll(runningJob) match {
           case x: BQPoll.Finished[?] => F.pure(x.asInstanceOf[BQPoll.Finished[Job]])
           case notFinished: BQPoll.NotFinished =>
-            val jobId = fromJob.id(runningJob)
+            val jobId = fromJob.reference(runningJob)
             val newSeenNotFinished = notFinished :: seenNotFinished
             val waitFor = fullJitter(config.baseDelay, seenErrors.length)
 
             logger.info(
-              s"sleeping ${waitFor.toMillis}ms before polling ${jobId.getOrElse("")}. Current status $notFinished"
+              s"sleeping ${waitFor.toMillis}ms before polling ${jobId.name}. Current status $notFinished"
             ) >> F.sleep(waitFor) >> retry.attempt
               .flatMap {
                 case Left(error) =>
@@ -62,17 +62,29 @@ object BQPoll {
                     logger.info(error)(
                       s"Network error while polling $jobId. Retrying"
                     ) >>
-                      go(runningJob, newSeenErrors, newSeenNotFinished)
+                      go(runningJob, newSeenErrors, newSeenNotFinished, retryNotFoundCount)
                   }
 
                 case Right(Some(runningJob)) =>
-                  go(runningJob, seenErrors, newSeenNotFinished)
+                  go(runningJob, seenErrors, newSeenNotFinished, retryNotFoundCount)
                 case Right(None) =>
-                  go(runningJob, seenErrors, seenNotFinished)
+                  val nextRetry = retryNotFoundCount + 1
+
+                  if (nextRetry >= config.maxRetryNotFound) {
+                    go(runningJob, seenErrors, seenNotFinished, nextRetry)
+                  } else {
+                    F.raiseError(
+                      BQExecutionException(
+                        fromJob.reference(runningJob),
+                        Some(BQError(message = Some(s"Exhaused retry for finding job with id ${jobId.name}"))),
+                        Nil
+                      )
+                    )
+                  }
               }
         }
 
-      F.sleep(config.maxDuration).race(go(runningJob, Nil, Nil)).flatMap {
+      F.sleep(config.maxDuration).race(go(runningJob, Nil, Nil, 0)).flatMap {
         case Left(_) =>
           F.raiseError(BQExecutionException(fromJob.reference(runningJob), None, Nil))
         case Right(finished) => F.pure(finished)

@@ -188,7 +188,8 @@ object QueryClient {
   case class PollConfig(
       baseDelay: FiniteDuration = 3.second,
       maxDuration: FiniteDuration = 20.minutes,
-      maxErrorsTolerated: Int = 10
+      maxErrorsTolerated: Int = 10,
+      maxRetryNotFound: Int = 5
   )
 
   type Aux[F[_], J] = QueryClient[F] {

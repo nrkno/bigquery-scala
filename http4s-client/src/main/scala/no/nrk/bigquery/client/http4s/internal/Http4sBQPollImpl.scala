@@ -14,9 +14,6 @@ private[client] object Http4sBQPollImpl {
     override def reference(job: Job): BQJobId =
       JobHelper.jobId(job).getOrElse(throw new IllegalStateException("Unable to get id from job"))
 
-    override def id(job: Job): Option[String] =
-      job.id
-
     override def toPoll(job: Job): BQPoll = {
       val maybeStatus: Option[JobStatus] = job.status
 
