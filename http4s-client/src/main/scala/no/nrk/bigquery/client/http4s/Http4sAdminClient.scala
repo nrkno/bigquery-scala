@@ -57,7 +57,7 @@ class Http4sAdminClient[F[_]] private (client: Client[F])(implicit F: Async[F])
   override def datasetsInProject(project: ProjectId): F[Vector[BQDataset]] =
     fs2.Stream
       .unfoldLoopEval(
-        DatasetsClient.ListGetParams(maxResults = Some(100))
+        DatasetsClient.ListParams(maxResults = Some(100))
       )(params =>
         datasetClient
           .list(project.value, query = params)
@@ -109,7 +109,7 @@ class Http4sAdminClient[F[_]] private (client: Client[F])(implicit F: Async[F])
   override def tablesInDataset(dataset: BQDataset.Ref): F[Vector[BQTableRef[Any]]] =
     fs2.Stream
       .unfoldLoopEval(
-        TablesClient.ListGetParams(maxResults = Some(100))
+        TablesClient.ListParams(maxResults = Some(100))
       )(params =>
         tableClient
           .list(dataset.project.value, dataset.id, query = params)
@@ -154,7 +154,7 @@ class Http4sAdminClient[F[_]] private (client: Client[F])(implicit F: Async[F])
   override def routinesInDataset(dataset: BQDataset.Ref): F[Vector[BQPersistentRoutine.Unknown]] =
     fs2.Stream
       .unfoldLoopEval(
-        RoutinesClient.ListGetParams(maxResults = Some(100))
+        RoutinesClient.ListParams(maxResults = Some(100))
       )(params =>
         routineClient
           .list(dataset.project.value, dataset.id, query = params)

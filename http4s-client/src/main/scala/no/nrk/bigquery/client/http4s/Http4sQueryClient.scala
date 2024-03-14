@@ -271,7 +271,7 @@ class Http4sQueryClient[F[_]] private (
                 .fromOption[F](job.jobReference.flatMap(_.jobId))
                 .flatMapF(id =>
                   jobsClient
-                    .get(project.value, id, query = JobsClient.GetGetParams(location = Some(location.value)))
+                    .get(project.value, id, query = JobsClient.GetParams(location = Some(location.value)))
                     .map(_.some)
                     .recoverWith {
                       case err: GoogleError if err.code.contains(Status.NotFound.code) =>
