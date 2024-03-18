@@ -145,7 +145,8 @@ object UDF {
       name: PersistentId,
       params: BQRoutine.Params[N],
       body: UDF.Body,
-      returnType: Option[BQType]
+      returnType: Option[BQType],
+      description: Option[String]
   ) extends UDF[UDFId.PersistentId, N]
       with BQPersistentRoutine[N, BQSqlFrag.Call] {
     def convertToTemporary: Temporary[N] =
@@ -179,9 +180,10 @@ object UDF {
       dataset: BQDataset.Ref,
       params: BQRoutine.Params[N],
       body: UDF.Body,
-      returnType: Option[BQType]
+      returnType: Option[BQType],
+      description: Option[String]
   ): Persistent[N] =
-    Persistent(UDFId.PersistentId(dataset, name), params, body, returnType)
+    Persistent(UDFId.PersistentId(dataset, name), params, body, returnType, description)
 
   def reference[N <: Nat](
       name: Ident,

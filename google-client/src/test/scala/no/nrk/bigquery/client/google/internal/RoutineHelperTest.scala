@@ -25,7 +25,9 @@ class RoutineUpdateOperationTest extends FunSuite {
       BQDataset.Ref(ProjectId("p1"), "ds1"),
       Params.empty,
       UDF.Body.Sql(bqfr"(1)"),
-      Some(BQType.INT64))
+      Some(BQType.INT64),
+      None
+    )
   private val routineId: RoutineId = RoutineId.of("p1", "ds1", "foo")
 
   test("should create when it does not exist") {
@@ -61,7 +63,8 @@ class RoutineUpdateOperationTest extends FunSuite {
             BQType.fromField(
               BQField.repeatedStruct("segments")(BQField("foo", BQField.Type.STRING, BQField.Mode.REQUIRED))))),
         UDF.Body.Sql(bqfr"(1)"),
-        Some(BQType.INT64)
+        Some(BQType.INT64),
+        None
       )
 
     val existingRoutine = RoutineHelper.toGoogle(udf, None)

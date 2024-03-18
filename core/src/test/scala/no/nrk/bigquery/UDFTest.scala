@@ -111,7 +111,8 @@ class UDFTest extends FunSuite {
         BQDataset.Ref(ProjectId("p1"), "ds1"),
         Params(Param("n", BQType.FLOAT64)),
         UDF.Body.Js("return n + 1", List("bucket/foo.js")),
-        Some(BQType.FLOAT64)
+        Some(BQType.FLOAT64),
+        Some("description")
       )
 
     assertEquals(bqfr"${udf(1d)}".asString, "`p1.ds1.fnName`(1.0)")
