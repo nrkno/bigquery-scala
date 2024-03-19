@@ -8,25 +8,13 @@ package no.nrk.bigquery
 
 import cats.data.OptionT
 import cats.effect.{IO, Resource}
-import com.google.auth.oauth2.{GoogleCredentials, ServiceAccountCredentials}
-import no.nrk.bigquery.client.google.GoogleBigQueryClient
-import no.nrk.bigquery.metrics.MetricsOps
+import com.permutive.gcp.auth.TokenProvider
+import no.nrk.bigquery.client.http4s.Http4sBigQueryClient
+import org.http4s.netty.client.NettyClientBuilder
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 
-import java.io.ByteArrayInputStream
-import java.nio.charset.StandardCharsets
-
-object GoogleTestClient {
+object Http4sTestClient {
   private implicit val loggerFactory: Slf4jFactory[IO] = Slf4jFactory.create[IO]
-
-  private def credentialsFromString(
-      str: String
-  ): IO[ServiceAccountCredentials] =
-    IO.blocking(
-      ServiceAccountCredentials.fromStream(
-        new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8))
-      )
-    )
 
   def testClient: Resource[IO, QueryClient[IO]] =
     for {
@@ -46,17 +34,19 @@ object GoogleTestClient {
 
   def testClient(defaults: BQClientDefaults): Resource[IO, QueryClient[IO]] =
     for {
+      client <- NettyClientBuilder[IO].withHttp2.resource
       credentials <- Resource.eval(
         OptionT(IO(sys.env.get("BIGQUERY_SERVICE_ACCOUNT")))
-          .semiflatMap(credentialsFromString)
-          .getOrElseF(
-            IO.blocking(GoogleCredentials.getApplicationDefault)
-          )
+          .semiflatMap { env =>
+            Http4sBigQueryClient.serviceAccountFromString[IO](env, client)
+          }
+          .getOrElseF(TokenProvider.userAccount[IO](client)))
+
+      underlying <- Http4sBigQueryClient.resource[IO](
+        client,
+        defaults,
+        credentials
       )
-      underlying <- GoogleBigQueryClient.resource(
-        credentials,
-        MetricsOps.noop[IO],
-        clientConfig = Some(GoogleBigQueryClient.Config(QueryClient.PollConfig(), Some(defaults))))
     } yield underlying
 
 }

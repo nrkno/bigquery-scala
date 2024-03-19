@@ -16,9 +16,6 @@ private[client] object GoogleBQPollImpl {
     override def reference(job: Job): BQJobId =
       GoogleTypeHelper.jobIdFromJob(job)
 
-    override def id(job: Job): Option[String] =
-      Option(job.getJobId).flatMap(j => Option(j.getJob))
-
     override def toPoll(job: Job): BQPoll = {
       val maybeStatus: Option[JobStatus] =
         Option(job.getStatus)

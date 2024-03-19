@@ -65,7 +65,17 @@ val commonSettings = Seq(
 lazy val root = tlCrossRootProject
   .settings(name := "bigquery-scala")
   .settings(commonSettings)
-  .aggregate(core, `google-client`, testing, prometheus, zetasql, codegen, codegenTests, `transfer-client`, docs)
+  .aggregate(
+    core,
+    `google-client`,
+    `http4s-client`,
+    testing,
+    prometheus,
+    zetasql,
+    codegen,
+    codegenTests,
+    `transfer-client`,
+    docs)
 
 lazy val core = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -136,6 +146,39 @@ lazy val `google-client` = crossProject(JVMPlatform)
     mimaBinaryIssueFilters := Nil
   )
 
+lazy val `http4s-client` = crossProject(JVMPlatform)
+  .withoutSuffixFor(JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("http4s-client"))
+  .dependsOn(core)
+  .settings(commonSettings)
+  .settings(
+    resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
+    name := "bigquery-http4s-client",
+    libraryDependencies ++= {
+      val binaryVersion = scalaBinaryVersion.value
+      Seq(
+        "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
+        "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
+        ("io.chrisdavenport" %% "http4s-grpc-google-cloud-bigquerystorage-v1" % "3.0.0+0.0.6")
+          .exclude("io.chrisdavenport", s"http4s-grpc_${binaryVersion}"),
+        ("io.chrisdavenport" %% "http4s-grpc" % "0.0.4")
+          .exclude("org.http4s", s"http4s-ember-server_${binaryVersion}")
+          .exclude("org.http4s", s"http4s-ember-client_${binaryVersion}")
+          .exclude("org.http4s", s"http4s-dsl_${binaryVersion}"),
+        // needed because of hard-link in http4s-grpc
+        // https://github.com/davenverse/http4s-grpc/pull/89
+        "org.http4s" %% "http4s-ember-core" % "0.23.25",
+        "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.4.0-v2-20240229",
+        "com.permutive" %% "gcp-auth" % "0.1.0"
+      )
+    },
+    Compile / doc / scalacOptions ++= Seq(
+      "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
+    ),
+    mimaBinaryIssueFilters := Nil
+  )
+
 lazy val prometheus = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
@@ -185,14 +228,15 @@ lazy val testing = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("testing"))
-  .dependsOn(core, `google-client` % Test)
+  .dependsOn(core, `google-client` % Test, `http4s-client` % Test)
   .settings(commonSettings)
   .settings(
     name := "bigquery-testing",
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7",
-      "ch.qos.logback" % "logback-classic" % "1.5.3" % Test
+      "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
+      "org.http4s" %% "http4s-netty-client" % "0.5.15"
     ),
     mimaBinaryIssueFilters := Nil
   )
