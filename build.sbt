@@ -169,7 +169,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
         // needed because of hard-link in http4s-grpc
         // https://github.com/davenverse/http4s-grpc/pull/89
         "org.http4s" %% "http4s-ember-core" % "0.23.25",
-        "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.3.0-10-1cda9bd-v2-20240229-SNAPSHOT",
+        "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.4.0-v2-20240229",
         "com.permutive" %% "gcp-auth" % "0.1.0"
       )
     },
