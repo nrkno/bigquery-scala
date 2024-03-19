@@ -59,8 +59,8 @@ object RoutineHelper {
         case "SQL" => UDF.Body.Sql(Option(routine.getBody).map(BQSqlFrag.Frag.apply).getOrElse(BQSqlFrag.Empty))
         case x => sys.error(s"Unknown language '$x' for function ${routine.getRoutineId}")
       },
-      returnType = Option(routine.getReturnType).flatMap(SchemaHelper.typeFrom)
-      // Option(routine.getDescription)
+      returnType = Option(routine.getReturnType).flatMap(SchemaHelper.typeFrom),
+      description = Option(routine.getDescription)
     )
 
   def fromReturnTableType(ttt: StandardSQLTableType): BQSchema = {
@@ -81,8 +81,8 @@ object RoutineHelper {
       case udf: UDF.Persistent[?] => createUdfRoutineInfo(udf, maybeExisting)
     }
 
-  private def createTvfRoutineInfo(tvf: TVF[Any, ?], maybeExisting: Option[RoutineInfo]) =
-    maybeExisting
+  private def createTvfRoutineInfo(tvf: TVF[Any, ?], maybeExisting: Option[RoutineInfo]) = {
+    val builder = maybeExisting
       .map(_.toBuilder)
       .getOrElse(RoutineInfo
         .newBuilder(toRoutineId(tvf.name)))
@@ -90,7 +90,8 @@ object RoutineHelper {
       .setArguments(tvf.params.unsized.toList.map(toRoutineArgs).asJava)
       .setLanguage("SQL")
       .setBody(tvf.query.asString)
-      // function not public in Builder: .setDescription(tvf.description.orNull)
+    RoutineInfoHelper
+      .setDescription(builder)(tvf.description)
       .setReturnTableType(
         StandardSQLTableType
           .newBuilder()
@@ -102,6 +103,7 @@ object RoutineHelper {
       )
       .setImportedLibraries(List.empty.asJava)
       .build()
+  }
 
   private def createUdfRoutineInfo(udf: UDF.Persistent[?], maybeExisting: Option[RoutineInfo]) = {
     val baseBuilder = maybeExisting
@@ -111,7 +113,7 @@ object RoutineHelper {
       .setRoutineType(UdfRoutineType)
       .setArguments(udf.params.unsized.map(toRoutineArgs).asJava)
       .setReturnType(udf.returnType.map(toSqlDataType).orNull)
-
+    RoutineInfoHelper.setDescription(baseBuilder)(udf.description)
     (udf.body match {
       case s: Body.Sql =>
         baseBuilder
