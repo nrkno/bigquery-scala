@@ -48,7 +48,7 @@ object RoutineHelper {
           description = description
         )
 
-      case UDF.Persistent(name, params, body, returnType) =>
+      case UDF.Persistent(name, params, body, returnType, description) =>
         val (lang, bodyString, imports) = body match {
           case UDF.Body.Sql(bd) => (RoutineLanguage.SQL, bd.asString, None)
           case UDF.Body.Js(bd, imports) => (RoutineLanguage.JAVASCRIPT, bd, Some(imports))
@@ -71,7 +71,8 @@ object RoutineHelper {
               .toList),
           definitionBody = Some(bodyString),
           importedLibraries = imports,
-          returnType = returnType.map(SchemaHelper.fromBQType)
+          returnType = returnType.map(SchemaHelper.fromBQType),
+          description = description
         )
     }
 
@@ -106,7 +107,8 @@ object RoutineHelper {
       id,
       ToSized(params),
       body,
-      routine.returnType.flatMap(SchemaHelper.toBQType)
+      routine.returnType.flatMap(SchemaHelper.toBQType),
+      routine.description
     )
 
   def toTVF(routine: Routine, ref: RoutineReference) =
