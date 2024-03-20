@@ -117,7 +117,9 @@ lazy val core = crossProject(JVMPlatform)
     Compile / doc / scalacOptions ++= Seq(
       "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
     ),
-    mimaBinaryIssueFilters := Nil
+    mimaBinaryIssueFilters := List(
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("no.nrk.bigquery.QueryClient.extract")
+    )
   )
 
 def addGoogleDep(module: ModuleID) =
