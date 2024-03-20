@@ -162,6 +162,8 @@ trait QueryClient[F[_]] {
       writeDisposition: Option[WriteDisposition]
   ): F[JobWithStats[Job]]
 
+  def extract(id: BQJobId, extract: BQTableExtract): F[BQJobStatistics.Extract]
+
   def dryRun(
       id: BQJobId,
       query: BQSqlFrag

@@ -122,6 +122,9 @@ object BigQueryTestClient {
         override def dryRun(id: BQJobId, query: BQSqlFrag): IO[BQJobStatistics.Query] =
           client.dryRun(id, query)
 
+        override def extract(id: BQJobId, extract: BQTableExtract): IO[BQJobStatistics.Extract] =
+          client.extract(id, extract)
+
         override def createTempTable[Param](
             table: BQTableDef.Table[Param],
             tmpDataset: BQDataset.Ref,

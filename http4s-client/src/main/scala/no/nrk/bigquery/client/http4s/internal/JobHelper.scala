@@ -60,4 +60,17 @@ object JobHelper {
         lstat.outputRows,
         lstat.badRecords
       ))
+
+  def toExtractStats(jobId: BQJobId, stat: JobStatistics) =
+    stat.extract.map(extract =>
+      BQJobStatistics.Extract(
+        jobId,
+        stat.creationTime.map(dur => Instant.ofEpochMilli(dur.toMillis)),
+        stat.startTime.map(dur => Instant.ofEpochMilli(dur.toMillis)),
+        stat.endTime.map(dur => Instant.ofEpochMilli(dur.toMillis)),
+        stat.numChildJobs.getOrElse(0L),
+        stat.parentJobId,
+        extract.inputBytes,
+        extract.destinationUriFileCounts
+      ))
 }
