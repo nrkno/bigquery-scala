@@ -170,7 +170,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
           .exclude("org.http4s", s"http4s-dsl_${binaryVersion}"),
         // needed because of hard-link in http4s-grpc
         // https://github.com/davenverse/http4s-grpc/pull/89
-        "org.http4s" %% "http4s-ember-core" % "0.23.25",
+        "org.http4s" %% "http4s-ember-core" % "0.23.26",
         "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.4.0-v2-20240229",
         "com.permutive" %% "gcp-auth" % "0.2.0"
       )
