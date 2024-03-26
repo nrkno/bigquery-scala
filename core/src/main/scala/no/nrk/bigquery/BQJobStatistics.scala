@@ -54,5 +54,16 @@ object BQJobStatistics {
   ) extends BQJobStatistics
 
   // Extract
+  final case class Extract(
+      jobId: BQJobId,
+      creationTime: Option[Instant],
+      startTime: Option[Instant],
+      endTime: Option[Instant],
+      numChildJobs: Long,
+      parentJobId: Option[String],
+      // extract stats
+      inputBytes: Option[Long],
+      destinationUriFileCounts: Option[List[Long]]
+  ) extends BQJobStatistics
   // Copy
 }
