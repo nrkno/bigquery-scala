@@ -119,9 +119,22 @@ object GoogleTypeHelper {
       Option(statistics.getBadRecords).map(_.longValue())
     )
 
+  def toExtractStats(jobId: BQJobId, statistics: JobStatistics.ExtractStatistics) =
+    BQJobStatistics.Extract(
+      jobId,
+      Option(statistics.getCreationTime).map(_.longValue()).map(Instant.ofEpochMilli),
+      Option(statistics.getStartTime).map(_.longValue()).map(Instant.ofEpochMilli),
+      Option(statistics.getEndTime).map(_.longValue()).map(Instant.ofEpochMilli),
+      Option(statistics.getNumChildJobs).map(_.longValue()).getOrElse(0),
+      Option(statistics.getParentJobId),
+      Option(statistics.getInputBytes).map(_.longValue()),
+      Option(statistics.getDestinationUriFileCounts).map(_.asScala.map(_.longValue()).toList)
+    )
+
   def toStats(jobId: BQJobId, statistics: JobStatistics): Option[BQJobStatistics] = statistics match {
     case statistics: JobStatistics.LoadStatistics => Some(toLoadStats(jobId, statistics))
     case statistics: JobStatistics.QueryStatistics => Some(toQueryStats(jobId, statistics))
+    case statistics: JobStatistics.ExtractStatistics => Some(toExtractStats(jobId, statistics))
     case _ => None
   }
 }

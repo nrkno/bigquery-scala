@@ -22,6 +22,7 @@ import com.google.cloud.bigquery.{Job as GoogleJob, Option as _, *}
 import com.google.cloud.http.HttpTransportOptions
 import fs2.{Chunk, Stream}
 import io.circe.Encoder
+import no.nrk.bigquery.BQTableExtract.Format
 import no.nrk.bigquery.client.google.internal.GoogleTypeHelper.*
 import no.nrk.bigquery.client.google.internal.{
   GoogleTypeHelper,
@@ -316,8 +317,14 @@ class GoogleBigQueryClient[F[_]](
     */
   def submitJob(jobId: BQJobId)(
       runJob: JobId => F[Option[Job]]
-  ): F[Option[Job]] = {
-    val loggedJob: JobId => F[Option[JobWithStats[Job]]] = id =>
+  ): F[Option[Job]] =
+    submitJobWithPoller(jobId)(runJob)(poller)
+
+  private def submitJobWithPoller(jobId: BQJobId)(
+      runJob: JobId => F[Option[Job]]
+  )(poller: BQPoll.Poller[F]): F[Option[Job]] = {
+
+    def loggedJob(id: JobId): F[Option[JobWithStats[Job]]] =
       runJob(id).flatMap {
         case Some(runningJob) =>
           val logged: F[JobWithStats[Job]] =
@@ -351,12 +358,37 @@ class GoogleBigQueryClient[F[_]](
           F.pure(None)
       }
 
-    freshJobId(jobId)
-      .flatMap(id =>
-        BQMetrics[F, Job](
-          metricOps,
-          jobId
-        )(loggedJob(id)))
+    freshJobId(jobId).flatMap(id => BQMetrics[F, Job](metricOps, jobId)(loggedJob(id)))
+  }
+
+  override def extract(jobId: BQJobId, extract: BQTableExtract): F[BQJobStatistics.Extract] = {
+    def submit(id: JobId) = {
+      val builder = ExtractJobConfiguration
+        .newBuilder(extract.source.underlying, extract.urls.map(_.value).asJava)
+        .setFormat(extract.format.value)
+        .setCompression(extract.compression.value)
+      extract.timeout.foreach(duration => builder.setJobTimeoutMs(duration.toMillis))
+
+      extract.format match {
+        case Format.CSV(delimiter, printHeader) =>
+          builder.setFieldDelimiter(delimiter).setPrintHeader(printHeader)
+        case Format.AVRO(logicalTypes) => builder.setUseAvroLogicalTypes(logicalTypes)
+        case _ => ()
+      }
+
+      runWithClient(_.create(JobInfo.of(id, builder.build()))).map(_.some)
+    }
+
+    submitJobWithPoller(jobId)(submit)(
+      new BQPoll.Poller[F](config.poll.copy(maxDuration = extract.timeout.getOrElse(config.poll.maxDuration)))
+    ).flatMap {
+      case Some(job) =>
+        F.pure(toExtractStats(jobIdFromJob(job), job.getStatistics[JobStatistics.ExtractStatistics]))
+      case None =>
+        F.raiseError(
+          new Exception(s"Unexpected: got no job after submitting ${jobId.name}")
+        )
+    }
   }
 
   override def getTable(tableId: BQTableId): F[Option[BQTableDef[Any]]] =
