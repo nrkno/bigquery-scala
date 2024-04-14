@@ -237,7 +237,7 @@ lazy val testing = crossProject(JVMPlatform)
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7",
-      "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
+      "ch.qos.logback" % "logback-classic" % "1.5.5" % Test,
       "org.http4s" %% "http4s-netty-client" % "0.5.15"
     ),
     mimaBinaryIssueFilters := Nil
