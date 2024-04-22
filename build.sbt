@@ -30,12 +30,13 @@ ThisBuild / githubWorkflowBuild := {
   val list = (ThisBuild / githubWorkflowBuild).value
   list.collect {
     case step: WorkflowStep.Sbt if step.name.contains("Test") =>
-      step.copy(env = Map(
-        "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}",
-        "BIGQUERY_DEFAULT_PROJECT" -> "${{secrets.BIGQUERY_DEFAULT_PROJECT}}",
-        "BIGQUERY_DEFAULT_LOCATION" -> "${{secrets.BIGQUERY_DEFAULT_LOCATION}}",
-        "ASSERT_CURRENT_GENERATED_FILES" -> "1"
-      ))
+      step.withEnv(
+        Map(
+          "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}",
+          "BIGQUERY_DEFAULT_PROJECT" -> "${{secrets.BIGQUERY_DEFAULT_PROJECT}}",
+          "BIGQUERY_DEFAULT_LOCATION" -> "${{secrets.BIGQUERY_DEFAULT_LOCATION}}",
+          "ASSERT_CURRENT_GENERATED_FILES" -> "1"
+        ))
     case s => s
   }
 }
