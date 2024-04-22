@@ -252,7 +252,7 @@ lazy val codegen = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-codegen",
     libraryDependencies ++= Seq(
-      "org.apache.commons" % "commons-text" % "1.11.0"
+      "org.apache.commons" % "commons-text" % "1.12.0"
     ),
     mimaBinaryIssueFilters := Nil
   )
