@@ -195,19 +195,33 @@ lazy val prometheus = crossProject(JVMPlatform)
     )
   )
 
+def addZetaDep(module: ModuleID) =
+  module.exclude("com.google.protobuf", "protobuf-javalite").exclude("io.grpc", "*").exclude("io.netty", "*")
+
 lazy val zetasql = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
-  .crossType(CrossType.Pure)
+  .crossType(CrossType.Full)
   .in(file("zetasql"))
   .settings(commonSettings)
   .dependsOn(core)
+  .enablePlugins(Antlr4Plugin)
   .settings(
     name := "bigquery-zetasql",
     libraryDependencies ++= Seq(
-      "com.google.zetasql.toolkit" % "zetasql-toolkit-bigquery" % "0.4.1",
+      // "com.google.zetasql.toolkit" % "zetasql-toolkit-bigquery" % "0.4.1",
+      addZetaDep("com.google.zetasql" % "zetasql-client" % "2024.03.1"),
+      addZetaDep("com.google.zetasql" % "zetasql-types" % "2024.03.1"),
+      addZetaDep("com.google.zetasql" % "zetasql-jni-channel" % "2024.03.1"),
+      "io.netty" % "netty-transport" % "4.1.109.Final",
+      "io.netty" % "netty-codec-http2" % "4.1.109.Final",
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
+    compileOrder := CompileOrder.JavaThenScala,
+    Compile / javacOptions -= "-Werror",
+    Compile / doc / sources := Nil,
+    headerSources / excludeFilter := HiddenFileFilter || "*.java",
+    Antlr4 / antlr4PackageName := Some("com.google.zetasql.toolkit.catalog.typeparser"),
     mimaBinaryIssueFilters := Nil
   )
 
