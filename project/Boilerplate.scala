@@ -1,3 +1,20 @@
+/*
+ * Copyright 2020 NRK
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/**
+ * Generate a boilerplate class that would be tedious to write and maintain by hand.
+ *
+ * Copied, with some modifications, from
+ * [[https://github.com/circe/circe/blob/series/0.14.x/project/Boilerplate.scala circe]].
+ *
+ * @author Miles Sabin
+ * @author Kevin Wright
+ */
+
+
 import sbt.*
 
 import java.io.File
