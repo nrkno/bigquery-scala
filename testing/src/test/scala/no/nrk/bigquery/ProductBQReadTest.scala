@@ -10,13 +10,13 @@ import no.nrk.bigquery.syntax.bqShowInterpolator
 import no.nrk.bigquery.testing.BQSmokeTest
 
 class ProductBQReadTest extends BQSmokeTest(Http4sTestClient.testClient) {
-  case class Nested(a: String, b: Long)
+  case class SubStructure(a: String, b: Long)
 
-  object Nested {
-    implicit val bqRead: BQRead[Nested] = BQRead.derived
+  object SubStructure {
+    implicit val bqRead: BQRead[SubStructure] = BQRead.derived
   }
 
-  case class TestCase(num: String, nested: List[Nested])
+  case class TestCase(num: String, subs: List[SubStructure])
 
   object TestCase {
     implicit val bqRead: BQRead[TestCase] =
