@@ -75,7 +75,8 @@ lazy val root = tlCrossRootProject
     codegen,
     codegenTests,
     `transfer-client`,
-    docs)
+    docs
+  )
 
 lazy val core = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)

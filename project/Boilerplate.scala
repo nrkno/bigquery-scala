@@ -19,30 +19,12 @@ object Boilerplate {
    * As a side-effect, it actually generates them...
    */
   def gen(dir: File): Seq[File] = {
-//    val templates = scalaBinaryVersion match {
-//      case "2.12" => templates212
-//      case "3"    => templates213
-//      case "2.13" => templates213
-//    }
-//    templates.map { template =>
     val template = GenProductBqRead
     val tgtFile = template.filename(dir)
+    print(tgtFile.toString)
     IO.write(tgtFile, template.body)
     Seq(tgtFile)
-//    }
   }
-
-//  /**
-//   * Return a sequence of the generated test files.
-//   *
-//   * As a side-effect, it actually generates them...
-//   */
-//  def genTests(dir: File): Seq[File] = testTemplates.map { template =>
-//    val tgtFile = template.filename(dir)
-//    IO.write(tgtFile, template.body)
-//    tgtFile
-//  }
-
 
   val header = "// auto-generated boilerplate"
   val maxArity = 22
