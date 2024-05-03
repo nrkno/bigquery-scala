@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: MIT
  */
 
-/**
- * Generate a boilerplate class that would be tedious to write and maintain by hand.
- *
- * Copied, with some modifications, from
- * [[https://github.com/circe/circe/blob/series/0.14.x/project/Boilerplate.scala circe]].
- *
- * @author Miles Sabin
- * @author Kevin Wright
- */
-
+/** Generate a boilerplate class that would be tedious to write and maintain by hand.
+  *
+  * Copied, with some modifications, from
+  * [[https://github.com/circe/circe/blob/series/0.14.x/project/Boilerplate.scala circe]].
+  *
+  * @author
+  *   Miles Sabin
+  * @author
+  *   Kevin Wright
+  */
 
 import sbt.*
 
@@ -30,11 +30,11 @@ object Boilerplate {
       trimmedLines.mkString("\n")
     }
   }
-  /**
-   * Return a sequence of the generated files.
-   *
-   * As a side-effect, it actually generates them...
-   */
+
+  /** Return a sequence of the generated files.
+    *
+    * As a side-effect, it actually generates them...
+    */
   def gen(dir: File): Seq[File] = {
     val template = GenProductBqRead
     val tgtFile = template.filename(dir)
