@@ -23,7 +23,7 @@ class ProductBQReadTest extends BQSmokeTest(Http4sTestClient.testClient) {
       BQRead.forProduct2("numberOfTests", "tests")((n, tests) => ComplexType(n, tests))
   }
 
-  bqTypeCheckTest("nested structure") {
+  bqTypeWithNameCheckTest("nested structure") {
     BQQuery[ComplexType](
       bqsql"""SELECT * FROM UNNEST(ARRAY<STRUCT<numberOfTests STRING, tests ARRAY<STRUCT<a STRING, b INT64>>>>[("a", [("b", 10), ("c", 11)])])"""
     )
