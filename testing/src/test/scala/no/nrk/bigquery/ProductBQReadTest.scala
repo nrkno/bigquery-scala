@@ -19,7 +19,8 @@ class ProductBQReadTest extends BQSmokeTest(Http4sTestClient.testClient) {
   case class TestCase(num: String, nested: List[Nested])
 
   object TestCase {
-    implicit val bqRead: BQRead[TestCase] = BQRead.forProduct2("numberOfTests", "tests")((n, tests) => TestCase(n, tests))
+    implicit val bqRead: BQRead[TestCase] =
+      BQRead.forProduct2("numberOfTests", "tests")((n, tests) => TestCase(n, tests))
   }
 
   bqTypeCheckTest("nested structure") {
