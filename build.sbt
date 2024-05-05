@@ -141,7 +141,7 @@ lazy val `google-client` = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
       addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.5.0"),
-      "com.google.guava" % "guava" % "33.1.0-jre"
+      "com.google.guava" % "guava" % "33.2.0-jre"
     ),
     Compile / doc / scalacOptions ++= Seq(
       "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
