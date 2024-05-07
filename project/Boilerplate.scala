@@ -74,7 +74,7 @@ object Boilerplate {
       val instances = synTypes.map(tpe => s"bqRead$tpe: BQRead[$tpe]").mkString(", ")
       val memberNames = synTypes.map(tpe => s"name$tpe: String").mkString(", ")
       val fieldTypes = synTypes.map(tpe => s"name$tpe -> bqRead$tpe.bqType").mkString(", ")
-      val getFields = (0 until arity).map(n => s"getField[A$n]($n)").mkString(", ")
+      val getNamedFields = synTypes.map(tpe => s"getField[$tpe](name$tpe)").mkString(", ")
 
       block"""
         |package no.nrk.bigquery
@@ -98,9 +98,9 @@ object Boilerplate {
         -      override def read(transportSchema: Schema, value: Any): Target =
         -        value match {
         -          case coll: GenericRecord =>
-        -            val fields = firstNotNullable(transportSchema).getOrElse(transportSchema).getFields
-        -            def getField[A: BQRead](index: Int) : A = implicitly[BQRead[A]].read(fields.get(index).schema(), coll.get(index))
-        -            f($getFields)
+        -            val schema = firstNotNullable(transportSchema).getOrElse(transportSchema)
+        -            def getField[A: BQRead](name: String) : A = implicitly[BQRead[A]].read(schema.getField(name).schema(), coll.get(name))
+        -            f($getNamedFields)
         -          case other => sys.error(s"Unexpected: $${other.getClass.getSimpleName} $$other . Schema from BQ: $$transportSchema")
         -        }
         -    }
