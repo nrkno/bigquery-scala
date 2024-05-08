@@ -12,7 +12,6 @@ import no.nrk.bigquery.syntax.*
 import fs2.Stream
 
 import java.time.{Instant, LocalDate, LocalDateTime, YearMonth}
-import scala.annotation.nowarn
 
 private[bigquery] object PartitionLoader {
   def loadGenericPartitions[F[_]: Concurrent](
@@ -587,7 +586,6 @@ private[bigquery] object PartitionLoader {
                |ORDER BY 1 DESC""".stripMargin
       }
 
-    @nowarn
     def withRowCountFromTableData[P: BQRead](
         table: BQTableLike[Unit],
         inRange: BQSqlFrag,

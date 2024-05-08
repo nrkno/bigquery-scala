@@ -10,7 +10,6 @@ import magnolia1.{CaseClass, Magnolia}
 
 import org.apache.avro
 import org.apache.avro.generic.GenericRecord
-import scala.annotation.nowarn
 
 private[bigquery] trait BQReadCompat { self: BQRead.type =>
   // magnolia automatic derivation begin
@@ -50,7 +49,6 @@ private[bigquery] trait BQReadCompat { self: BQRead.type =>
   def derived[T]: BQRead[T] = macro Magnolia.gen[T]
   // magnolia automatic derivation end
 
-  @nowarn("cat=unused")
   implicit def convertsTuple[A: BQRead, B: BQRead]: BQRead[(A, B)] =
     derived[(A, B)]
 
