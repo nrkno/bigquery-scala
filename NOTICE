@@ -1,15 +1,3 @@
 bigquery
 Copyright 2020 NRK
 Licensed under MIT (see LICENSE)
-
-zetasql/src/jvm/java
-Copyright Google Inc
-Licensed under Apache 2.0
-
-zetasql/src/jvm/antlr4
-Copyright Google Inc
-Licensed under Apache 2.0
-
-project/src/main/scala/com/simplytyped
-Copyright https://github.com/ihji
-Licensed under Apache 2.0
