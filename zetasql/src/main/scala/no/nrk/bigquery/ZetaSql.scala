@@ -11,25 +11,11 @@ import cats.effect.Sync
 import com.google.common.collect.ImmutableList
 import com.google.zetasql.ZetaSQLFunctions.SignatureArgumentKind
 import no.nrk.bigquery.syntax.*
-import com.google.zetasql.{
-  AnalyzerOptions,
-  FunctionArgumentType,
-  FunctionSignature,
-  ParseLocationRange,
-  Parser,
-  SimpleColumn,
-  SimpleTable,
-  SqlException,
-  StructType,
-  TVFRelation,
-  Type,
-  TypeFactory
-}
+import com.google.zetasql.{AnalyzerOptions, FunctionArgumentType, FunctionSignature, LanguageOptions, ParseLocationRange, Parser, SimpleColumn, SimpleTable, SqlException, StructType, TVFRelation, Type, TypeFactory}
 import com.google.zetasql.ZetaSQLType.TypeKind
 import com.google.zetasql.resolvedast.ResolvedCreateStatementEnums.{CreateMode, CreateScope}
 import com.google.zetasql.resolvedast.ResolvedNodes
 import com.google.zetasql.toolkit.catalog.basic.BasicCatalogWrapper
-import com.google.zetasql.toolkit.options.BigQueryLanguageOptions
 import com.google.zetasql.parser.{ASTNodes, ParseTreeVisitor}
 import com.google.zetasql.toolkit.catalog.TVFInfo
 import com.google.zetasql.toolkit.{AnalysisException, AnalyzedStatement, ZetaSQLToolkitAnalyzer}
@@ -46,7 +32,7 @@ class ZetaSql[F[_]](implicit F: Sync[F]) {
 
   def parseScript(frag: BQSqlFrag): F[Either[SqlException, ASTNodes.ASTScript]] =
     F.interruptible {
-      val options = BigQueryLanguageOptions.get()
+      val options = new LanguageOptions().enableMaximumLanguageFeatures()
 
       try
         Right(Parser.parseScript(frag.asString, options))
@@ -174,7 +160,7 @@ class ZetaSql[F[_]](implicit F: Sync[F]) {
       val catalog = toCatalog(tables*)
       val rendered = frag.asString
 
-      val options = BigQueryLanguageOptions.get()
+      val options = new LanguageOptions().enableMaximumLanguageFeatures()
       val analyzerOptions = new AnalyzerOptions
       analyzerOptions.setLanguageOptions(options)
       analyzerOptions.setPreserveColumnAliases(true)

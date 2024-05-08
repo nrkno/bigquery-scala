@@ -137,7 +137,7 @@ class ZetaTest extends munit.CatsEffectSuite {
   }
 
   test("parse then build analysis with tvf") {
-    val query = """select a from `com-example.example.tvftest`(current_date)"""
+    val query = """select a from `com-example.example.tvftest`(current_date())"""
 
     val expected = tvf.schema.fields.map(_.recursivelyNullable.withoutDescription)
 
