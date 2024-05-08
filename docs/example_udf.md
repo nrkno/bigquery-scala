@@ -38,8 +38,7 @@ object MyPersistentSQLUdfs {
     dataset,
     BQRoutine.Params(BQRoutine.Param("n", BQType.FLOAT64)),
     UDF.Body.Sql(bqfr"""(n + 1)"""),
-    Some(BQType.FLOAT64),
-    None
+    Some(BQType.FLOAT64)
   )
 
 }

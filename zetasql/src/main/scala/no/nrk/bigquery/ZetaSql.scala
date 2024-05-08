@@ -15,7 +15,6 @@ import com.google.zetasql.{
   AnalyzerOptions,
   FunctionArgumentType,
   FunctionSignature,
-  LanguageOptions,
   ParseLocationRange,
   Parser,
   SimpleColumn,
@@ -30,6 +29,7 @@ import com.google.zetasql.ZetaSQLType.TypeKind
 import com.google.zetasql.resolvedast.ResolvedCreateStatementEnums.{CreateMode, CreateScope}
 import com.google.zetasql.resolvedast.ResolvedNodes
 import com.google.zetasql.toolkit.catalog.basic.BasicCatalogWrapper
+import com.google.zetasql.toolkit.options.BigQueryLanguageOptions
 import com.google.zetasql.parser.{ASTNodes, ParseTreeVisitor}
 import com.google.zetasql.toolkit.catalog.TVFInfo
 import com.google.zetasql.toolkit.{AnalysisException, AnalyzedStatement, ZetaSQLToolkitAnalyzer}
@@ -46,7 +46,7 @@ class ZetaSql[F[_]](implicit F: Sync[F]) {
 
   def parseScript(frag: BQSqlFrag): F[Either[SqlException, ASTNodes.ASTScript]] =
     F.interruptible {
-      val options = new LanguageOptions().enableMaximumLanguageFeatures()
+      val options = BigQueryLanguageOptions.get()
 
       try
         Right(Parser.parseScript(frag.asString, options))
@@ -174,7 +174,7 @@ class ZetaSql[F[_]](implicit F: Sync[F]) {
       val catalog = toCatalog(tables*)
       val rendered = frag.asString
 
-      val options = new LanguageOptions().enableMaximumLanguageFeatures()
+      val options = BigQueryLanguageOptions.get()
       val analyzerOptions = new AnalyzerOptions
       analyzerOptions.setLanguageOptions(options)
       analyzerOptions.setPreserveColumnAliases(true)
