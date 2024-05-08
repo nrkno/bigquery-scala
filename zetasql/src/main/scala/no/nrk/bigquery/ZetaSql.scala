@@ -11,7 +11,21 @@ import cats.effect.Sync
 import com.google.common.collect.ImmutableList
 import com.google.zetasql.ZetaSQLFunctions.SignatureArgumentKind
 import no.nrk.bigquery.syntax.*
-import com.google.zetasql.{AnalyzerOptions, FunctionArgumentType, FunctionSignature, LanguageOptions, ParseLocationRange, Parser, SimpleColumn, SimpleTable, SqlException, StructType, TVFRelation, Type, TypeFactory}
+import com.google.zetasql.{
+  AnalyzerOptions,
+  FunctionArgumentType,
+  FunctionSignature,
+  LanguageOptions,
+  ParseLocationRange,
+  Parser,
+  SimpleColumn,
+  SimpleTable,
+  SqlException,
+  StructType,
+  TVFRelation,
+  Type,
+  TypeFactory
+}
 import com.google.zetasql.ZetaSQLType.TypeKind
 import com.google.zetasql.resolvedast.ResolvedCreateStatementEnums.{CreateMode, CreateScope}
 import com.google.zetasql.resolvedast.ResolvedNodes
