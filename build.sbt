@@ -41,7 +41,7 @@ ThisBuild / githubWorkflowBuild := {
   }
 }
 
-val Scala213 = "2.13.13"
+val Scala213 = "2.13.14"
 ThisBuild / crossScalaVersions := Seq(Scala213, "3.3.3")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 ThisBuild / tlVersionIntroduced := Map(
@@ -140,7 +140,7 @@ lazy val `google-client` = crossProject(JVMPlatform)
       "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
-      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.5.0"),
+      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.5.1"),
       "com.google.guava" % "guava" % "33.2.0-jre"
     ),
     Compile / doc / scalacOptions ++= Seq(
@@ -204,7 +204,7 @@ lazy val zetasql = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-zetasql",
     libraryDependencies ++= Seq(
-      ("com.google.zetasql.toolkit" % "zetasql-toolkit-core" % "0.5.0")
+      ("com.google.zetasql.toolkit" % "zetasql-toolkit-core" % "0.5.1")
         .exclude("com.google.cloud", "google-cloud-spanner"),
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
@@ -221,7 +221,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
-      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.42.0",
+      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.43.0",
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
