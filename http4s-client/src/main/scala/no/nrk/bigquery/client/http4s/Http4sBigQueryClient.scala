@@ -69,6 +69,9 @@ class Http4sBigQueryClient[F[_]: Async: LoggerFactory](
       writeDisposition: Option[WriteDisposition]): F[JobWithStats[Job]] =
     queryClient.submitQuery(id, query, destination, writeDisposition)
 
+  override def extract(id: BQJobId, extract: BQTableExtract): F[BQJobStatistics.Extract] =
+    queryClient.extract(id, extract)
+
   override def dryRun(id: BQJobId, query: BQSqlFrag): F[BQJobStatistics.Query] =
     queryClient.dryRun(id, query)
 

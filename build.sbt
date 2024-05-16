@@ -1,7 +1,7 @@
 import com.typesafe.tools.mima.core.*
 
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
-ThisBuild / tlBaseVersion := "0.17" // your current series x.y
+ThisBuild / tlBaseVersion := "0.18" // your current series x.y
 
 ThisBuild / organization := "no.nrk.bigquery"
 ThisBuild / organizationName := "NRK"
@@ -30,17 +30,18 @@ ThisBuild / githubWorkflowBuild := {
   val list = (ThisBuild / githubWorkflowBuild).value
   list.collect {
     case step: WorkflowStep.Sbt if step.name.contains("Test") =>
-      step.copy(env = Map(
-        "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}",
-        "BIGQUERY_DEFAULT_PROJECT" -> "${{secrets.BIGQUERY_DEFAULT_PROJECT}}",
-        "BIGQUERY_DEFAULT_LOCATION" -> "${{secrets.BIGQUERY_DEFAULT_LOCATION}}",
-        "ASSERT_CURRENT_GENERATED_FILES" -> "1"
-      ))
+      step.withEnv(
+        Map(
+          "BIGQUERY_SERVICE_ACCOUNT" -> "${{secrets.BIGQUERY_SERVICE_ACCOUNT}}",
+          "BIGQUERY_DEFAULT_PROJECT" -> "${{secrets.BIGQUERY_DEFAULT_PROJECT}}",
+          "BIGQUERY_DEFAULT_LOCATION" -> "${{secrets.BIGQUERY_DEFAULT_LOCATION}}",
+          "ASSERT_CURRENT_GENERATED_FILES" -> "1"
+        ))
     case s => s
   }
 }
 
-val Scala213 = "2.13.13"
+val Scala213 = "2.13.14"
 ThisBuild / crossScalaVersions := Seq(Scala213, "3.3.3")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 ThisBuild / tlVersionIntroduced := Map(
@@ -94,23 +95,23 @@ lazy val core = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       ("org.apache.avro" % "avro" % "1.11.3").exclude("org.apache.commons", "commons-compress"),
       "org.apache.commons" % "commons-compress" % "1.26.1",
-      "com.lihaoyi" %% "sourcecode" % "0.3.1",
-      "org.typelevel" %% "log4cats-slf4j" % "2.6.0",
-      "io.circe" %% "circe-generic" % "0.14.6",
-      "io.circe" %% "circe-parser" % "0.14.6",
-      "co.fs2" %% "fs2-core" % "3.9.4",
-      "co.fs2" %% "fs2-io" % "3.9.4",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.11.0"
+      "com.lihaoyi" %% "sourcecode" % "0.4.1",
+      "org.typelevel" %% "log4cats-slf4j" % "2.7.0",
+      "io.circe" %% "circe-generic" % "0.14.7",
+      "io.circe" %% "circe-parser" % "0.14.7",
+      "co.fs2" %% "fs2-core" % "3.10.2",
+      "co.fs2" %% "fs2-io" % "3.10.2",
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.12.0"
     ),
     libraryDependencies ++= {
       if (scalaVersion.value.startsWith("3")) {
         Seq(
-          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.4"
+          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.6"
         )
       } else {
         // scala2
         Seq(
-          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.8",
+          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.9",
           "org.scala-lang" % "scala-reflect" % scalaVersion.value
         )
       }
@@ -119,7 +120,9 @@ lazy val core = crossProject(JVMPlatform)
     Compile / doc / scalacOptions ++= Seq(
       "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
     ),
-    mimaBinaryIssueFilters := Nil
+    mimaBinaryIssueFilters := List(
+      ProblemFilters.exclude[ReversedMissingMethodProblem]("no.nrk.bigquery.QueryClient.extract")
+    )
   )
 
 def addGoogleDep(module: ModuleID) =
@@ -139,8 +142,8 @@ lazy val `google-client` = crossProject(JVMPlatform)
       "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
-      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.3.1"),
-      "com.google.guava" % "guava" % "33.1.0-jre"
+      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.5.1"),
+      "com.google.guava" % "guava" % "33.2.0-jre"
     ),
     Compile / doc / scalacOptions ++= Seq(
       "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
@@ -170,9 +173,9 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
           .exclude("org.http4s", s"http4s-dsl_${binaryVersion}"),
         // needed because of hard-link in http4s-grpc
         // https://github.com/davenverse/http4s-grpc/pull/89
-        "org.http4s" %% "http4s-ember-core" % "0.23.25",
-        "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.4.0-v2-20240229",
-        "com.permutive" %% "gcp-auth" % "0.1.0"
+        "org.http4s" %% "http4s-ember-core" % "0.23.27",
+        "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.4.1-v2-20240323",
+        "com.permutive" %% "gcp-auth" % "0.2.0"
       )
     },
     Compile / doc / scalacOptions ++= Seq(
@@ -203,7 +206,8 @@ lazy val zetasql = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-zetasql",
     libraryDependencies ++= Seq(
-      "com.google.zetasql.toolkit" % "zetasql-toolkit-bigquery" % "0.4.1",
+      ("com.google.zetasql.toolkit" % "zetasql-toolkit-core" % "0.5.1")
+        .exclude("com.google.cloud", "google-cloud-spanner"),
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
@@ -219,7 +223,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
-      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.37.0",
+      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.43.0",
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
@@ -238,7 +242,7 @@ lazy val testing = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7",
       "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
-      "org.http4s" %% "http4s-netty-client" % "0.5.15"
+      "org.http4s" %% "http4s-netty-client" % "0.5.16"
     ),
     mimaBinaryIssueFilters := Nil
   )
@@ -252,7 +256,7 @@ lazy val codegen = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-codegen",
     libraryDependencies ++= Seq(
-      "org.apache.commons" % "commons-text" % "1.11.0"
+      "org.apache.commons" % "commons-text" % "1.12.0"
     ),
     mimaBinaryIssueFilters := Nil
   )

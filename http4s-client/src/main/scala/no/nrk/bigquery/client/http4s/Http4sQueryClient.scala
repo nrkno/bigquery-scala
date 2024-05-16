@@ -222,6 +222,65 @@ class Http4sQueryClient[F[_]] private (
       .getOrElseF(F.raiseError(new Exception(s"Unexpected: got no job after submitting ${id.name}")))
   }
 
+  override def extract(id: BQJobId, extract: BQTableExtract): F[BQJobStatistics.Extract] = {
+    val project = id.projectId.getOrElse(defaults.projectId)
+
+    val csv = extract.format match {
+      case c: BQTableExtract.Format.CSV => Some(c)
+      case _ => None
+    }
+
+    def submit(ref: JobReference) = {
+      val jobSpec = Job(
+        jobReference = Some(ref),
+        configuration = Some(
+          JobConfiguration(
+            jobType = Some("EXTRACT"),
+            labels = Some(id.labels.value),
+            extract = Some(JobConfigurationExtract(
+              destinationUris = Some(extract.urls.map(_.value)),
+              useAvroLogicalTypes = extract.format match {
+                case BQTableExtract.Format.AVRO(logicalTypes) => Some(logicalTypes)
+                case _ => None
+              },
+              sourceModel = None,
+              printHeader = csv match {
+                case Some(BQTableExtract.Format.CSV(_, printHeader)) => Some(printHeader)
+                case _ => None
+              },
+              compression = Some(extract.compression.value),
+              fieldDelimiter = csv match {
+                case Some(BQTableExtract.Format.CSV(delimiter, _)) => Some(delimiter)
+                case _ => None
+              },
+              destinationUri = None,
+              destinationFormat = Some(extract.format.value),
+              modelExtractOptions = None,
+              sourceTable = Some(TableHelper.toTableReference(extract.source))
+            ))
+          ))
+      )
+      jobsClient.insert(project.value)(jobSpec).map(_.some).recoverWith {
+        case err: GoogleError if err.code.contains(Status.Conflict.code) =>
+          OptionT.fromOption[F](ref.jobId).semiflatMap(id => jobsClient.get(project.value, id)).value
+      }
+    }
+    def toJobStats(job: Job) =
+      for {
+        id <- JobHelper.jobId(job)
+        stats <- job.statistics
+        qstats <- JobHelper.toExtractStats(id, stats)
+      } yield qstats
+
+    val submitted = OptionT(
+      submitJobWithPoller(id)(submit)(
+        new BQPoll.Poller[F](pollConfig.copy(maxDuration = extract.timeout.getOrElse(pollConfig.maxDuration)))))
+
+    submitted
+      .subflatMap(toJobStats)
+      .getOrElseF(F.raiseError(new Exception(s"Unexpected: got no job after submitting ${id.name}")))
+  }
+
   override def dryRun(id: BQJobId, query: BQSqlFrag): F[BQJobStatistics.Query] = {
     val submitted = OptionT
       .liftF(
@@ -257,11 +316,15 @@ class Http4sQueryClient[F[_]] private (
       .getOrElseF(F.raiseError(new Exception(s"Unexpected: got no job after submitting ${id.name}")))
   }
 
-  def submitJob(jobId: BQJobId)(runRef: JobReference => F[Option[Job]]): F[Option[Job]] = {
+  def submitJob(jobId: BQJobId)(runRef: JobReference => F[Option[Job]]): F[Option[Job]] =
+    submitJobWithPoller(jobId)(runRef)(poller)
+
+  private def submitJobWithPoller(jobId: BQJobId)(runRef: JobReference => F[Option[Job]])(
+      poller: BQPoll.Poller[F]): F[Option[Job]] = {
     val project = jobId.projectId.getOrElse(defaults.projectId)
     val location = jobId.locationId.getOrElse(defaults.locationId)
 
-    val run: (JobReference) => F[Option[Job]] = { ref =>
+    def run(ref: JobReference): F[Option[Job]] =
       runRef(ref).flatMap {
         case Some(job) =>
           poller
@@ -293,7 +356,6 @@ class Http4sQueryClient[F[_]] private (
             }
         case None => F.pure(None)
       }
-    }
 
     freshJobReference(jobId).flatMap(run)
   }
