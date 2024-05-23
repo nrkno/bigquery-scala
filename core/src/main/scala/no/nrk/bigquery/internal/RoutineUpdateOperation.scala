@@ -21,9 +21,9 @@ object RoutineUpdateOperation {
     a.name == b.name &&
     a.params == b.params &&
     a.description == b.description &&
-    conforms.onlyTypes(a.schema, b.schema).exists(_.isEmpty) &&
-    a.partitionType == b.partitionType
-    a.query.asString == a.query.asString
+    conforms.onlyTypes(a.schema, b.schema).isEmpty &&
+    a.partitionType == b.partitionType &&
+    a.query.asString == b.query.asString
   }
 
   def from[R](

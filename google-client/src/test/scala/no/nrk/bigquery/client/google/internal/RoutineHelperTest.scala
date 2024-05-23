@@ -86,6 +86,54 @@ class RoutineUpdateOperationTest extends FunSuite {
     }
   }
 
+  test("update tvf if query changed") {
+    val oldQuery = bqfr"select 1 as n"
+    val routine = RoutineInfo
+      .newBuilder(routineId)
+      .setRoutineType("TABLE_VALUED_FUNCTION")
+      .setLanguage("SQL")
+      .setBody(oldQuery.asString)
+      .setReturnTableType(
+        StandardSQLTableType
+          .newBuilder()
+          .setColumns(
+            List(
+              StandardSQLField
+                .newBuilder()
+                .setName("n")
+                .setDataType(StandardSQLDataType.newBuilder().setTypeKind(BQType.INT64.tpe.name).build())
+                .build()
+            ).asJava
+          )
+          .build()
+      )
+      .build()
+
+    val tvf = TVF(
+      TVF.TVFId(BQDataset.Ref(ProjectId("p1"), "ds1"), ident"foo"),
+      BQPartitionType.NotPartitioned,
+      Params.empty,
+      oldQuery,
+      BQSchema.of(
+        BQField("n", BQField.Type.INT64, BQField.Mode.NULLABLE)
+      )
+    )
+
+    val tvfUpdated = TVF(
+      TVF.TVFId(BQDataset.Ref(ProjectId("p1"), "ds1"), ident"foo"),
+      BQPartitionType.NotPartitioned,
+      Params.empty,
+      bqfr"select 100 as n",
+      BQSchema.of(
+        BQField("n", BQField.Type.INT64, BQField.Mode.NULLABLE)
+      )
+    )
+
+    RoutineUpdateOperation.from(tvfUpdated, Some(ExistingRoutine(tvf, routine))) match {
+      case _: UpdateOperation.Success[?, ?] =>
+      case other => fail(other.toString)
+    }
+  }
   test("noop tvf") {
     val routine = RoutineInfo
       .newBuilder(routineId)
