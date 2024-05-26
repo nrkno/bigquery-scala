@@ -93,7 +93,7 @@ lazy val core = crossProject(JVMPlatform)
       "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       ("org.apache.avro" % "avro" % "1.11.3").exclude("org.apache.commons", "commons-compress"),
-      "org.apache.commons" % "commons-compress" % "1.26.1",
+      "org.apache.commons" % "commons-compress" % "1.26.2",
       "com.lihaoyi" %% "sourcecode" % "0.4.1",
       "org.typelevel" %% "log4cats-slf4j" % "2.7.0",
       "io.circe" %% "circe-generic" % "0.14.7",
