@@ -173,7 +173,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
         // https://github.com/davenverse/http4s-grpc/pull/89
         "org.http4s" %% "http4s-ember-core" % "0.23.27",
         "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.4.2-v2-20240423",
-        "com.permutive" %% "gcp-auth" % "0.2.0"
+        "com.permutive" %% "gcp-auth" % "0.3.0"
       )
     },
     Compile / doc / scalacOptions ++= Seq(
