@@ -105,7 +105,7 @@ lazy val core = crossProject(JVMPlatform)
     libraryDependencies ++= {
       if (scalaVersion.value.startsWith("3")) {
         Seq(
-          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.6"
+          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.7"
         )
       } else {
         // scala2
