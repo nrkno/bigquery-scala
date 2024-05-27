@@ -13,6 +13,7 @@ import cats.syntax.alternative.*
 import io.circe.parser.decode
 import io.circe.syntax.*
 import munit.Assertions.{clues, fail}
+import munit.catseffect.IOFixture
 import munit.{CatsEffectSuite, Clues, Location}
 import no.nrk.bigquery.UDF.Body
 import no.nrk.bigquery.*
@@ -50,7 +51,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
     override def testType: String = "bq-example-query"
   }
 
-  val bqClient: Fixture[QueryClient[IO]] = ResourceSuiteLocalFixture(
+  val bqClient: IOFixture[QueryClient[IO]] = ResourceSuiteLocalFixture(
     "bqClient",
     testClient
   )

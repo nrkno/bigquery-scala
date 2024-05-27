@@ -13,6 +13,7 @@ import cats.effect.kernel.Outcome
 import io.circe.Json
 import io.circe.parser.decode
 import io.circe.syntax.*
+import munit.catseffect.IOFixture
 import munit.{CatsEffectSuite, Location}
 import no.nrk.bigquery.syntax.*
 import org.typelevel.log4cats.slf4j.*
@@ -21,7 +22,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 abstract class BQUdfSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends CatsEffectSuite {
-  val bqClient: Fixture[QueryClient[IO]] = ResourceSuiteLocalFixture(
+  val bqClient: IOFixture[QueryClient[IO]] = ResourceSuiteLocalFixture(
     "bqClient",
     testClient
   )
