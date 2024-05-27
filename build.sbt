@@ -94,7 +94,7 @@ lazy val core = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       ("org.apache.avro" % "avro" % "1.11.3").exclude("org.apache.commons", "commons-compress"),
       "org.apache.commons" % "commons-compress" % "1.26.2",
-      "com.lihaoyi" %% "sourcecode" % "0.4.1",
+      "com.lihaoyi" %% "sourcecode" % "0.4.2",
       "org.typelevel" %% "log4cats-slf4j" % "2.7.0",
       "io.circe" %% "circe-generic" % "0.14.7",
       "io.circe" %% "circe-parser" % "0.14.7",
@@ -105,12 +105,12 @@ lazy val core = crossProject(JVMPlatform)
     libraryDependencies ++= {
       if (scalaVersion.value.startsWith("3")) {
         Seq(
-          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.6"
+          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.7"
         )
       } else {
         // scala2
         Seq(
-          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.9",
+          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.10",
           "org.scala-lang" % "scala-reflect" % scalaVersion.value
         )
       }
@@ -140,7 +140,7 @@ lazy val `google-client` = crossProject(JVMPlatform)
       "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
-      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.5.1"),
+      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.5.2"),
       "com.google.guava" % "guava" % "33.2.0-jre"
     ),
     Compile / doc / scalacOptions ++= Seq(
@@ -163,7 +163,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
       Seq(
         "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
         "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
-        ("io.chrisdavenport" %% "http4s-grpc-google-cloud-bigquerystorage-v1" % "3.0.1+0.0.6")
+        ("io.chrisdavenport" %% "http4s-grpc-google-cloud-bigquerystorage-v1" % "3.5.2+0.0.6")
           .exclude("io.chrisdavenport", s"http4s-grpc_${binaryVersion}"),
         ("io.chrisdavenport" %% "http4s-grpc" % "0.0.4")
           .exclude("org.http4s", s"http4s-ember-server_${binaryVersion}")
@@ -173,7 +173,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
         // https://github.com/davenverse/http4s-grpc/pull/89
         "org.http4s" %% "http4s-ember-core" % "0.23.27",
         "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.4.2-v2-20240423",
-        "com.permutive" %% "gcp-auth" % "0.2.0"
+        "com.permutive" %% "gcp-auth" % "0.3.0"
       )
     },
     Compile / doc / scalacOptions ++= Seq(
@@ -221,7 +221,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
-      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.43.0",
+      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.44.0",
       "org.scalameta" %% "munit" % "0.7.29",
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7"
     ),
