@@ -12,6 +12,7 @@ import no.nrk.bigquery.syntax.*
 import com.google.zetasql.toolkit.AnalysisException
 
 import java.time.LocalDate
+import scala.concurrent.Future
 
 class ZetaTest extends munit.CatsEffectSuite {
   private lazy val zetaSql = new ZetaSql[IO]
@@ -170,11 +171,10 @@ class ZetaTest extends munit.CatsEffectSuite {
         test =>
           if ("aarch64" == System.getProperty("os.arch").toLowerCase)
             test
-              .withBody[Boolean] { () =>
+              .withBody { () =>
                 println("Test is Disabled for \"aarch64\"")
-                true
+                Future.successful(true)
               }
-              .asInstanceOf[Test]
           else test
       ))
 }
