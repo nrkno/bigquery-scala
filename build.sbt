@@ -161,7 +161,6 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
     libraryDependencies ++= {
       val binaryVersion = scalaBinaryVersion.value
       Seq(
-
         "org.scalameta" %% "munit-scalacheck" % "1.0.0" % Test,
         "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
         ("io.chrisdavenport" %% "http4s-grpc-google-cloud-bigquerystorage-v1" % "3.5.2+0.0.6")
