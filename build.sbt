@@ -163,7 +163,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
       Seq(
         "org.scalameta" %% "munit-scalacheck" % "0.7.29" % Test,
         "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
-        ("io.chrisdavenport" %% "http4s-grpc-google-cloud-bigquerystorage-v1" % "3.0.1+0.0.6")
+        ("io.chrisdavenport" %% "http4s-grpc-google-cloud-bigquerystorage-v1" % "3.5.2+0.0.6")
           .exclude("io.chrisdavenport", s"http4s-grpc_${binaryVersion}"),
         ("io.chrisdavenport" %% "http4s-grpc" % "0.0.4")
           .exclude("org.http4s", s"http4s-ember-server_${binaryVersion}")
