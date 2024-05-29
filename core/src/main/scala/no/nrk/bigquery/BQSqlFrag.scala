@@ -7,10 +7,9 @@
 package no.nrk.bigquery
 
 import cats.syntax.all.*
-import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.BQSqlFrag.asSubQuery
+import no.nrk.bigquery.syntax.*
 
-import java.time.LocalDate
 import scala.annotation.tailrec
 
 /* The result of building a BigQuery sql. The `Frag` part of the name was chosen because it can be a fragment and not a complete query */
@@ -128,34 +127,27 @@ sealed trait BQSqlFrag {
   final def allReferencedAsPartitions: Seq[BQPartitionId[Any]] =
     allReferencedAsPartitions(expandAndExcludeViews = true)
   final def allReferencedAsPartitions(expandAndExcludeViews: Boolean): Seq[BQPartitionId[Any]] = {
+    def expandAndApplyOuterRef(
+        table: BQTableLike[Any],
+        outerRef: Option[BQPartitionId[Any]]): List[BQPartitionId[Any]] =
+      table match {
+        case tableDef: BQTableDef.View[?] if expandAndExcludeViews => tableDef.query.collect(pf(outerRef)).flatten
+        case tvf: BQAppliedTableValuedFunction[?] if expandAndExcludeViews => tvf.query.collect(pf(outerRef)).flatten
+        case _ =>
+          (table.partitionType, outerRef) match {
+            case (partitionType: BQPartitionType.DatePartitioned, Some(partitionRef: BQPartitionId.DatePartitioned)) =>
+              List(table.withTableType(partitionType).assertPartition(partitionRef.partition))
+            case (partitionType: BQPartitionType.HourPartitioned, Some(partitionRef: BQPartitionId.HourPartitioned)) =>
+              List(table.withTableType(partitionType).assertPartition(partitionRef.partition))
+            case (_, _) => List(table.unpartitioned.assertPartition)
+          }
+      }
+
     def pf(outerRef: Option[BQPartitionId[Any]]): PartialFunction[BQSqlFrag, List[BQPartitionId[Any]]] = {
-      case BQSqlFrag.PartitionRef(partitionRef) =>
-        partitionRef.wholeTable match {
-          case tableDef: BQTableDef.View[?] if expandAndExcludeViews =>
-            tableDef.query.collect(pf(Some(partitionRef))).flatten
-          case tvf: BQAppliedTableValuedFunction[?] if expandAndExcludeViews =>
-            tvf.query.collect(pf(Some(partitionRef))).flatten
-          case _ => List(partitionRef)
-        }
-
-      case BQSqlFrag.TableRef(table) =>
-        (table.partitionType, outerRef) match {
-          case (partitionType: BQPartitionType.DatePartitioned, Some(partitionRef: BQPartitionId.DatePartitioned)) =>
-            List(table.withTableType(partitionType).assertPartition(partitionRef.partition))
-          case (partitionType: BQPartitionType.HourPartitioned, Some(partitionRef: BQPartitionId.HourPartitioned)) =>
-            List(table.withTableType(partitionType).assertPartition(partitionRef.partition))
-          case (_, _) => List(table.unpartitioned.assertPartition)
-        }
-
+      case BQSqlFrag.PartitionRef(partitionRef) => expandAndApplyOuterRef(partitionRef.wholeTable, Some(partitionRef))
+      case BQSqlFrag.TableRef(table) => expandAndApplyOuterRef(table, outerRef)
       case BQSqlFrag.FillRef(fill) => List(fill.destination)
-      case BQSqlFrag.FilledTableRef(fill) =>
-        (fill.tableDef.partitionType, outerRef) match {
-          case (partitionType: BQPartitionType.DatePartitioned, Some(partitionRef: BQPartitionId.DatePartitioned)) =>
-            List(fill.tableDef.withTableType(partitionType).assertPartition(partitionRef.partition))
-          case (partitionType: BQPartitionType.HourPartitioned, Some(partitionRef: BQPartitionId.HourPartitioned)) =>
-            List(fill.tableDef.withTableType(partitionType).assertPartition(partitionRef.partition))
-          case (_, _) => List(fill.tableDef.unpartitioned.assertPartition)
-        }
+      case BQSqlFrag.FilledTableRef(fill) => expandAndApplyOuterRef(fill.tableDef, outerRef)
     }
 
     this.collect(pf(None)).flatten.distinct
