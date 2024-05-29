@@ -10,6 +10,7 @@ import cats.syntax.all.*
 import no.nrk.bigquery.syntax.*
 import no.nrk.bigquery.BQSqlFrag.asSubQuery
 
+import java.time.LocalDate
 import scala.annotation.tailrec
 
 /* The result of building a BigQuery sql. The `Frag` part of the name was chosen because it can be a fragment and not a complete query */
@@ -160,10 +161,23 @@ sealed trait BQSqlFrag {
     this.collect(pf(None)).flatten.distinct
   }
 
-  final def allReferencedTables: Seq[BQTableLike[Any]] =
-    allReferencedAsPartitions
-      .map(_.wholeTable)
-      .filterNot(tableLike => tableLike.isInstanceOf[BQTableDef.View[?]])
+  final def allReferencedTables(expandAndExcludeViews: Boolean): Seq[BQTableLike[Any]] = {
+    def expand(table: BQTableLike[Any]): List[BQTableLike[Any]] =
+      table match {
+        case tableDef: BQTableDef.View[?] if expandAndExcludeViews => tableDef.query.collect(pf).flatten
+        case tvf: BQAppliedTableValuedFunction[?] if expandAndExcludeViews => tvf.query.collect(pf).flatten
+        case _ => List(table)
+      }
+
+    def pf: PartialFunction[BQSqlFrag, List[BQTableLike[Any]]] = {
+      case BQSqlFrag.PartitionRef(partitionRef) => expand(partitionRef.wholeTable)
+      case BQSqlFrag.TableRef(table) => expand(table)
+      case BQSqlFrag.FillRef(fill) => List(fill.destination.wholeTable)
+      case BQSqlFrag.FilledTableRef(fill) => List(fill.tableDef)
+    }
+    this.collect(pf).flatten.distinct
+  }
+  final def allReferencedTables: Seq[BQTableLike[Any]] = allReferencedTables(expandAndExcludeViews = true)
 
   final def allReferencedTablesAsPartitions: Seq[BQPartitionId[Any]] =
     allReferencedAsPartitions(expandAndExcludeViews = true)
