@@ -144,7 +144,10 @@ class ZetaTest extends munit.CatsEffectSuite {
 
     zetaSql
       .parseAndBuildAnalysableFragment(query, List(table), List(tvf))
-      .flatMap(fragment => zetaSql.queryFields(fragment).tupleRight(fragment.allReferencedTables.map(_.tableId)))
+      .flatMap(fragment =>
+        zetaSql
+          .queryFields(fragment)
+          .tupleRight(fragment.allReferencedTables(expandAndExcludeViews = false).map(_.tableId)))
       .assertEquals(expected -> List(BQTableId(tvf.name.dataset, tvf.name.name.value)))
   }
 

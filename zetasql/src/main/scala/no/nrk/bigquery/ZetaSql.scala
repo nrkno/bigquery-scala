@@ -170,7 +170,7 @@ class ZetaSql[F[_]](implicit F: Sync[F]) {
 
   def analyzeFirst(frag: BQSqlFrag): F[Either[AnalysisException, AnalyzedStatement]] =
     F.interruptible {
-      val tables = frag.allReferencedTables
+      val tables = frag.allReferencedTables(expandAndExcludeViews = false)
       val catalog = toCatalog(tables*)
       val rendered = frag.asString
 
