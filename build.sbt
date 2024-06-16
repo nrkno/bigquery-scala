@@ -204,7 +204,7 @@ lazy val zetasql = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-zetasql",
     libraryDependencies ++= Seq(
-      ("com.google.zetasql.toolkit" % "zetasql-toolkit-core" % "0.5.1")
+      ("com.google.zetasql.toolkit" % "zetasql-toolkit-core" % "0.5.2")
         .exclude("com.google.cloud", "google-cloud-spanner"),
       "org.scalameta" %% "munit" % "1.0.0",
       "org.typelevel" %% "munit-cats-effect" % "2.0.0"
