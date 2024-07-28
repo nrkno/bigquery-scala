@@ -73,8 +73,7 @@ object Generators {
       case BQPartitionType.Sharded =>
         "BQPartitionType.Sharded"
       case BQPartitionType.IntegerRangePartitioned(Ident(field), range) =>
-        s"BQPartitionType.IntegerRangePartitioned(Ident(${lit(
-            field)}), BQIntegerRange(start = ${range.start}, end = ${range.end}, interval = ${range.interval}))"
+        s"BQPartitionType.IntegerRangePartitioned(Ident(${lit(field)}), BQIntegerRange(start = ${range.start}, end = ${range.end}, interval = ${range.interval}))"
       case _: BQPartitionType.NotPartitioned =>
         "BQPartitionType.NotPartitioned"
     }
