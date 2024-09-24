@@ -140,6 +140,21 @@ object BQRead extends BQReadCompat {
         }
     }
 
+  implicit val convertsInt: BQRead[Int] =
+    new BQRead[Int] {
+      override val bqType: BQType =
+        BQType(BQField.Mode.REQUIRED, BQField.Type.INT64, Nil)
+
+      override def read(transportSchema: avro.Schema, value: Any): Int =
+        value match {
+          case int: java.lang.Integer => int
+          case other =>
+            sys.error(
+              s"Unexpected: ${other.getClass.getSimpleName} $other . Schema from BQ: $transportSchema"
+            )
+        }
+    }
+
   implicit val convertsDouble: BQRead[Double] =
     new BQRead[Double] {
       override val bqType: BQType =
