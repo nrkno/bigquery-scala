@@ -12,7 +12,7 @@ import cats.syntax.all.*
 import fs2.Stream
 import io.circe.Encoder
 import org.apache.avro
-import org.apache.avro.Schema
+import org.apache.avro.{Schema, SchemaFormatter}
 import org.apache.avro.file.{DataFileReader, DataFileWriter}
 import org.apache.avro.generic.{GenericDatumReader, GenericDatumWriter, GenericRecord}
 import org.typelevel.log4cats.SelfAwareStructuredLogger
@@ -140,7 +140,7 @@ object BigQueryTestClient {
   def serializeSchema(path: Path, schema: avro.Schema): IO[Unit] =
     IO.blocking {
       Files.createDirectories(path.getParent)
-      Files.write(path, schema.toString(true).getBytes(StandardCharsets.UTF_8))
+      Files.write(path, SchemaFormatter.format("json/pretty", schema).getBytes(StandardCharsets.UTF_8))
       ()
     }
 
