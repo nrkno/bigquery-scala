@@ -10,12 +10,7 @@ import cats.data.OptionT
 import cats.effect.*
 import cats.effect.implicits.*
 import cats.syntax.all.*
-import com.google.cloud.bigquery.storage.v1.storage.{
-  BigQueryRead,
-  CreateReadSessionRequest,
-  ReadRowsRequest,
-  ReadRowsResponse
-}
+import com.google.cloud.bigquery.storage.v1.storage.{BigQueryRead, CreateReadSessionRequest, ReadRowsRequest, ReadRowsResponse}
 import com.google.cloud.bigquery.storage.v1.stream.{DataFormat, ReadSession}
 import fs2.{Chunk, Pipe, Stream}
 import googleapis.bigquery.*
@@ -27,7 +22,7 @@ import no.nrk.bigquery.util.StreamUtils
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericDatumReader, GenericRecord}
 import org.apache.avro.io.DecoderFactory
-import org.http4s.*
+import org.http4s.{Header, *}
 import org.http4s.client.Client
 import org.http4s.headers.`Content-Type`
 import org.http4s.syntax.literals.*
@@ -207,7 +202,7 @@ class Http4sQueryClient[F[_]] private (
       )
       jobsClient.insert(project.value)(jobSpec).map(_.some).recoverWith {
         case err: GoogleError if err.code.contains(Status.Conflict.code) =>
-          OptionT.fromOption[F](ref.jobId).semiflatMap(id => jobsClient.get(project.value, id)).value
+          OptionT.fromOption[F].apply[String](ref.jobId).semiflatMap(id => jobsClient.get(project.value, id)).value
       }
     }
     def toJobStats(job: Job) =
@@ -262,7 +257,7 @@ class Http4sQueryClient[F[_]] private (
       )
       jobsClient.insert(project.value)(jobSpec).map(_.some).recoverWith {
         case err: GoogleError if err.code.contains(Status.Conflict.code) =>
-          OptionT.fromOption[F](ref.jobId).semiflatMap(id => jobsClient.get(project.value, id)).value
+          OptionT.fromOption[F].apply[String](ref.jobId).semiflatMap(id => jobsClient.get(project.value, id)).value
       }
     }
     def toJobStats(job: Job) =
@@ -331,7 +326,7 @@ class Http4sQueryClient[F[_]] private (
             .poll[Job](
               runningJob = job,
               retry = OptionT
-                .fromOption[F](job.jobReference.flatMap(_.jobId))
+                .fromOption[F].apply[String](job.jobReference.flatMap(_.jobId))
                 .flatMapF(id =>
                   jobsClient
                     .get(project.value, id, query = JobsClient.GetParams(location = Some(location.value)))
@@ -454,9 +449,10 @@ class Http4sQueryClient[F[_]] private (
         )
           .withEntity(job)
           .putHeaders("X-Upload-Content-Value" -> "application/octet-stream"))
-      .use(res =>
-        res.headers.get[Location] match {
-          case Some(value) => F.pure(value.uri)
+      .use{res =>
+        implicit val ev : Header.Select[Location] = Header.Select.singleHeaders[Location]
+        res.headers.get[Location]  match {
+          case Some(value@ org.http4s.Header(_)) => F.pure(value.uri)
           case None =>
             res
               .as[GoogleError]
@@ -466,7 +462,7 @@ class Http4sQueryClient[F[_]] private (
                   new IllegalStateException(
                     s"Not possible to create a upload uri for ${job.asJson.dropNullValues.noSpaces}",
                     err.merge)))
-        })
+        }}
   }
 
   private def upload[A: Encoder](uri: Uri, stream: Stream[F, A], logStream: Boolean, chunkSize: Int): F[Option[Job]] = {
