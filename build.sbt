@@ -89,15 +89,15 @@ lazy val core = crossProject(JVMPlatform)
       "org.typelevel" %% "cats-core" % "2.12.0",
       "org.typelevel" %% "cats-effect" % "3.5.4",
       "org.typelevel" %% "literally" % "1.2.0",
-      "org.scalameta" %% "munit" % "1.0.0" % Test,
+      "org.scalameta" %% "munit" % "1.0.2" % Test,
       "org.scalameta" %% "munit-scalacheck" % "1.0.0" % Test,
       "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
       ("org.apache.avro" % "avro" % "1.11.3").exclude("org.apache.commons", "commons-compress"),
-      "org.apache.commons" % "commons-compress" % "1.26.2",
+      "org.apache.commons" % "commons-compress" % "1.27.1",
       "com.lihaoyi" %% "sourcecode" % "0.4.2",
       "org.typelevel" %% "log4cats-slf4j" % "2.7.0",
-      "io.circe" %% "circe-generic" % "0.14.9",
-      "io.circe" %% "circe-parser" % "0.14.9",
+      "io.circe" %% "circe-generic" % "0.14.10",
+      "io.circe" %% "circe-parser" % "0.14.10",
       "co.fs2" %% "fs2-core" % "3.10.2",
       "co.fs2" %% "fs2-io" % "3.10.2",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.12.0"
@@ -140,7 +140,7 @@ lazy val `google-client` = crossProject(JVMPlatform)
       "org.scalameta" %% "munit-scalacheck" % "1.0.0" % Test,
       "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
-      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.8.0"),
+      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.8.1"),
       "com.google.guava" % "guava" % "33.2.1-jre"
     ),
     Compile / doc / scalacOptions ++= Seq(
@@ -171,7 +171,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
           .exclude("org.http4s", s"http4s-dsl_${binaryVersion}"),
         // needed because of hard-link in http4s-grpc
         // https://github.com/davenverse/http4s-grpc/pull/89
-        "org.http4s" %% "http4s-ember-core" % "0.23.27",
+        "org.http4s" %% "http4s-ember-core" % "0.23.28",
         "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.4.4-v2-20240714",
         "com.permutive" %% "gcp-auth" % "1.1.0"
       )
@@ -206,7 +206,7 @@ lazy val zetasql = crossProject(JVMPlatform)
     libraryDependencies ++= Seq(
       ("com.google.zetasql.toolkit" % "zetasql-toolkit-core" % "0.5.2")
         .exclude("com.google.cloud", "google-cloud-spanner"),
-      "org.scalameta" %% "munit" % "1.0.0",
+      "org.scalameta" %% "munit" % "1.0.2",
       "org.typelevel" %% "munit-cats-effect" % "2.0.0"
     ),
     mimaBinaryIssueFilters := Nil
@@ -222,7 +222,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
       "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.49.0",
-      "org.scalameta" %% "munit" % "1.0.0",
+      "org.scalameta" %% "munit" % "1.0.2",
       "org.typelevel" %% "munit-cats-effect" % "2.0.0"
     ),
     mimaBinaryIssueFilters := Nil
@@ -237,10 +237,10 @@ lazy val testing = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-testing",
     libraryDependencies ++= Seq(
-      "org.scalameta" %% "munit" % "1.0.0",
+      "org.scalameta" %% "munit" % "1.0.2",
       "org.typelevel" %% "munit-cats-effect" % "2.0.0",
       "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
-      "org.http4s" %% "http4s-netty-client" % "0.5.17"
+      "org.http4s" %% "http4s-netty-client" % "0.5.19"
     ),
     mimaBinaryIssueFilters := Nil
   )
