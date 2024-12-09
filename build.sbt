@@ -98,8 +98,8 @@ lazy val core = crossProject(JVMPlatform)
       "org.typelevel" %% "log4cats-slf4j" % "2.7.0",
       "io.circe" %% "circe-generic" % "0.14.10",
       "io.circe" %% "circe-parser" % "0.14.10",
-      "co.fs2" %% "fs2-core" % "3.10.2",
-      "co.fs2" %% "fs2-io" % "3.10.2",
+      "co.fs2" %% "fs2-core" % "3.11.0",
+      "co.fs2" %% "fs2-io" % "3.11.0",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.12.0"
     ),
     libraryDependencies ++= {
@@ -141,7 +141,7 @@ lazy val `google-client` = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
       addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.8.1"),
-      "com.google.guava" % "guava" % "33.2.1-jre"
+      "com.google.guava" % "guava" % "33.3.1-jre"
     ),
     Compile / doc / scalacOptions ++= Seq(
       "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
