@@ -6,7 +6,6 @@
 
 package no.nrk.bigquery
 
-import no.nrk.bigquery.*
 import no.nrk.bigquery.syntax.*
 import munit.FunSuite
 

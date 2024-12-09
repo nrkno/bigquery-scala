@@ -41,8 +41,8 @@ ThisBuild / githubWorkflowBuild := {
   }
 }
 
-val Scala213 = "2.13.14"
-ThisBuild / crossScalaVersions := Seq(Scala213, "3.3.3")
+val Scala213 = "2.13.15"
+ThisBuild / crossScalaVersions := Seq(Scala213, "3.3.4")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 ThisBuild / tlVersionIntroduced := Map(
   "3" -> "0.9.0",
@@ -87,12 +87,12 @@ lazy val core = crossProject(JVMPlatform)
     name := "bigquery-core",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "2.12.0",
-      "org.typelevel" %% "cats-effect" % "3.5.4",
+      "org.typelevel" %% "cats-effect" % "3.5.7",
       "org.typelevel" %% "literally" % "1.2.0",
       "org.scalameta" %% "munit" % "1.0.2" % Test,
       "org.scalameta" %% "munit-scalacheck" % "1.0.0" % Test,
       "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
-      ("org.apache.avro" % "avro" % "1.11.3").exclude("org.apache.commons", "commons-compress"),
+      ("org.apache.avro" % "avro" % "1.12.0").exclude("org.apache.commons", "commons-compress"),
       "org.apache.commons" % "commons-compress" % "1.27.1",
       "com.lihaoyi" %% "sourcecode" % "0.4.2",
       "org.typelevel" %% "log4cats-slf4j" % "2.7.0",
@@ -105,7 +105,7 @@ lazy val core = crossProject(JVMPlatform)
     libraryDependencies ++= {
       if (scalaVersion.value.startsWith("3")) {
         Seq(
-          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.7"
+          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.8"
         )
       } else {
         // scala2
@@ -140,8 +140,8 @@ lazy val `google-client` = crossProject(JVMPlatform)
       "org.scalameta" %% "munit-scalacheck" % "1.0.0" % Test,
       "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
-      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.8.1"),
-      "com.google.guava" % "guava" % "33.3.0-jre"
+      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.10.3"),
+      "com.google.guava" % "guava" % "33.3.1-jre"
     ),
     Compile / doc / scalacOptions ++= Seq(
       "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
@@ -172,8 +172,8 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
         // needed because of hard-link in http4s-grpc
         // https://github.com/davenverse/http4s-grpc/pull/89
         "org.http4s" %% "http4s-ember-core" % "0.23.30",
-        "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.4.4-v2-20240714",
-        "com.permutive" %% "gcp-auth" % "1.1.0"
+        "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.4.5-v2-20240905",
+        "com.permutive" %% "gcp-auth" % "1.2.0"
       )
     },
     Compile / doc / scalacOptions ++= Seq(
@@ -221,7 +221,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
-      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.46.0",
+      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.54.0",
       "org.scalameta" %% "munit" % "1.0.2",
       "org.typelevel" %% "munit-cats-effect" % "2.0.0"
     ),
