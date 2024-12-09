@@ -16,7 +16,7 @@ object SchemaHelper {
 
   def fromTableFieldSchema(field: TableFieldSchema): BQField =
     field match {
-      case TableFieldSchema(Some(name), _, _, _, tags, desc, _, subFields, _, mode, Some(typ), _, _, _, _) =>
+      case TableFieldSchema(Some(name), _, _, _, tags, desc, _, subFields, _, mode, Some(typ), _, _, _, _, _) =>
         BQField(
           name = name,
           tpe = BQField.Type.unsafeFromString(typ match {
