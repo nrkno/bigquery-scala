@@ -41,7 +41,7 @@ ThisBuild / githubWorkflowBuild := {
   }
 }
 
-val Scala213 = "2.13.14"
+val Scala213 = "2.13.15"
 ThisBuild / crossScalaVersions := Seq(Scala213, "3.3.3")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 ThisBuild / tlVersionIntroduced := Map(
@@ -92,7 +92,7 @@ lazy val core = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "1.0.2" % Test,
       "org.scalameta" %% "munit-scalacheck" % "1.0.0" % Test,
       "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
-      ("org.apache.avro" % "avro" % "1.11.3").exclude("org.apache.commons", "commons-compress"),
+      ("org.apache.avro" % "avro" % "1.12.0").exclude("org.apache.commons", "commons-compress"),
       "org.apache.commons" % "commons-compress" % "1.27.1",
       "com.lihaoyi" %% "sourcecode" % "0.4.2",
       "org.typelevel" %% "log4cats-slf4j" % "2.7.0",
@@ -141,7 +141,7 @@ lazy val `google-client` = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
       addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.8.1"),
-      "com.google.guava" % "guava" % "33.3.0-jre"
+      "com.google.guava" % "guava" % "33.3.1-jre"
     ),
     Compile / doc / scalacOptions ++= Seq(
       "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
