@@ -23,7 +23,7 @@ object StreamUtils {
   def toLineSeparatedJsonBytes[F[_]: Sync, A: Encoder](
       chunkSize: Int
   ): Pipe[F, A, Chunk[Byte]] =
-    _.map(_.asJson.noSpaces)
+    _.map(_.asJson.dropNullValues.noSpaces)
       .intersperse("\n")
       .through(fs2.text.utf8.encode)
       .through(Compression.forSync[F].gzip())
