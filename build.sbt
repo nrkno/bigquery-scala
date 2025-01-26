@@ -90,7 +90,7 @@ lazy val core = crossProject(JVMPlatform)
       "org.typelevel" %% "cats-effect" % "3.5.7",
       "org.typelevel" %% "literally" % "1.2.0",
       "org.scalameta" %% "munit" % "1.0.4" % Test,
-      "org.scalameta" %% "munit-scalacheck" % "1.0.0" % Test,
+      "org.scalameta" %% "munit-scalacheck" % "1.1.0" % Test,
       "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
       ("org.apache.avro" % "avro" % "1.12.0").exclude("org.apache.commons", "commons-compress"),
       "org.apache.commons" % "commons-compress" % "1.27.1",
@@ -137,7 +137,7 @@ lazy val `google-client` = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-google-client",
     libraryDependencies ++= Seq(
-      "org.scalameta" %% "munit-scalacheck" % "1.0.0" % Test,
+      "org.scalameta" %% "munit-scalacheck" % "1.1.0" % Test,
       "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
       addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.11.1"),
@@ -161,7 +161,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
     libraryDependencies ++= {
       val binaryVersion = scalaBinaryVersion.value
       Seq(
-        "org.scalameta" %% "munit-scalacheck" % "1.0.0" % Test,
+        "org.scalameta" %% "munit-scalacheck" % "1.1.0" % Test,
         "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
         ("io.chrisdavenport" %% "http4s-grpc-google-cloud-bigquerystorage-v1" % "3.6.0+0.0.6")
           .exclude("io.chrisdavenport", s"http4s-grpc_${binaryVersion}"),
