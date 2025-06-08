@@ -240,7 +240,7 @@ lazy val testing = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "1.0.4",
       "org.typelevel" %% "munit-cats-effect" % "2.0.0",
       "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
-      "org.http4s" %% "http4s-netty-client" % "0.5.22"
+      "org.http4s" %% "http4s-netty-client" % "0.5.24"
     ),
     mimaBinaryIssueFilters := Nil
   )
