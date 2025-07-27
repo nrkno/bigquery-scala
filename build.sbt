@@ -87,7 +87,7 @@ lazy val core = crossProject(JVMPlatform)
     name := "bigquery-core",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "2.12.0",
-      "org.typelevel" %% "cats-effect" % "3.5.7",
+      "org.typelevel" %% "cats-effect" % "3.6.3",
       "org.typelevel" %% "literally" % "1.2.0",
       "org.scalameta" %% "munit" % "1.0.4" % Test,
       "org.scalameta" %% "munit-scalacheck" % "1.0.0" % Test,
