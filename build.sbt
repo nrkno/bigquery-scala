@@ -94,7 +94,7 @@ lazy val core = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
       ("org.apache.avro" % "avro" % "1.12.0").exclude("org.apache.commons", "commons-compress"),
       "org.apache.commons" % "commons-compress" % "1.27.1",
-      "com.lihaoyi" %% "sourcecode" % "0.4.2",
+      "com.lihaoyi" %% "sourcecode" % "0.4.4",
       "org.typelevel" %% "log4cats-slf4j" % "2.7.0",
       "io.circe" %% "circe-generic" % "0.14.10",
       "io.circe" %% "circe-parser" % "0.14.10",
