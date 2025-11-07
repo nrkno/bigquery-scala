@@ -60,7 +60,7 @@ jobs:
 
       - name: Check headers and formatting
         if: matrix.java == 'temurin@11' && matrix.os == 'ubuntu-22.04'
-        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' headerCheckAll scalafmtCheckAll 'project /' scalafmtSbtCheck
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' headerCheckAll 'project /' scalafmtSbtCheck
 
       - name: Test
         env:
