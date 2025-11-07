@@ -37,7 +37,7 @@ trait GeneratedTest extends BQDatasetDirectoryProvider {
     f.getParentFile.toPath
   }
 
-  def generatedDir: Path = basedir.resolve("generatedMODIFIED4")
+  def generatedDir: Path = basedir.resolve("generated")
 
   def testFileForName(name: String): Path = {
     val safeFileName = name.replaceAll("\\s", "_")
