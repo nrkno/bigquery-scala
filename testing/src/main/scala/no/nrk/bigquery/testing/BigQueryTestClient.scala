@@ -24,16 +24,23 @@ import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.*
 import scala.util.Properties
 
-object BigQueryTestClient {
+object BigQueryTestClient extends BQDatasetDirectoryProvider {
   private implicit val loggerFactory: Slf4jFactory[IO] = Slf4jFactory.create[IO]
   private val logger: SelfAwareStructuredLogger[IO] = loggerFactory.getLogger
+
+  def getBQDatasetName(using givenBQDatasetName: String = this.BQDatasetName): String = givenBQDatasetName
 
   val basedir =
     Paths
       .get(sys.env.getOrElse("BIGQUERY_HOME", Properties.userHome))
       .resolve(".bigquery")
   val queryCachePath = {
-    val dir = basedir.resolve("query-cache")
+    val dir =
+      if (useDatasetDir) {
+        basedir.resolve("query-cache").resolve(getBQDatasetName)
+      } else {
+        basedir.resolve("query-cache")
+      }
     Files.createDirectories(dir)
     dir
   }

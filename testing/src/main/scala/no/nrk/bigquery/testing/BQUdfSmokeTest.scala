@@ -94,10 +94,20 @@ object BQUdfSmokeTest {
   }
 
   // this is a user-wide query cache to speed up development/CI
-  case class CachedQuery(frag: BQSqlFrag) {
-    val cacheFile: Path = BigQueryTestClient.basedir
-      .resolve("smoke-test-udf-cache")
-      .resolve(s"${frag.asStringWithUDFs.hashCode()}.json")
+  case class CachedQuery(frag: BQSqlFrag) extends BQDatasetDirectoryProvider {
+    def getBQDatasetName(using givenBQDatasetName: String = this.BQDatasetName): String = givenBQDatasetName
+
+    val cacheFile: Path =
+      if (useDatasetDir) {
+        BigQueryTestClient.basedir
+          .resolve("smoke-test-udf-cache")
+          .resolve(getBQDatasetName)
+          .resolve(s"${frag.asStringWithUDFs.hashCode()}.json")
+      } else {
+        BigQueryTestClient.basedir
+          .resolve("smoke-test-udf-cache")
+          .resolve(s"${frag.asStringWithUDFs.hashCode()}.json")
+      }
 
     def writeRow(row: Json): IO[Path] =
       IO {
