@@ -11,6 +11,7 @@ import no.nrk.bigquery.BQSqlFrag.asSubQuery
 import no.nrk.bigquery.syntax.*
 
 import scala.annotation.tailrec
+import scala.language.implicitConversions
 
 /* The result of building a BigQuery sql. The `Frag` part of the name was chosen because it can be a fragment and not a complete query */
 sealed trait BQSqlFrag {

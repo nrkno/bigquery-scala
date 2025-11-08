@@ -9,6 +9,7 @@ package no.nrk.bigquery.internal
 import no.nrk.bigquery.{BQRoutine, BQSqlFrag}
 import no.nrk.bigquery.util.nat.*
 import no.nrk.bigquery.util.IndexSeqSizedBuilder
+import scala.language.implicitConversions
 
 trait RoutineSyntax {
   implicit def bqRoutineOps0[C](routine: BQRoutine[_0, C]): RoutineOps0[C] = new RoutineOps0(routine)

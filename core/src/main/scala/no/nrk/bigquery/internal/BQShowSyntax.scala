@@ -11,6 +11,7 @@ import cats.Foldable
 import cats.syntax.all.*
 
 import java.time.LocalDate
+import scala.language.implicitConversions
 
 trait BQShowSyntax extends RoutineSyntax {
 
