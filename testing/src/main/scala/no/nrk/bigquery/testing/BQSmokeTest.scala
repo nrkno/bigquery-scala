@@ -37,18 +37,20 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
 
   object StaticQueries extends GeneratedTest {
     override def basedir: Path = self.basedir
-
     override def testType: String = "bq-query-static"
+    override def BQDatasetName: String = self.BQDatasetName
   }
 
   object Queries extends GeneratedTest {
     override def basedir: Path = self.basedir
     override def testType: String = "bq-query"
+    override def BQDatasetName: String = self.BQDatasetName
   }
 
   object ExampleQueries extends GeneratedTest {
     override def basedir: Path = self.basedir
     override def testType: String = "bq-example-query"
+    override def BQDatasetName: String = self.BQDatasetName
   }
 
   val bqClient: IOFixture[QueryClient[IO]] = ResourceSuiteLocalFixture(
@@ -237,7 +239,8 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
 
 }
 
-object BQSmokeTest {
+object BQSmokeTest extends BQDatasetDirectoryProvider {
+  self =>
   private val logger: SelfAwareStructuredLogger[IO] = Slf4jFactory.create[IO].getLogger
 
   def bqCheckFragment(
@@ -264,7 +267,14 @@ object BQSmokeTest {
           )
         )
 
-        val cachedQuery = CachedQuery(staticFrag, BigQueryTestClient.basedir)
+        val cachedQuery =
+          if (useDatasetDir) {
+            CachedQueryWithDatasetDir(staticFrag, BigQueryTestClient.basedir)
+          } else {
+            CachedQuery(staticFrag, BigQueryTestClient.basedir)
+          }
+
+        // val cachedQuery = CachedQuery(staticFrag, BigQueryTestClient.basedir)
         val runCheck: IO[Unit] = cachedQuery.read
           .flatMap {
             case Some(schema) => IO.pure(schema)
@@ -542,10 +552,48 @@ object BQSmokeTest {
       .mkFragment(",")
   }
 
+  trait CachedQueryBase {
+    def read: IO[Option[BQSchema]]
+    def write(schema: BQSchema): IO[Path]
+  }
+
   // this is a user-wide query cache to speed up development/CI
-  case class CachedQuery(frag: BQSqlFrag, cacheDir: Path) {
+  case class CachedQuery(frag: BQSqlFrag, cacheDir: Path) extends CachedQueryBase {
     val cacheFile = cacheDir
       .resolve("smoke-test-cache")
+      .resolve(s"${frag.asStringWithUDFs.hashCode()}.json")
+
+    def write(schema: BQSchema): IO[Path] =
+      IO {
+        Files.createDirectories(cacheFile.getParent)
+        Files.write(
+          cacheFile,
+          schema.asJson.noSpaces.getBytes(StandardCharsets.UTF_8)
+        )
+      }
+
+    val read: IO[Option[BQSchema]] = IO {
+      if (Files.exists(cacheFile)) {
+        decode[BQSchema](
+          new String(Files.readAllBytes(cacheFile), StandardCharsets.UTF_8)
+        ) match {
+          case Left(err) =>
+            System.err.println(
+              s"Couldn't parse query cache file $cacheFile. Rerunning query. ${err.getMessage}"
+            )
+            Files.delete(cacheFile)
+            None
+          case Right(schema) => Some(schema)
+        }
+      } else None
+    }
+  }
+  case class CachedQueryWithDatasetDir(frag: BQSqlFrag, cacheDir: Path)(implicit
+      givenBQDatasetName: String = self.BQDatasetName)
+      extends CachedQueryBase {
+    val cacheFile = cacheDir
+      .resolve("smoke-test-cache")
+      .resolve(givenBQDatasetName)
       .resolve(s"${frag.asStringWithUDFs.hashCode()}.json")
 
     def write(schema: BQSchema): IO[Path] =

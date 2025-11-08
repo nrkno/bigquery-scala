@@ -15,7 +15,14 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 
-trait GeneratedTest {
+trait BQDatasetDirectoryProvider { // TODO: Maybe we dont need this trait
+  lazy val useDatasetDir: Boolean =
+    sys.env.contains("USE_DATASET_DIR_FOR_GENERATED_BQ_FILES")
+
+  def BQDatasetName: String = ""
+}
+
+trait GeneratedTest extends BQDatasetDirectoryProvider {
   def testType: String
 
   def assertCurrentGeneratedFiles: Boolean =
@@ -30,10 +37,16 @@ trait GeneratedTest {
     f.getParentFile.toPath
   }
 
-  def generatedDir = basedir.resolve("generated")
+  def generatedDir: Path = basedir.resolve("generated")
 
-  def testFileForName(name: String): Path =
-    generatedDir.resolve(testType).resolve(name.replaceAll("\\s", "_"))
+  def testFileForName(name: String): Path = {
+    val safeFileName = name.replaceAll("\\s", "_")
+    if (useDatasetDir) {
+      generatedDir.resolve(testType).resolve(BQDatasetName).resolve(safeFileName)
+    } else {
+      generatedDir.resolve(testType).resolve(safeFileName)
+    }
+  }
 
   def writeAndCompare(testFile: Path, value: String)(implicit
       loc: Location
