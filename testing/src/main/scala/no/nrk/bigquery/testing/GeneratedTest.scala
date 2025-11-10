@@ -31,7 +31,7 @@ trait GeneratedTest {
     f.getParentFile.toPath
   }
 
-  def generatedDir = basedir.resolve("generated1")
+  def generatedDir = basedir.resolve("generated")
 
   def testFileForName(name: String): Path =
     generatedDir.resolve(testType).resolve(datasetDir).resolve(name.replaceAll("\\s", "_"))
