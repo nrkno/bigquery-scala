@@ -98,7 +98,7 @@ lazy val core = crossProject(JVMPlatform)
       "io.circe" %% "circe-parser" % "0.14.10",
       "co.fs2" %% "fs2-core" % "3.11.0",
       "co.fs2" %% "fs2-io" % "3.11.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.12.0"
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.14.0"
     ),
     libraryDependencies ++= {
       if (scalaVersion.value.startsWith("3")) {
