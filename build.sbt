@@ -58,7 +58,7 @@ val commonSettings = Seq(
     } else {
       Nil
     }
-  },
+  }
 )
 
 lazy val root = tlCrossRootProject
