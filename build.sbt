@@ -98,12 +98,12 @@ lazy val core = crossProject(JVMPlatform)
       "io.circe" %% "circe-parser" % "0.14.10",
       "co.fs2" %% "fs2-core" % "3.11.0",
       "co.fs2" %% "fs2-io" % "3.11.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.12.0"
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.14.0"
     ),
     libraryDependencies ++= {
       if (scalaVersion.value.startsWith("3")) {
         Seq(
-          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.8"
+          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.18"
         )
       } else {
         // scala2
@@ -169,8 +169,8 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
           .exclude("org.http4s", s"http4s-dsl_${binaryVersion}"),
         // needed because of hard-link in http4s-grpc
         // https://github.com/davenverse/http4s-grpc/pull/89
-        "org.http4s" %% "http4s-ember-core" % "0.23.30",
-        "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.6.1-v2-20241111",
+        "org.http4s" %% "http4s-ember-core" % "0.23.33",
+        "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.6.4-v2-20250427",
         "com.permutive" %% "gcp-auth" % "2.1.0"
       )
     },
@@ -238,7 +238,7 @@ lazy val testing = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "1.2.1",
       "org.typelevel" %% "munit-cats-effect" % "2.1.0",
       "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
-      "org.http4s" %% "http4s-netty-client" % "0.5.22"
+      "org.http4s" %% "http4s-netty-client" % "0.5.25"
     ),
     mimaBinaryIssueFilters := Nil
   )
