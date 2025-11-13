@@ -17,7 +17,6 @@ ThisBuild / developers := List(
 )
 ThisBuild / tlCiHeaderCheck := true
 ThisBuild / tlCiScalafmtCheck := true
-ThisBuild / tlSonatypeUseLegacyHost := true
 ThisBuild / Test / fork := true
 
 // publish website from this branch
@@ -41,7 +40,7 @@ ThisBuild / githubWorkflowBuild := {
   }
 }
 
-val Scala213 = "2.13.16"
+val Scala213 = "2.13.17"
 ThisBuild / crossScalaVersions := Seq(Scala213, "3.3.4")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 ThisBuild / tlVersionIntroduced := Map(
@@ -59,8 +58,7 @@ val commonSettings = Seq(
     } else {
       Nil
     }
-  },
-  sonatypeProfileName := "no.nrk"
+  }
 )
 
 lazy val root = tlCrossRootProject
@@ -156,7 +154,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
   .dependsOn(core)
   .settings(commonSettings)
   .settings(
-    resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
+    resolvers += Resolver.sonatypeCentralSnapshots,
     name := "bigquery-http4s-client",
     libraryDependencies ++= {
       val binaryVersion = scalaBinaryVersion.value
