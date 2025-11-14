@@ -87,7 +87,8 @@ class Http4sQueryClient[F[_]] private (
             Headers(
               "content-type" -> "application/grpc",
               "user-agent" -> "http4s-bigquery",
-              "x-goog-request-params" -> s"read_stream=${Uri.Path.Segment(streamN.name).encoded}")
+              "x-goog-request-params" -> s"read_stream=${Uri.Path.Segment(streamN.name).encoded}"
+            )
           )
         }
       } yield (session, serverStreams)
@@ -237,27 +238,29 @@ class Http4sQueryClient[F[_]] private (
           JobConfiguration(
             jobType = Some("EXTRACT"),
             labels = Some(id.labels.value),
-            extract = Some(JobConfigurationExtract(
-              destinationUris = Some(extract.urls.map(_.value)),
-              useAvroLogicalTypes = extract.format match {
-                case BQTableExtract.Format.AVRO(logicalTypes) => Some(logicalTypes)
-                case _ => None
-              },
-              sourceModel = None,
-              printHeader = csv match {
-                case Some(BQTableExtract.Format.CSV(_, printHeader)) => Some(printHeader)
-                case _ => None
-              },
-              compression = Some(extract.compression.value),
-              fieldDelimiter = csv match {
-                case Some(BQTableExtract.Format.CSV(delimiter, _)) => Some(delimiter)
-                case _ => None
-              },
-              destinationUri = None,
-              destinationFormat = Some(extract.format.value),
-              modelExtractOptions = None,
-              sourceTable = Some(TableHelper.toTableReference(extract.source))
-            ))
+            extract =
+              Some(
+                JobConfigurationExtract(
+                  destinationUris = Some(extract.urls.map(_.value)),
+                  useAvroLogicalTypes = extract.format match {
+                    case BQTableExtract.Format.AVRO(logicalTypes) => Some(logicalTypes)
+                    case _ => None
+                  },
+                  sourceModel = None,
+                  printHeader = csv match {
+                    case Some(BQTableExtract.Format.CSV(_, printHeader)) => Some(printHeader)
+                    case _ => None
+                  },
+                  compression = Some(extract.compression.value),
+                  fieldDelimiter = csv match {
+                    case Some(BQTableExtract.Format.CSV(delimiter, _)) => Some(delimiter)
+                    case _ => None
+                  },
+                  destinationUri = None,
+                  destinationFormat = Some(extract.format.value),
+                  modelExtractOptions = None,
+                  sourceTable = Some(TableHelper.toTableReference(extract.source))
+                ))
           ))
       )
       jobsClient.insert(project.value)(jobSpec).map(_.some).recoverWith {
