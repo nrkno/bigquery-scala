@@ -93,7 +93,7 @@ lazy val core = crossProject(JVMPlatform)
       ("org.apache.avro" % "avro" % "1.12.0").exclude("org.apache.commons", "commons-compress"),
       "com.lihaoyi" %% "sourcecode" % "0.4.4",
       "org.apache.commons" % "commons-compress" % "1.28.0",
-      "org.typelevel" %% "log4cats-slf4j" % "2.7.0",
+      "org.typelevel" %% "log4cats-slf4j" % "2.7.1",
       "co.fs2" %% "fs2-core" % "3.12.2",
       "co.fs2" %% "fs2-io" % "3.12.2",
       "io.circe" %% "circe-generic" % "0.14.15",
