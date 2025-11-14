@@ -177,7 +177,7 @@ object Http4sBigQueryClient {
   ): Resource[F, Http4sBigQueryClient[F]] =
     for {
       auth <- configureAuth
-        .getOrElse(identity[TokenProvider.CachedBuilder[F]])(defaultCached)
+        .getOrElse(identity[TokenProvider.CachedBuilder[F]](_))(defaultCached)
         .build(authentication)
       middle = withMiddlewares(client, retry, auth)
     } yield new Http4sBigQueryClient(middle, defaults, pollConfig)
