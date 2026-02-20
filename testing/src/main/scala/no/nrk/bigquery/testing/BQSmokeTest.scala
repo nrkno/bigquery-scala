@@ -28,7 +28,6 @@ import java.nio.file.{Files, Path}
 
 abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends CatsEffectSuite with GeneratedTest {
   self =>
-
   override def testType: String = "big-query"
 
   private val builder: IndexSeqSizedBuilder[BQSqlFrag.Magnet] = new IndexSeqSizedBuilder[BQSqlFrag.Magnet]
@@ -37,18 +36,20 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
 
   object StaticQueries extends GeneratedTest {
     override def basedir: Path = self.basedir
-
     override def testType: String = "bq-query-static"
+    override def datasetDir: String = self.datasetDir
   }
 
   object Queries extends GeneratedTest {
     override def basedir: Path = self.basedir
     override def testType: String = "bq-query"
+    override def datasetDir: String = self.datasetDir
   }
 
   object ExampleQueries extends GeneratedTest {
     override def basedir: Path = self.basedir
     override def testType: String = "bq-example-query"
+    override def datasetDir: String = self.datasetDir
   }
 
   val bqClient: IOFixture[QueryClient[IO]] = ResourceSuiteLocalFixture(
@@ -264,7 +265,7 @@ object BQSmokeTest {
           )
         )
 
-        val cachedQuery = CachedQuery(staticFrag, BigQueryTestClient.basedir)
+        val cachedQuery = CachedQuery(staticFrag, BigQueryTestClient.basedir.resolve(target.datasetDir))
         val runCheck: IO[Unit] = cachedQuery.read
           .flatMap {
             case Some(schema) => IO.pure(schema)

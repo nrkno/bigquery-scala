@@ -41,7 +41,7 @@ ThisBuild / githubWorkflowBuild := {
 }
 
 val Scala213 = "2.13.17"
-ThisBuild / crossScalaVersions := Seq(Scala213, "3.3.4")
+ThisBuild / crossScalaVersions := Seq(Scala213, "3.3.7")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 ThisBuild / tlVersionIntroduced := Map(
   "3" -> "0.9.0",
@@ -84,26 +84,26 @@ lazy val core = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-core",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.12.0",
-      "org.typelevel" %% "cats-effect" % "3.5.7",
+      "org.typelevel" %% "cats-core" % "2.13.0",
+      "org.typelevel" %% "cats-effect" % "3.6.3",
       "org.typelevel" %% "literally" % "1.2.0",
-      "org.scalameta" %% "munit" % "1.0.4" % Test,
-      "org.scalameta" %% "munit-scalacheck" % "1.0.0" % Test,
-      "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
-      ("org.apache.avro" % "avro" % "1.12.0").exclude("org.apache.commons", "commons-compress"),
-      "org.apache.commons" % "commons-compress" % "1.27.1",
-      "com.lihaoyi" %% "sourcecode" % "0.4.2",
-      "org.typelevel" %% "log4cats-slf4j" % "2.7.0",
-      "io.circe" %% "circe-generic" % "0.14.10",
-      "io.circe" %% "circe-parser" % "0.14.10",
-      "co.fs2" %% "fs2-core" % "3.11.0",
-      "co.fs2" %% "fs2-io" % "3.11.0",
-      "org.scala-lang.modules" %% "scala-collection-compat" % "2.12.0"
+      "org.scalameta" %% "munit" % "1.2.1" % Test,
+      "org.typelevel" %% "munit-cats-effect" % "2.1.0" % Test,
+      "org.scalameta" %% "munit-scalacheck" % "1.2.0" % Test,
+      ("org.apache.avro" % "avro" % "1.12.1").exclude("org.apache.commons", "commons-compress"),
+      "com.lihaoyi" %% "sourcecode" % "0.4.4",
+      "org.apache.commons" % "commons-compress" % "1.28.0",
+      "org.typelevel" %% "log4cats-slf4j" % "2.7.1",
+      "co.fs2" %% "fs2-core" % "3.12.2",
+      "co.fs2" %% "fs2-io" % "3.12.2",
+      "io.circe" %% "circe-generic" % "0.14.15",
+      "io.circe" %% "circe-parser" % "0.14.15",
+      "org.scala-lang.modules" %% "scala-collection-compat" % "2.14.0"
     ),
     libraryDependencies ++= {
       if (scalaVersion.value.startsWith("3")) {
         Seq(
-          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.8"
+          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.18"
         )
       } else {
         // scala2
@@ -135,11 +135,11 @@ lazy val `google-client` = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-google-client",
     libraryDependencies ++= Seq(
-      "org.scalameta" %% "munit-scalacheck" % "1.0.0" % Test,
-      "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
+      "org.typelevel" %% "munit-cats-effect" % "2.1.0" % Test,
+      "org.scalameta" %% "munit-scalacheck" % "1.2.0" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
-      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.11.1"),
-      "com.google.guava" % "guava" % "33.4.0-jre"
+      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.18.0"),
+      "com.google.guava" % "guava" % "33.4.8-jre"
     ),
     Compile / doc / scalacOptions ++= Seq(
       "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
@@ -159,8 +159,8 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
     libraryDependencies ++= {
       val binaryVersion = scalaBinaryVersion.value
       Seq(
-        "org.scalameta" %% "munit-scalacheck" % "1.0.0" % Test,
-        "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
+        "org.typelevel" %% "munit-cats-effect" % "2.1.0" % Test,
+        "org.scalameta" %% "munit-scalacheck" % "1.2.0" % Test,
         ("io.chrisdavenport" %% "http4s-grpc-google-cloud-bigquerystorage-v1" % "3.6.0+0.0.6")
           .exclude("io.chrisdavenport", s"http4s-grpc_${binaryVersion}"),
         ("io.chrisdavenport" %% "http4s-grpc" % "0.0.4")
@@ -169,9 +169,9 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
           .exclude("org.http4s", s"http4s-dsl_${binaryVersion}"),
         // needed because of hard-link in http4s-grpc
         // https://github.com/davenverse/http4s-grpc/pull/89
-        "org.http4s" %% "http4s-ember-core" % "0.23.30",
-        "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.6.1-v2-20241111",
-        "com.permutive" %% "gcp-auth" % "1.2.0"
+        "org.http4s" %% "http4s-ember-core" % "0.23.33",
+        "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.6.4-v2-20250427",
+        "com.permutive" %% "gcp-auth" % "2.1.0"
       )
     },
     Compile / doc / scalacOptions ++= Seq(
@@ -204,8 +204,8 @@ lazy val zetasql = crossProject(JVMPlatform)
     libraryDependencies ++= Seq(
       ("com.google.zetasql.toolkit" % "zetasql-toolkit-core" % "0.5.2")
         .exclude("com.google.cloud", "google-cloud-spanner"),
-      "org.scalameta" %% "munit" % "1.0.4",
-      "org.typelevel" %% "munit-cats-effect" % "2.0.0"
+      "org.scalameta" %% "munit" % "1.2.1",
+      "org.typelevel" %% "munit-cats-effect" % "2.1.0"
     ),
     mimaBinaryIssueFilters := Nil
   )
@@ -219,9 +219,9 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
-      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.56.0",
-      "org.scalameta" %% "munit" % "1.0.4",
-      "org.typelevel" %% "munit-cats-effect" % "2.0.0"
+      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.80.0",
+      "org.scalameta" %% "munit" % "1.2.1",
+      "org.typelevel" %% "munit-cats-effect" % "2.1.0"
     ),
     mimaBinaryIssueFilters := Nil
   )
@@ -235,10 +235,10 @@ lazy val testing = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-testing",
     libraryDependencies ++= Seq(
-      "org.scalameta" %% "munit" % "1.0.4",
-      "org.typelevel" %% "munit-cats-effect" % "2.0.0",
+      "org.scalameta" %% "munit" % "1.2.1",
+      "org.typelevel" %% "munit-cats-effect" % "2.1.0",
       "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
-      "org.http4s" %% "http4s-netty-client" % "0.5.22"
+      "org.http4s" %% "http4s-netty-client" % "0.5.25"
     ),
     mimaBinaryIssueFilters := Nil
   )
@@ -252,7 +252,7 @@ lazy val codegen = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-codegen",
     libraryDependencies ++= Seq(
-      "org.apache.commons" % "commons-text" % "1.13.0"
+      "org.apache.commons" % "commons-text" % "1.14.0"
     ),
     mimaBinaryIssueFilters := Nil
   )

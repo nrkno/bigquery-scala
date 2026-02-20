@@ -41,8 +41,8 @@ object RoutineHelper {
 
   private def toParams(routine: RoutineInfo) =
     Option(routine.getArguments)
-      .map(_.asScala.map(ra =>
-        BQRoutine.Param(Ident(ra.getName), Option(ra.getDataType).flatMap(SchemaHelper.typeFrom))))
+      .map(
+        _.asScala.map(ra => BQRoutine.Param(Ident(ra.getName), Option(ra.getDataType).flatMap(SchemaHelper.typeFrom))))
       .map(buf => ToSized(buf.toList))
       .getOrElse(BQRoutine.Params.empty.asInstanceOf[util.Sized[IndexedSeq[BQRoutine.Param], util.NatUnknown]])
 
