@@ -76,7 +76,13 @@ object conforms {
         path: List[BQField],
         actualFields: Seq[BQField],
         givenFields: Seq[BQField]
-    ): Unit =
+    ): Unit = {
+      // Check field count mismatch TODO: check
+      if (actualFields.size != givenFields.size) {
+        val pathStr = if (path.isEmpty) "root" else path.reverse.map(_.name).mkString(".")
+        reasonsBuilder += s"Field count mismatch at $pathStr: expected ${actualFields.size} fields, got ${givenFields.size}"
+      }
+
       actualFields.zipWithIndex.foreach { case (actualField, idx) =>
         val givenFieldOpt = givenFields.lift(idx)
 
@@ -100,6 +106,7 @@ object conforms {
             reasonsBuilder += s"Expected ${render(actualField)} at 0-based index $idx, but it given table/struct was shorter"
         }
       }
+    }
 
     go(Nil, actualSchema.fields, givenSchema.fields)
 
@@ -120,7 +127,13 @@ object conforms {
         path: List[BQField],
         actualFields: Seq[BQField],
         givenFields: Seq[BQField]
-    ): Unit =
+    ): Unit = {
+      // Check field count mismatch TODO: check
+      if (actualFields.size != givenFields.size) {
+        val pathStr = if (path.isEmpty) "root" else path.reverse.map(_.name).mkString(".")
+        reasonsBuilder += s"Field count mismatch at $pathStr: expected ${actualFields.size} fields, got ${givenFields.size}"
+      }
+
       actualFields.foreach { actualField =>
         val givenFieldOpt = givenFields.find(_.name == actualField.name)
 
@@ -142,6 +155,7 @@ object conforms {
             reasonsBuilder += s"Expected ${render(actualField)} to part of [${givenFields.map(_.name).mkString(", ")}]"
         }
       }
+    }
 
     go(Nil, actualSchema.fields, givenSchema.fields)
 
