@@ -150,4 +150,66 @@ object conforms {
       case reasons => Some(reasons)
     }
   }
+
+  /** Checks that schemas have exactly the same number of fields at each level.
+    * Returns None if counts match, Some(reasons) if they don't.
+    */
+  def fieldCounts(
+      actualSchema: BQSchema,
+      givenSchema: BQSchema
+  ): Option[List[String]] = {
+    val reasonsBuilder = List.newBuilder[String]
+
+    def go(
+        path: List[String],
+        actualFields: Seq[BQField],
+        givenFields: Seq[BQField]
+    ): Unit = {
+      val pathStr = if (path.isEmpty) "root" else path.reverse.mkString(".")
+
+      if (actualFields.size != givenFields.size) {
+        reasonsBuilder += s"At $pathStr: expected ${givenFields.size} fields, got ${actualFields.size}. " +
+          s"Expected: [${givenFields.map(_.name).mkString(", ")}], " +
+          s"got: [${actualFields.map(_.name).mkString(", ")}]"
+      }
+
+      // Recursively check struct subfields by matching on position
+      actualFields.zip(givenFields).foreach { case (actualField, givenField) =>
+        if (actualField.tpe == BQField.Type.STRUCT && actualField.subFields.nonEmpty) {
+          go(actualField.name :: path, actualField.subFields, givenField.subFields)
+        }
+      }
+    }
+
+    go(Nil, actualSchema.fields, givenSchema.fields)
+
+    reasonsBuilder.result() match {
+      case Nil => None
+      case reasons => Some(reasons)
+    }
+  }
+
+  /** Overload for BQType - converts to BQSchema then checks */
+  def fieldCounts(
+      actualSchema: BQSchema,
+      givenType: BQType
+  ): Option[List[String]] = {
+    def asField(name: String, bqType: BQType): BQField =
+      BQField(
+        name,
+        bqType.tpe,
+        bqType.mode,
+        None,
+        bqType.subFields.map { case (subName, tpe) => asField(subName, tpe) },
+        Nil
+      )
+
+    val givenSchema = asField("_", givenType) match {
+      case BQField(_, BQField.Type.STRUCT, _, _, subFields, Nil) =>
+        BQSchema(subFields)
+      case other => BQSchema.of(other)
+    }
+
+    fieldCounts(actualSchema, givenSchema)
+  }
 }

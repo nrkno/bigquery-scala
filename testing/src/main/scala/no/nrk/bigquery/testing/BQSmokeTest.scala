@@ -313,23 +313,38 @@ object BQSmokeTest {
           conforms.onlyTypes(actualSchema, expectedSchema) match {
             case Some(reasons) =>
               fail(s"Failed because ${reasons.mkString(", ")}", TypeClue(expectedSchema, actualSchema))
-            case None => assert(true)
+            case None => ()
+          }
+          conforms.fieldCounts(actualSchema, expectedSchema) match {
+            case Some(reasons) =>
+              fail(s"Field count mismatch: ${reasons.mkString(", ")}", TypeClue(expectedSchema, actualSchema))
+            case None => ()
           }
         case CheckType.TypeOnly(expectedType) =>
           conforms.onlyTypes(actualSchema, expectedType) match {
             case Some(reasons) =>
               fail(s"Failed because ${reasons.mkString(", ")}", TypeClue(expectedType, actualSchema))
-            case None => assert(true)
+            case None => ()
+          }
+          conforms.fieldCounts(actualSchema, expectedType) match {
+            case Some(reasons) =>
+              fail(s"Field count mismatch: ${reasons.mkString(", ")}", TypeClue(expectedType, actualSchema))
+            case None => ()
           }
 
         case CheckType.TypeAndName(expectedType) =>
           conforms.types(actualSchema, expectedType) match {
             case Some(reasons) =>
               fail(s"Failed because ${reasons.mkString(", ")}", TypeClue(expectedType, actualSchema))
-            case None => assert(true)
+            case None => ()
+          }
+          conforms.fieldCounts(actualSchema, expectedType) match {
+            case Some(reasons) =>
+              fail(s"Field count mismatch: ${reasons.mkString(", ")}", TypeClue(expectedType, actualSchema))
+            case None => ()
           }
         case CheckType.Untyped | CheckType.Failing =>
-          assert(true)
+          ()
       }
   }
 
