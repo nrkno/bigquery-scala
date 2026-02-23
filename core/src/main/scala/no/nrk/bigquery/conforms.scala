@@ -151,8 +151,8 @@ object conforms {
     }
   }
 
-  /** Checks that schemas have exactly the same number of fields at each level.
-    * Returns None if counts match, Some(reasons) if they don't.
+  /** Checks that schemas have exactly the same number of fields at each level. Returns None if counts match,
+    * Some(reasons) if they don't.
     */
   def fieldCounts(
       actualSchema: BQSchema,
