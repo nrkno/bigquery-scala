@@ -35,7 +35,8 @@ object BQJobStatistics {
       totalBytesBilled: Option[Long],
       totalBytesProcessed: Option[Long],
       totalPartitionsProcessed: Option[Long],
-      totalSlotMs: Option[Long]
+      totalSlotMs: Option[Long],
+      referencedTables: Option[List[BQTableId]]
   ) extends BQJobStatistics
 
   final case class Load(

@@ -101,7 +101,10 @@ object GoogleTypeHelper {
       Option(statistics.getTotalBytesBilled).map(_.longValue()),
       Option(statistics.getTotalBytesProcessed).map(_.longValue()),
       Option(statistics.getTotalPartitionsProcessed).map(_.longValue()),
-      Option(statistics.getTotalSlotMs).map(_.longValue())
+      Option(statistics.getTotalSlotMs).map(_.longValue()),
+      Option(statistics.getReferencedTables).map(
+        _.asScala.toList
+          .map(t => BQTableId(BQDataset(ProjectId(t.getProject), t.getDataset, jobId.locationId).toRef, t.getTable)))
     )
 
   def toLoadStats(jobId: BQJobId, statistics: JobStatistics.LoadStatistics) =
