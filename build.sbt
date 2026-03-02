@@ -40,7 +40,7 @@ ThisBuild / githubWorkflowBuild := {
   }
 }
 
-val Scala213 = "2.13.17"
+val Scala213 = "2.13.18"
 ThisBuild / crossScalaVersions := Seq(Scala213, "3.3.7")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 ThisBuild / tlVersionIntroduced := Map(
@@ -138,7 +138,7 @@ lazy val `google-client` = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect" % "2.1.0" % Test,
       "org.scalameta" %% "munit-scalacheck" % "1.2.0" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
-      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.18.0"),
+      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.22.0"),
       "com.google.guava" % "guava" % "33.4.8-jre"
     ),
     Compile / doc / scalacOptions ++= Seq(
