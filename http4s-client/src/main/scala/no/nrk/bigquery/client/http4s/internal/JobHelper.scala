@@ -42,7 +42,13 @@ object JobHelper {
         qstat.totalBytesBilled,
         qstat.totalBytesProcessed,
         qstat.totalPartitionsProcessed,
-        qstat.totalSlotMs.map(_.toMillis)
+        qstat.totalSlotMs.map(_.toMillis),
+        qstat.referencedTables.map(_.flatMap(t =>
+          for {
+            projectId <- t.projectId
+            datasetId <- t.datasetId
+            tableId <- t.tableId
+          } yield BQTableId(BQDataset(ProjectId(projectId), datasetId, jobId.locationId).toRef, tableId)))
       ))
 
   def toLoadStats(jobId: BQJobId, stat: JobStatistics) =
