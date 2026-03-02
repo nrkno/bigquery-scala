@@ -6,16 +6,18 @@
 
 package no.nrk.bigquery
 
-/** Comparisons of schemas and bigquery types. This is order dependant instead of names, because that's how we
-  * originally wrote all the BQ integration code. Not decided if that is for better or worse still.
+/** conformance checks for BigQuery queries, schemas and types.
+  *
+  * All methods return None if schemas conform, or Some(reasons) listing mismatches.
   */
 object conforms {
+
+  // Positional check of types/modes only - anonymizes all field names before comparing
   def onlyTypes(
       actualSchema: BQSchema,
       givenType: BQType
   ): Option[List[String]] = {
 
-    // rewrite both types to not use names, and reuse the comparison logic in `apply`
     val Anon = "_"
     def asAnonField(bqType: BQType): BQField =
       BQField(
@@ -41,31 +43,7 @@ object conforms {
     )
   }
 
-  def types(
-      actualSchema: BQSchema,
-      givenType: BQType
-  ): Option[List[String]] = {
-
-    def asField(name: String, bqType: BQType): BQField =
-      BQField(
-        name,
-        bqType.tpe,
-        bqType.mode,
-        None,
-        bqType.subFields.map { case (subName, tpe) => asField(subName, tpe) },
-        Nil
-      )
-
-    // the _ can cause issues when we only have one type!
-    val givenSchema = asField("_", givenType) match {
-      case BQField(_, BQField.Type.STRUCT, _, _, subFields, Nil) =>
-        BQSchema(subFields)
-      case other => BQSchema.of(other)
-    }
-
-    typesAndName(actualSchema, givenSchema)
-  }
-
+  // Positional check: compares fields by index, checking name, type and mode (REPEATED vs not)
   def onlyTypes(
       actualSchema: BQSchema,
       givenSchema: BQSchema
@@ -109,7 +87,33 @@ object conforms {
     }
   }
 
-  /** this is a stronger comparison than `onlyTypes`, because it takes into column names as well */
+  // Converts BQType to schema preserving names, then does name-based comparison via typesAndName
+  def types(
+      actualSchema: BQSchema,
+      givenType: BQType
+  ): Option[List[String]] = {
+
+    def asField(name: String, bqType: BQType): BQField =
+      BQField(
+        name,
+        bqType.tpe,
+        bqType.mode,
+        None,
+        bqType.subFields.map { case (subName, tpe) => asField(subName, tpe) },
+        Nil
+      )
+
+    // the _ can cause issues when we only have one type!
+    val givenSchema = asField("_", givenType) match {
+      case BQField(_, BQField.Type.STRUCT, _, _, subFields, Nil) =>
+        BQSchema(subFields)
+      case other => BQSchema.of(other)
+    }
+
+    typesAndName(actualSchema, givenSchema)
+  }
+
+  // Name-based check: looks up fields by name, then compares type and mode
   def typesAndName(
       actualSchema: BQSchema,
       givenSchema: BQSchema
@@ -149,5 +153,65 @@ object conforms {
       case Nil => None
       case reasons => Some(reasons)
     }
+  }
+
+  // Checks that field counts match at each nesting level (root and nested structs)
+  def fieldCounts(
+      actualSchema: BQSchema,
+      givenSchema: BQSchema
+  ): Option[List[String]] = {
+    val reasonsBuilder = List.newBuilder[String]
+
+    def go(
+        path: List[String],
+        actualFields: Seq[BQField],
+        givenFields: Seq[BQField]
+    ): Unit = {
+      val pathStr = if (path.isEmpty) "root" else path.reverse.mkString(".")
+
+      if (actualFields.size != givenFields.size) {
+        reasonsBuilder += s"At $pathStr: expected ${givenFields.size} fields, got ${actualFields.size}. " +
+          s"Expected: [${givenFields.map(_.name).mkString(", ")}], " +
+          s"got: [${actualFields.map(_.name).mkString(", ")}]"
+      }
+
+      // Recursively check struct subfields by matching on position
+      actualFields.zip(givenFields).foreach { case (actualField, givenField) =>
+        if (actualField.tpe == BQField.Type.STRUCT && actualField.subFields.nonEmpty) {
+          go(actualField.name :: path, actualField.subFields, givenField.subFields)
+        }
+      }
+    }
+
+    go(Nil, actualSchema.fields, givenSchema.fields)
+
+    reasonsBuilder.result() match {
+      case Nil => None
+      case reasons => Some(reasons)
+    }
+  }
+
+  // Overload: converts BQType to BQSchema, then checks field counts
+  def fieldCounts(
+      actualSchema: BQSchema,
+      givenType: BQType
+  ): Option[List[String]] = {
+    def asField(name: String, bqType: BQType): BQField =
+      BQField(
+        name,
+        bqType.tpe,
+        bqType.mode,
+        None,
+        bqType.subFields.map { case (subName, tpe) => asField(subName, tpe) },
+        Nil
+      )
+
+    val givenSchema = asField("_", givenType) match {
+      case BQField(_, BQField.Type.STRUCT, _, _, subFields, Nil) =>
+        BQSchema(subFields)
+      case other => BQSchema.of(other)
+    }
+
+    fieldCounts(actualSchema, givenSchema)
   }
 }
