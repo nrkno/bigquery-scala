@@ -40,7 +40,7 @@ ThisBuild / githubWorkflowBuild := {
   }
 }
 
-val Scala213 = "2.13.17"
+val Scala213 = "2.13.18"
 ThisBuild / crossScalaVersions := Seq(Scala213, "3.3.7")
 ThisBuild / scalaVersion := Scala213 // the default Scala
 ThisBuild / tlVersionIntroduced := Map(
@@ -87,7 +87,7 @@ lazy val core = crossProject(JVMPlatform)
       "org.typelevel" %% "cats-core" % "2.13.0",
       "org.typelevel" %% "cats-effect" % "3.6.3",
       "org.typelevel" %% "literally" % "1.2.0",
-      "org.scalameta" %% "munit" % "1.2.1" % Test,
+      "org.scalameta" %% "munit" % "1.2.3" % Test,
       "org.typelevel" %% "munit-cats-effect" % "2.1.0" % Test,
       "org.scalameta" %% "munit-scalacheck" % "1.2.0" % Test,
       ("org.apache.avro" % "avro" % "1.12.1").exclude("org.apache.commons", "commons-compress"),
@@ -108,7 +108,7 @@ lazy val core = crossProject(JVMPlatform)
       } else {
         // scala2
         Seq(
-          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.10",
+          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.12",
           "org.scala-lang" % "scala-reflect" % scalaVersion.value
         )
       }
@@ -138,7 +138,7 @@ lazy val `google-client` = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect" % "2.1.0" % Test,
       "org.scalameta" %% "munit-scalacheck" % "1.2.0" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
-      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.18.0"),
+      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.22.0"),
       "com.google.guava" % "guava" % "33.4.8-jre"
     ),
     Compile / doc / scalacOptions ++= Seq(
@@ -204,7 +204,7 @@ lazy val zetasql = crossProject(JVMPlatform)
     libraryDependencies ++= Seq(
       ("com.google.zetasql.toolkit" % "zetasql-toolkit-core" % "0.5.2")
         .exclude("com.google.cloud", "google-cloud-spanner"),
-      "org.scalameta" %% "munit" % "1.2.1",
+      "org.scalameta" %% "munit" % "1.2.3",
       "org.typelevel" %% "munit-cats-effect" % "2.1.0"
     ),
     mimaBinaryIssueFilters := Nil
@@ -219,8 +219,8 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
-      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.80.0",
-      "org.scalameta" %% "munit" % "1.2.1",
+      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.86.0",
+      "org.scalameta" %% "munit" % "1.2.3",
       "org.typelevel" %% "munit-cats-effect" % "2.1.0"
     ),
     mimaBinaryIssueFilters := Nil
@@ -235,10 +235,10 @@ lazy val testing = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-testing",
     libraryDependencies ++= Seq(
-      "org.scalameta" %% "munit" % "1.2.1",
+      "org.scalameta" %% "munit" % "1.2.3",
       "org.typelevel" %% "munit-cats-effect" % "2.1.0",
       "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
-      "org.http4s" %% "http4s-netty-client" % "0.5.25"
+      "org.http4s" %% "http4s-netty-client" % "0.5.26"
     ),
     mimaBinaryIssueFilters := Nil
   )
