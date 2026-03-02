@@ -26,6 +26,10 @@ import org.typelevel.log4cats.SelfAwareStructuredLogger
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
+/** Base class for BigQuery smoke tests that validate queries against BQ via dry-run.
+  *
+  * Provides test helpers that check schema conformance using different strategies
+  */
 abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends CatsEffectSuite with GeneratedTest {
   self =>
   override def testType: String = "big-query"
@@ -59,6 +63,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
 
   override def munitFixtures = List(bqClient)
 
+  // Checks query schema positionally (types/modes only, ignores field names because we provide bqType)
   protected def bqTypeCheckTest[A](
       testName: String
   )(query: BQQuery[A])(implicit loc: Location): Unit =
@@ -79,6 +84,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
   )(queries: List[BQQuery[A]])(implicit loc: Location): Unit =
     bqTypeChecksTest[A](testName)(queries)
 
+  // Combines multiple queries with UNION ALL, then checks positionally
   protected def bqTypeChecksTest[A](
       testName: String
   )(queries: List[BQQuery[A]])(implicit loc: Location): Unit =
@@ -96,6 +102,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
       )(bqClient())
     }
 
+  // Runs dry-run without any schema validation (just checks syntax)
   protected def bqCheckFragmentNoSchemaTest(
       testName: String
   )(frag: BQSqlFrag)(implicit loc: Location): Unit =
@@ -110,6 +117,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
       )(bqClient())
     }
 
+  // Checks query schema by field name lookup instead of positionally
   protected def bqTypeWithNameCheckTest[A](
       testName: String
   )(query: BQQuery[A])(implicit loc: Location): Unit =
@@ -124,6 +132,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
       )(bqClient())
     }
 
+  // Checks example query syntax (no schema validation), writes to ExampleQueries dir
   protected def bqCheckExample(
       testName: String
   )(frag: BQSqlFrag)(implicit loc: Location): Unit =
@@ -138,7 +147,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
       )(bqClient())
     }
 
-  // note that we just compare the generated sql for legacy sql. neither dry runs nor schemas work
+  // Legacy SQL: only compares generated SQL text (no dry-run or schema check)
   protected def bqCheckLegacyFragmentTest[A](
       testName: String
   )(frag: BQSqlFrag)(implicit loc: Location): Unit =
@@ -149,6 +158,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
       )
     }
 
+  // Checks fragment against explicit schema
   protected def bqCheckFragmentTest(
       testName: String
   )(tuple: (BQSqlFrag, BQSchema))(implicit loc: Location): Unit =
@@ -163,6 +173,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
       )(bqClient())
     }
 
+  // Checks fill query matches its target table schema
   protected def bqCheckFill(
       testName: String
   )(fill: BQFill[Any])(implicit loc: Location): Unit =
@@ -177,6 +188,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
       )(bqClient())
     }
 
+  // Checks view query matches its declared schema
   protected def bqCheckViewTest(
       testName: String,
       view: BQTableDef.ViewLike[Any]
@@ -192,6 +204,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
       )(bqClient())
     }
 
+  // Expects the query to fail with an error containing errorFragment
   protected def bqCheckFragmentTestFailing(
       testName: String,
       errorFragment: String
@@ -220,6 +233,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
         }
     }
 
+  // Checks table-valued function with provided args against its schema
   protected def bqCheckTableValueFunction[N <: Nat](testName: String, tvf: TVF[?, N])(
       args: IndexSeqSizedBuilder[BQSqlFrag.Magnet] => Sized[IndexedSeq[BQSqlFrag.Magnet], N]
   )(implicit loc: Location): Unit = {
@@ -241,6 +255,7 @@ abstract class BQSmokeTest(testClient: Resource[IO, QueryClient[IO]]) extends Ca
 object BQSmokeTest {
   private val logger: SelfAwareStructuredLogger[IO] = Slf4jFactory.create[IO].getLogger
 
+  // Core check: writes SQL to file, runs dry-run (cached if possible), validates schema
   def bqCheckFragment(
       testName: String,
       frag: BQSqlFrag,
@@ -306,6 +321,7 @@ object BQSmokeTest {
     }
   }
 
+  // Defines how to validate the returned schema from dry-run
   sealed trait CheckType {
     def checkSchema(actualSchema: BQSchema): Unit =
       this match {
@@ -313,23 +329,38 @@ object BQSmokeTest {
           conforms.onlyTypes(actualSchema, expectedSchema) match {
             case Some(reasons) =>
               fail(s"Failed because ${reasons.mkString(", ")}", TypeClue(expectedSchema, actualSchema))
-            case None => assert(true)
+            case None => ()
+          }
+          conforms.fieldCounts(actualSchema, expectedSchema) match {
+            case Some(reasons) =>
+              fail(s"Field count mismatch: ${reasons.mkString(", ")}", TypeClue(expectedSchema, actualSchema))
+            case None => ()
           }
         case CheckType.TypeOnly(expectedType) =>
           conforms.onlyTypes(actualSchema, expectedType) match {
             case Some(reasons) =>
               fail(s"Failed because ${reasons.mkString(", ")}", TypeClue(expectedType, actualSchema))
-            case None => assert(true)
+            case None => ()
+          }
+          conforms.fieldCounts(actualSchema, expectedType) match {
+            case Some(reasons) =>
+              fail(s"Field count mismatch: ${reasons.mkString(", ")}", TypeClue(expectedType, actualSchema))
+            case None => ()
           }
 
         case CheckType.TypeAndName(expectedType) =>
           conforms.types(actualSchema, expectedType) match {
             case Some(reasons) =>
               fail(s"Failed because ${reasons.mkString(", ")}", TypeClue(expectedType, actualSchema))
-            case None => assert(true)
+            case None => ()
+          }
+          conforms.fieldCounts(actualSchema, expectedType) match {
+            case Some(reasons) =>
+              fail(s"Field count mismatch: ${reasons.mkString(", ")}", TypeClue(expectedType, actualSchema))
+            case None => ()
           }
         case CheckType.Untyped | CheckType.Failing =>
-          assert(true)
+          ()
       }
   }
 
@@ -375,6 +406,7 @@ object BQSmokeTest {
     case object Failing extends CheckType
   }
 
+  // Rewrites query to use CTEs with fake data instead of real tables (for caching)
   def dependenciesAsStaticData(
       frag: BQSqlFrag,
       assertStable: Seq[BQTableLike[Any]]
@@ -482,6 +514,7 @@ object BQSmokeTest {
         )
     }
 
+  // Generates a fake row with example values matching the schema
   def exampleRow(schema: BQSchema): BQSqlFrag = {
     object counter {
       var value = 0L
@@ -543,7 +576,7 @@ object BQSmokeTest {
       .mkFragment(",")
   }
 
-  // this is a user-wide query cache to speed up development/CI
+  // Query cache: stores dry-run results by query hash to avoid repeated BQ calls
   case class CachedQuery(frag: BQSqlFrag, cacheDir: Path) {
     val cacheFile = cacheDir
       .resolve("smoke-test-cache")
