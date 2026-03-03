@@ -1,0 +1,1 @@
+SELECT * FROM UNNEST(ARRAY<STRUCT<numberOfTests STRING, tests ARRAY<STRUCT<a STRING, b INT64>>>>[("a", [("b", 10), ("c", 11)])])
