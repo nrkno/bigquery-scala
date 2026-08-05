@@ -76,13 +76,52 @@ class RoutineUpdateOperationTest extends FunSuite {
       .newBuilder(routineId)
       .setRoutineType("SCALAR_FUNCTION")
       .setLanguage("SQL")
-      .setBody("((1))")
+      .setBody("(1)")
       .setReturnType(StandardSQLDataType.newBuilder().setTypeKind(BQType.INT64.tpe.name).build())
       .build()
 
     RoutineUpdateOperation.from(udf, Some(ExistingRoutine(udf, routine))) match {
       case _: UpdateOperation.Noop =>
       case other => fail(other.toString)
+    }
+  }
+
+  test("noop udf round-trip through toGoogle/fromGoogle") {
+    val rtUdf: UDF.Persistent[_0] =
+      UDF.persistent(
+        ident"foo",
+        BQDataset.Ref(ProjectId("test-project-123456"), "ds1"),
+        Params.empty,
+        UDF.Body.Sql(bqfr"(1)"),
+        Some(BQType.INT64),
+        None
+      )
+    val googleRoutine = RoutineHelper.toGoogle(rtUdf, None)
+    val roundTripped = RoutineHelper.fromGoogle(googleRoutine)
+
+    RoutineUpdateOperation.from(rtUdf, Some(ExistingRoutine(roundTripped, googleRoutine))) match {
+      case _: UpdateOperation.Noop =>
+      case other => fail(s"expected Noop after round-trip, got: $other")
+    }
+  }
+
+  test("noop udf round-trip with struct return type") {
+    val structUdf: UDF.Persistent[_1] =
+      UDF.persistent(
+        ident"bar",
+        BQDataset.Ref(ProjectId("test-project-123456"), "ds1"),
+        Params(Param("input", BQType.STRING)),
+        UDF.Body.Sql(bqfr"(SELECT STRUCT(input AS name, 1 AS count))"),
+        Some(BQType.struct(("name", BQType.STRING), ("count", BQType.INT64))),
+        Some("a test udf")
+      )
+
+    val googleRoutine = RoutineHelper.toGoogle(structUdf, None)
+    val roundTripped = RoutineHelper.fromGoogle(googleRoutine)
+
+    RoutineUpdateOperation.from(structUdf, Some(ExistingRoutine(roundTripped, googleRoutine))) match {
+      case _: UpdateOperation.Noop =>
+      case other => fail(s"expected Noop after round-trip, got: $other")
     }
   }
 

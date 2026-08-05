@@ -10,11 +10,21 @@ package internal
 import cats.Eq
 
 object RoutineUpdateOperation {
+
+  private def normalizeType(tpe: BQType): BQType =
+    tpe.copy(
+      mode = BQField.Mode.REQUIRED,
+      subFields = tpe.subFields.map { case (name, t) => (name, normalizeType(t)) }
+    )
+
+  private def normalizeParam(p: BQRoutine.Param): BQRoutine.Param =
+    p.copy(maybeType = p.maybeType.map(normalizeType))
+
   implicit val eqUDF: Eq[UDF.Persistent[?]] = Eq.instance { (a, b) =>
     a.name == b.name &&
-    a.params == b.params &&
+    a.params.unsized.map(normalizeParam) == b.params.unsized.map(normalizeParam) &&
     a.body.asFragment.asString == b.body.asFragment.asString &&
-    a.returnType == b.returnType
+    a.returnType.map(normalizeType) == b.returnType.map(normalizeType)
   }
 
   implicit val eqTVF: Eq[TVF[?, ?]] = Eq.instance { (a, b) =>
