@@ -219,7 +219,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
-      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.95.0",
+      ("com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.95.0").exclude("org.jspecify", "jspecify"),
       "org.scalameta" %% "munit" % "1.2.4",
       "org.typelevel" %% "munit-cats-effect" % "2.2.0"
     ),
