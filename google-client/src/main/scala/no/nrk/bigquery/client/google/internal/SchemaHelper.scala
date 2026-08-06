@@ -7,14 +7,7 @@
 package no.nrk.bigquery
 package client.google.internal
 
-import com.google.cloud.bigquery.{
-  Field,
-  FieldList,
-  PolicyTags,
-  Schema,
-  StandardSQLDataType,
-  StandardSQLTypeName
-}
+import com.google.cloud.bigquery.{Field, FieldList, PolicyTags, Schema, StandardSQLDataType, StandardSQLTypeName}
 import no.nrk.bigquery.BQField.Type
 
 import scala.jdk.CollectionConverters.*
