@@ -159,20 +159,13 @@ object Http4sBigQueryClient {
       authentication: TokenProvider[F]): Client[F] =
     Retry(retry)(authentication.clientMiddleware(client))
 
-  def defaultCached[F[_]: Async: LoggerFactory] = {
-    val logger = LoggerFactory[F].getLogger
-    TokenProvider
-      .cached[F]
-      .safetyPeriod(4.seconds)
-      .onRefreshFailure { case (error, details) =>
-        logger.warn(error)(s"Token refresh failed (retry details: $details)")
-      }
-      .onExhaustedRetries { case error =>
-        logger.error(error)("Token refresh retries exhausted")
-      }
-      .onNewToken { case (_, _) => Async[F].unit }
-      .retryPolicy(fullJitter[F](1.second).join(limitRetries[F](5)))
-  }
+  def defaultCached[F[_]: Async] = TokenProvider
+    .cached[F]
+    .safetyPeriod(4.seconds)
+    .onRefreshFailure { case (_, _) => Async[F].unit }
+    .onExhaustedRetries(_ => Async[F].unit)
+    .onNewToken { case (_, _) => Async[F].unit }
+    .retryPolicy(fullJitter[F](1.second).join(limitRetries[F](5)))
 
   def resource[F[_]: Async: LoggerFactory](
       client: Client[F],
