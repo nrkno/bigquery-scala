@@ -7,7 +7,15 @@
 package no.nrk.bigquery
 package client.google.internal
 
-import com.google.cloud.bigquery.{Option as _, *}
+import com.google.cloud.bigquery.{
+  Clustering,
+  MaterializedViewDefinition,
+  StandardTableDefinition,
+  TableDefinition,
+  TableId,
+  TableInfo,
+  ViewDefinition
+}
 import no.nrk.bigquery.*
 
 import scala.jdk.CollectionConverters.*
