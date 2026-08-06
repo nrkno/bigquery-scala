@@ -19,7 +19,7 @@ import org.apache.avro.generic.GenericRecord
 import org.http4s.client.Client
 import org.http4s.client.middleware.{Retry, RetryPolicy as HttpRetryPolicy}
 import org.typelevel.log4cats.LoggerFactory
-import retry.RetryPolicies.constantDelay
+import retry.RetryPolicies.{fullJitter, limitRetries}
 
 import scala.concurrent.duration.*
 
@@ -165,7 +165,7 @@ object Http4sBigQueryClient {
     .onRefreshFailure { case (_, _) => Async[F].unit }
     .onExhaustedRetries(_ => Async[F].unit)
     .onNewToken { case (_, _) => Async[F].unit }
-    .retryPolicy(constantDelay[F](200.millis))
+    .retryPolicy(fullJitter[F](1.second).join(limitRetries[F](5)))
 
   def resource[F[_]: Async: LoggerFactory](
       client: Client[F],

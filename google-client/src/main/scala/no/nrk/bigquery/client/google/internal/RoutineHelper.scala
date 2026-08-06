@@ -7,7 +7,16 @@
 package no.nrk.bigquery
 package client.google.internal
 
-import com.google.cloud.bigquery.{Option as _, *}
+import com.google.cloud.bigquery.{
+  RoutineArgument,
+  RoutineId,
+  RoutineInfo,
+  RoutineInfoHelper,
+  StandardSQLDataType,
+  StandardSQLField,
+  StandardSQLStructType,
+  StandardSQLTableType
+}
 import no.nrk.bigquery.UDF.Body
 import no.nrk.bigquery.util.ToSized
 
