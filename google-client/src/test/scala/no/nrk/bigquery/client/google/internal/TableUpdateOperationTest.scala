@@ -7,8 +7,14 @@
 package no.nrk.bigquery
 package client.google.internal
 
+import com.google.cloud.bigquery.{
+  MaterializedViewDefinition,
+  StandardTableDefinition,
+  TableInfo,
+  TimePartitioning,
+  ViewDefinition
+}
 import com.google.cloud.bigquery.TimePartitioning.Type
-import com.google.cloud.bigquery.{Option as _, *}
 import munit.FunSuite
 import no.nrk.bigquery.syntax.*
 import GoogleTypeHelper.*
