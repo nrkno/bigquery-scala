@@ -96,19 +96,19 @@ lazy val core = crossProject(JVMPlatform)
       "org.typelevel" %% "log4cats-slf4j" % "2.7.1",
       "co.fs2" %% "fs2-core" % "3.12.2",
       "co.fs2" %% "fs2-io" % "3.12.2",
-      "io.circe" %% "circe-generic" % "0.14.15",
-      "io.circe" %% "circe-parser" % "0.14.15",
+      "io.circe" %% "circe-generic" % "0.14.16",
+      "io.circe" %% "circe-parser" % "0.14.16",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.14.0"
     ),
     libraryDependencies ++= {
       if (scalaVersion.value.startsWith("3")) {
         Seq(
-          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.18"
+          "com.softwaremill.magnolia1_3" %% "magnolia" % "1.3.23"
         )
       } else {
         // scala2
         Seq(
-          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.12",
+          "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.14",
           "org.scala-lang" % "scala-reflect" % scalaVersion.value
         )
       }
@@ -219,7 +219,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
-      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.86.0",
+      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.92.0",
       "org.scalameta" %% "munit" % "1.2.3",
       "org.typelevel" %% "munit-cats-effect" % "2.1.0"
     ),
