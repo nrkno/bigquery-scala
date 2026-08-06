@@ -18,7 +18,28 @@ import com.google.api.gax.retrying.RetrySettings
 import com.google.api.gax.rpc.ServerStream
 import com.google.auth.Credentials
 import com.google.cloud.bigquery.storage.v1.*
-import com.google.cloud.bigquery.{Job as GoogleJob, Option as _, *}
+import com.google.cloud.bigquery.{
+  BigQuery,
+  BigQueryException,
+  BigQueryOptions,
+  DatasetId,
+  DatasetInfo,
+  ExtractJobConfiguration,
+  FormatOptions,
+  Job as GoogleJob,
+  JobId,
+  JobInfo,
+  JobStatistics,
+  Jsonify,
+  QueryJobConfiguration,
+  RoutineId,
+  RoutineInfo,
+  StandardTableDefinition,
+  TableDataWriteChannel,
+  TableDefinition,
+  TableInfo,
+  WriteChannelConfiguration
+}
 import com.google.cloud.http.HttpTransportOptions
 import fs2.{Chunk, Stream}
 import io.circe.Encoder
