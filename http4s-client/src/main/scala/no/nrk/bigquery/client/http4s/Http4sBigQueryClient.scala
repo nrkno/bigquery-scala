@@ -19,7 +19,7 @@ import org.apache.avro.generic.GenericRecord
 import org.http4s.client.Client
 import org.http4s.client.middleware.{Retry, RetryPolicy as HttpRetryPolicy}
 import org.typelevel.log4cats.LoggerFactory
-import retry.RetryPolicies.constantDelay
+import retry.RetryPolicies.{fullJitter, limitRetries}
 
 import scala.concurrent.duration.*
 
@@ -159,13 +159,20 @@ object Http4sBigQueryClient {
       authentication: TokenProvider[F]): Client[F] =
     Retry(retry)(authentication.clientMiddleware(client))
 
-  def defaultCached[F[_]: Async] = TokenProvider
-    .cached[F]
-    .safetyPeriod(4.seconds)
-    .onRefreshFailure { case (_, _) => Async[F].unit }
-    .onExhaustedRetries(_ => Async[F].unit)
-    .onNewToken { case (_, _) => Async[F].unit }
-    .retryPolicy(constantDelay[F](200.millis))
+  def defaultCached[F[_]: Async: LoggerFactory] = {
+    val logger = LoggerFactory[F].getLogger
+    TokenProvider
+      .cached[F]
+      .safetyPeriod(4.seconds)
+      .onRefreshFailure { case (error, details) =>
+        logger.warn(error)(s"Token refresh failed (retry details: $details)")
+      }
+      .onExhaustedRetries { case error =>
+        logger.error(error)("Token refresh retries exhausted")
+      }
+      .onNewToken { case (_, _) => Async[F].unit }
+      .retryPolicy(fullJitter[F](1.second).join(limitRetries[F](5)))
+  }
 
   def resource[F[_]: Async: LoggerFactory](
       client: Client[F],
