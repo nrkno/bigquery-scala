@@ -87,15 +87,15 @@ lazy val core = crossProject(JVMPlatform)
       "org.typelevel" %% "cats-core" % "2.13.0",
       "org.typelevel" %% "cats-effect" % "3.7.0",
       "org.typelevel" %% "literally" % "1.2.0",
-      "org.scalameta" %% "munit" % "1.2.3" % Test,
+      "org.scalameta" %% "munit" % "1.2.4" % Test,
       "org.typelevel" %% "munit-cats-effect" % "2.2.0" % Test,
       "org.scalameta" %% "munit-scalacheck" % "1.3.0" % Test,
       ("org.apache.avro" % "avro" % "1.12.1").exclude("org.apache.commons", "commons-compress"),
       "com.lihaoyi" %% "sourcecode" % "0.4.4",
       "org.apache.commons" % "commons-compress" % "1.28.0",
+      "co.fs2" %% "fs2-core" % "3.13.0",
+      "co.fs2" %% "fs2-io" % "3.13.0",
       "org.typelevel" %% "log4cats-slf4j" % "2.8.0",
-      "co.fs2" %% "fs2-core" % "3.12.2",
-      "co.fs2" %% "fs2-io" % "3.12.2",
       "io.circe" %% "circe-generic" % "0.14.16",
       "io.circe" %% "circe-parser" % "0.14.16",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.14.0"
@@ -204,7 +204,7 @@ lazy val zetasql = crossProject(JVMPlatform)
     libraryDependencies ++= Seq(
       ("com.google.zetasql.toolkit" % "zetasql-toolkit-core" % "0.5.2")
         .exclude("com.google.cloud", "google-cloud-spanner"),
-      "org.scalameta" %% "munit" % "1.2.3",
+      "org.scalameta" %% "munit" % "1.2.4",
       "org.typelevel" %% "munit-cats-effect" % "2.2.0"
     ),
     mimaBinaryIssueFilters := Nil
@@ -220,7 +220,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
       "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.92.0",
-      "org.scalameta" %% "munit" % "1.2.3",
+      "org.scalameta" %% "munit" % "1.2.4",
       "org.typelevel" %% "munit-cats-effect" % "2.2.0"
     ),
     mimaBinaryIssueFilters := Nil
@@ -235,7 +235,7 @@ lazy val testing = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-testing",
     libraryDependencies ++= Seq(
-      "org.scalameta" %% "munit" % "1.2.3",
+      "org.scalameta" %% "munit" % "1.2.4",
       "org.typelevel" %% "munit-cats-effect" % "2.2.0",
       "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
       "org.http4s" %% "http4s-netty-client" % "0.5.31"
