@@ -219,8 +219,8 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
-      ("com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.95.0").exclude("org.jspecify", "jspecify"),
       "org.scalameta" %% "munit" % "1.3.5",
+      ("com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.96.0").exclude("org.jspecify", "jspecify"),
       "org.typelevel" %% "munit-cats-effect" % "2.2.0"
     ),
     mimaBinaryIssueFilters := Nil
@@ -238,7 +238,7 @@ lazy val testing = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "1.3.5",
       "org.typelevel" %% "munit-cats-effect" % "2.2.0",
       "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
-      "org.http4s" %% "http4s-netty-client" % "0.5.31"
+      "org.http4s" %% "http4s-netty-client" % "0.7.0"
     ),
     mimaBinaryIssueFilters := Nil
   )
