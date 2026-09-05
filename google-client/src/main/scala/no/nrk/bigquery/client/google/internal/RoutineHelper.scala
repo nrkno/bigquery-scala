@@ -127,7 +127,7 @@ object RoutineHelper {
       case s: Body.Sql =>
         baseBuilder
           .setLanguage("SQL")
-          .setBody(s.asFragment.asString)
+          .setBody(s.body.asString)
           .setImportedLibraries(List.empty.asJava)
       case Body.Js(javascriptSnippet, gsLibraryPath) =>
         baseBuilder
