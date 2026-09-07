@@ -7,14 +7,12 @@
 package no.nrk.bigquery
 
 import io.circe.Json
-
 import org.apache.avro.util.Utf8
 import org.apache.avro
 
 import java.time.*
 import scala.collection.compat.*
 import scala.jdk.CollectionConverters.*
-
 import scala.reflect.ClassTag
 
 trait BQRead[A] { outer =>
@@ -30,7 +28,7 @@ trait BQRead[A] { outer =>
   def read(transportSchema: avro.Schema, value: Any): A
 }
 
-object BQRead extends BQReadCompat {
+object BQRead extends BQReadCompat with ProductBQRead {
 
   def apply[A: BQRead]: BQRead[A] = implicitly
 
