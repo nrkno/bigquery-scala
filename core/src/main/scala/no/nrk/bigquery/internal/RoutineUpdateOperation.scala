@@ -12,12 +12,7 @@ import cats.Eq
 object RoutineUpdateOperation {
 
   private def normalizeType(tpe: BQType): BQType =
-    // make every field required
-    // because getting the routine from BQ only return name and type, not mode
-    // So When initializing BQType (BQType.apply(...)) when we define our routines,
-    // .apply automatically adds the REQUIRED mode
-    // While what we get back from the routineClieng.get from BQ does not have any
-    // mode, so it gets turned into NULLABLE here in bigquery-scala
+    // Routine info from BQ does not contain mode for types, here we normalize mode before we compare
     tpe.copy(
       mode = BQField.Mode.REQUIRED,
       subFields = tpe.subFields.map { case (name, t) => (name, normalizeType(t)) }
@@ -28,25 +23,12 @@ object RoutineUpdateOperation {
 
   implicit val eqUDF: Eq[UDF.Persistent[?]] = Eq.instance { (a, b) =>
     val name: Boolean = a.name == b.name
-    // unsized is used because it is awkward to map on sized wrapping
-    // normalize type to REQUIRED for both a and b
-    // a.params == b.params &&
-    val aNormalizedParams = a.params.unsized.map(normalizeParam)
-    val bNormalizedParams = b.params.unsized.map(normalizeParam)
-    val params: Boolean = aNormalizedParams == bNormalizedParams
-
-    // TODO: aBodyFragment lacks an extra surrounding () because when we create a new udf we wrap it in ()
-    // So either do s.body.asString in toGoogle
-    // or wrap a.body.asFragment.asString in extra parenthesis here
-    val aBodyFragment = a.body.asFragment.asString
-    val bBodyFragment = b.body.asFragment.asString
-    val body: Boolean = aBodyFragment == bBodyFragment
+    // unsized is used because it is "awkward" to map on Sized wrapping
+    val params: Boolean = a.params.unsized.map(normalizeParam) == b.params.unsized.map(normalizeParam)
+    val body: Boolean = a.body.asFragment.asString == b.body.asFragment.asString
 
     // normalize return type to REQUIRED for both a and b
-    // a.returnType == b.returnType
-    val aReturnType = a.returnType.map(normalizeType)
-    val bReturnType = b.returnType.map(normalizeType)
-    val returnType: Boolean = aReturnType == bReturnType
+    val returnType: Boolean = a.returnType.map(normalizeType) == b.returnType.map(normalizeType)
 
     name && params && body && returnType
   }
