@@ -120,12 +120,10 @@ class Http4sAdminClient[F[_]] private (client: Client[F])(implicit F: Async[F])
       .toVector
 
   override def getRoutineWithUnderlying(id: BQPersistentRoutine.Id): F[Option[ExistingRoutine[Routine]]] =
-    // We use googles client to get the routine
     routineClient
       .get(id.dataset.project.value, id.dataset.id, id.name.value)
       .attempt
       .flatMap(toMaybe)
-      // here we use the helper to convert the routine to udf/tvf
       .map(_.flatMap(r => RoutineHelper.fromGoogle(r).toOption.map(ExistingRoutine(_, r))))
 
   override def updateRoutineWithExisting(
