@@ -26,8 +26,7 @@ object SchemaHelper {
       struct = Option(dt.getStructType).map(e =>
         e.getFields.asScala.flatMap(f => typeFrom(f.getDataType).map(t => f.getName -> t)).toList)
     } yield BQType(
-      // TODO: Here the params from the routine from google is converted to BQType
-      // And here the MODE is turned into NULLABLE unless it is an array
+      // Here the params from the routine from google is converted to BQType
       // In datahub repo, we turn mode automatically into REQUIRED, so that is the bug
       if (arr.isDefined) BQField.Mode.REPEATED else BQField.Mode.REQUIRED,
       arr.map(_.tpe).getOrElse(typ),
