@@ -47,7 +47,6 @@ object BQType {
   val BIGNUMERIC: BQType =
     apply(BQField.Mode.REQUIRED, BQField.Type.BIGNUMERIC, Nil)
   val STRING: BQType =
-    // TODO: But here it gets also turned into required...?
     apply(BQField.Mode.REQUIRED, BQField.Type.STRING, Nil)
   val BYTES: BQType = apply(BQField.Mode.REQUIRED, BQField.Type.BYTES, Nil)
   val TIMESTAMP: BQType =
