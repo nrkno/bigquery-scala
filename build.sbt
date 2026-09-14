@@ -89,7 +89,7 @@ lazy val core = crossProject(JVMPlatform)
       "org.typelevel" %% "literally" % "1.2.0",
       "org.scalameta" %% "munit" % "1.3.6" % Test,
       "org.typelevel" %% "munit-cats-effect" % "2.2.0" % Test,
-      "org.scalameta" %% "munit-scalacheck" % "1.3.0" % Test,
+      "org.scalameta" %% "munit-scalacheck" % "1.3.1" % Test,
       ("org.apache.avro" % "avro" % "1.12.2").exclude("org.apache.commons", "commons-compress"),
       "com.lihaoyi" %% "sourcecode" % "0.4.4",
       "org.apache.commons" % "commons-compress" % "1.28.0",
@@ -136,7 +136,7 @@ lazy val `google-client` = crossProject(JVMPlatform)
     name := "bigquery-google-client",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "munit-cats-effect" % "2.2.0" % Test,
-      "org.scalameta" %% "munit-scalacheck" % "1.3.0" % Test,
+      "org.scalameta" %% "munit-scalacheck" % "1.3.1" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
       addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.22.1"),
       "com.google.guava" % "guava" % "33.7.1-jre"
@@ -160,7 +160,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
       val binaryVersion = scalaBinaryVersion.value
       Seq(
         "org.typelevel" %% "munit-cats-effect" % "2.2.0" % Test,
-        "org.scalameta" %% "munit-scalacheck" % "1.3.0" % Test,
+        "org.scalameta" %% "munit-scalacheck" % "1.3.1" % Test,
         ("io.chrisdavenport" %% "http4s-grpc-google-cloud-bigquerystorage-v1" % "3.6.0+0.0.6")
           .exclude("io.chrisdavenport", s"http4s-grpc_${binaryVersion}"),
         ("io.chrisdavenport" %% "http4s-grpc" % "0.0.4")
@@ -169,7 +169,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
           .exclude("org.http4s", s"http4s-dsl_${binaryVersion}"),
         // needed because of hard-link in http4s-grpc
         // https://github.com/davenverse/http4s-grpc/pull/89
-        "org.http4s" %% "http4s-ember-core" % "0.23.36",
+        "org.http4s" %% "http4s-ember-core" % "0.23.37",
         "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.6.4-v2-20250427",
         "com.permutive" %% "gcp-auth" % "2.1.0"
       )
@@ -238,7 +238,7 @@ lazy val testing = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "1.3.6",
       "org.typelevel" %% "munit-cats-effect" % "2.2.0",
       "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
-      "org.http4s" %% "http4s-netty-client" % "0.7.0"
+      "org.http4s" %% "http4s-netty-client" % "0.7.1"
     ),
     mimaBinaryIssueFilters := Nil
   )
