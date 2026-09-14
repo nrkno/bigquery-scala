@@ -85,14 +85,11 @@ object RoutineHelper {
       TVF.TVFId(BQDataset.Ref(ProjectId.unsafeFromString(a), b), Ident(c)))
 
   def toParam(argument: Argument) =
-    // here only name and type is defined for the param
     (argument.name, argument.dataType).mapN((name, dt) => BQRoutine.Param(Ident(name), SchemaHelper.toBQType(dt)))
 
   def toUDF(routine: Routine, ref: RoutineReference) =
-    // Here we make the routine into udf
     for {
       id <- toUdfId(ref).toRight("Not possible to create UDF.UDFId.PersistentId")
-      // here we make the params for the udf
       params = routine.arguments.getOrElse(Nil).flatMap(toParam)
       lang <- routine.language.toRight("No language defined")
       body <- lang match {
