@@ -25,7 +25,7 @@ object RoutineUpdateOperation {
     val name: Boolean = a.name == b.name
     // unsized is used because it is "awkward" to map on Sized wrapping
     val params: Boolean = a.params.unsized.map(normalizeParam) == b.params.unsized.map(normalizeParam)
-    val body: Boolean = a.body.asFragment.asString == b.body.asFragment.asString
+    val body: Boolean = "(" + a.body.asFragment.asString + ")" == b.body.asFragment.asString
 
     // normalize return type to REQUIRED for both a and b
     val returnType: Boolean = a.returnType.map(normalizeType) == b.returnType.map(normalizeType)
