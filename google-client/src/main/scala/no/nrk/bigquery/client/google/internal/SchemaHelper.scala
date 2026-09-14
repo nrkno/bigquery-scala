@@ -29,7 +29,7 @@ object SchemaHelper {
       // TODO: Here the params from the routine from google is converted to BQType
       // And here the MODE is turned into NULLABLE unless it is an array
       // In datahub repo, we turn mode automatically into REQUIRED, so that is the bug
-      if (arr.isDefined) BQField.Mode.REPEATED else BQField.Mode.NULLABLE,
+      if (arr.isDefined) BQField.Mode.REPEATED else BQField.Mode.REQUIRED,
       arr.map(_.tpe).getOrElse(typ),
       struct.orElse(arr.map(_.subFields)).getOrElse(Nil)
     )

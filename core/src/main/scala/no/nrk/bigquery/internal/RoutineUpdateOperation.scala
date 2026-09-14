@@ -35,7 +35,9 @@ object RoutineUpdateOperation {
     val bNormalizedParams = b.params.unsized.map(normalizeParam)
     val params: Boolean = aNormalizedParams == bNormalizedParams
 
-    // TODO: aBodyFragment lacks an extra surrounding (), maybe because of the change we did with s.body?
+    // TODO: aBodyFragment lacks an extra surrounding () because when we create a new udf we wrap it in ()
+    // So either do s.body.asString in toGoogle
+    // or wrap a.body.asFragment.asString in extra parenthesis here
     val aBodyFragment = a.body.asFragment.asString
     val bBodyFragment = b.body.asFragment.asString
     val body: Boolean = aBodyFragment == bBodyFragment
