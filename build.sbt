@@ -169,7 +169,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
           .exclude("org.http4s", s"http4s-dsl_${binaryVersion}"),
         // needed because of hard-link in http4s-grpc
         // https://github.com/davenverse/http4s-grpc/pull/89
-        "org.http4s" %% "http4s-ember-core" % "0.23.36",
+        "org.http4s" %% "http4s-ember-core" % "0.23.37",
         "net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.6.4-v2-20250427",
         "com.permutive" %% "gcp-auth" % "2.1.0"
       )
@@ -238,7 +238,7 @@ lazy val testing = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "1.3.5",
       "org.typelevel" %% "munit-cats-effect" % "2.2.0",
       "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
-      "org.http4s" %% "http4s-netty-client" % "0.7.0"
+      "org.http4s" %% "http4s-netty-client" % "0.7.1"
     ),
     mimaBinaryIssueFilters := Nil
   )
