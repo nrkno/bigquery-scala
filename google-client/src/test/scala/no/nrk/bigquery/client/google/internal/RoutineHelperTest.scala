@@ -92,7 +92,7 @@ class RoutineUpdateOperationTest extends FunSuite {
         ident"foo",
         BQDataset.Ref(ProjectId("test-project-123456"), "ds1"),
         Params.empty,
-        UDF.Body.Sql(bqfr"(1)"),
+        UDF.Body.Sql(bqfr"((1))"),
         Some(BQType.INT64),
         None
       )
