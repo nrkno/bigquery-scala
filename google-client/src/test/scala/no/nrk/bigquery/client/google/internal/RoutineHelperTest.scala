@@ -22,7 +22,7 @@ class RoutineUpdateOperationTest extends FunSuite {
   private val udf: UDF.Persistent[_0] =
     UDF.persistent(
       ident"foo",
-      BQDataset.Ref(ProjectId("p1"), "ds1"),
+      BQDataset.Ref(ProjectId("project-id1"), "ds1"),
       Params.empty,
       UDF.Body.Sql(bqfr"(1)"),
       Some(BQType.INT64),
