@@ -71,8 +71,8 @@ class RoutineUpdateOperationTest extends FunSuite {
     assertEquals(existingRoutine.getArguments.get(0).getDataType.getTypeKind, "ARRAY")
   }
 
-  test("noop udf") {
-    val routine = RoutineInfo
+  test("should noop when UDF equals the converted routine from google") {
+    val routineFromBQ = RoutineInfo
       .newBuilder(routineId)
       .setRoutineType("SCALAR_FUNCTION")
       .setLanguage("SQL")
@@ -80,7 +80,9 @@ class RoutineUpdateOperationTest extends FunSuite {
       .setReturnType(StandardSQLDataType.newBuilder().setTypeKind(BQType.INT64.tpe.name).build())
       .build()
 
-    RoutineUpdateOperation.from(udf, Some(ExistingRoutine(udf, routine))) match {
+    val udfFromRoutine = RoutineHelper.fromGoogle(routineFromBQ)
+
+    RoutineUpdateOperation.from(udf, Some(ExistingRoutine(udfFromRoutine, routineFromBQ))) match {
       case _: UpdateOperation.Noop =>
       case other => fail(other.toString)
     }
@@ -92,7 +94,7 @@ class RoutineUpdateOperationTest extends FunSuite {
         ident"foo",
         BQDataset.Ref(ProjectId("test-project-123456"), "ds1"),
         Params.empty,
-        UDF.Body.Sql(bqfr"((1))"),
+        UDF.Body.Sql(bqfr"(1)"),
         Some(BQType.INT64),
         None
       )
