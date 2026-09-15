@@ -76,7 +76,7 @@ class RoutineUpdateOperationTest extends FunSuite {
       .newBuilder(routineId)
       .setRoutineType("SCALAR_FUNCTION")
       .setLanguage("SQL")
-      .setBody("((1))")
+      .setBody("(1)")
       .setReturnType(StandardSQLDataType.newBuilder().setTypeKind(BQType.INT64.tpe.name).build())
       .build()
 
