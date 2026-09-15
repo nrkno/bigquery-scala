@@ -28,7 +28,7 @@ class RoutineUpdateOperationTest extends FunSuite {
       Some(BQType.INT64),
       None
     )
-  private val routineId: RoutineId = RoutineId.of("p1", "ds1", "foo")
+  private val routineId: RoutineId = RoutineId.of("project-id1", "ds1", "foo")
 
   test("should create when it does not exist") {
     RoutineUpdateOperation.from(udf, None) match {
@@ -56,7 +56,7 @@ class RoutineUpdateOperationTest extends FunSuite {
     val udf: UDF.Persistent[_1] =
       UDF.persistent(
         ident"foo",
-        BQDataset.Ref(ProjectId("p1"), "ds1"),
+        BQDataset.Ref(ProjectId("project-id1"), "ds1"),
         Params(
           Param(
             "segments",
@@ -151,7 +151,7 @@ class RoutineUpdateOperationTest extends FunSuite {
       .build()
 
     val tvf = TVF(
-      TVF.TVFId(BQDataset.Ref(ProjectId("p1"), "ds1"), ident"foo"),
+      TVF.TVFId(BQDataset.Ref(ProjectId("project-id1"), "ds1"), ident"foo"),
       BQPartitionType.NotPartitioned,
       Params.empty,
       oldQuery,
@@ -161,7 +161,7 @@ class RoutineUpdateOperationTest extends FunSuite {
     )
 
     val tvfUpdated = TVF(
-      TVF.TVFId(BQDataset.Ref(ProjectId("p1"), "ds1"), ident"foo"),
+      TVF.TVFId(BQDataset.Ref(ProjectId("project-id1"), "ds1"), ident"foo"),
       BQPartitionType.NotPartitioned,
       Params.empty,
       bqfr"select 100 as n",
@@ -198,7 +198,7 @@ class RoutineUpdateOperationTest extends FunSuite {
       .build()
 
     val tvf = TVF(
-      TVF.TVFId(BQDataset.Ref(ProjectId("p1"), "ds1"), ident"foo"),
+      TVF.TVFId(BQDataset.Ref(ProjectId("project-id1"), "ds1"), ident"foo"),
       BQPartitionType.NotPartitioned,
       Params.empty,
       bqfr"select 1 as n",
