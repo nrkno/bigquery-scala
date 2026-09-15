@@ -26,7 +26,6 @@ object SchemaHelper {
       struct = Option(dt.getStructType).map(e =>
         e.getFields.asScala.flatMap(f => typeFrom(f.getDataType).map(t => f.getName -> t)).toList)
     } yield BQType(
-      // Here the params from the routine from google is converted to BQType, and the Mode is set to NULLABLE
       if (arr.isDefined) BQField.Mode.REPEATED else BQField.Mode.NULLABLE,
       arr.map(_.tpe).getOrElse(typ),
       struct.orElse(arr.map(_.subFields)).getOrElse(Nil)
