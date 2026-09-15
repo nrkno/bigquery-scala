@@ -12,9 +12,13 @@ import cats.Eq
 object RoutineUpdateOperation {
 
   private def normalizeType(tpe: BQType): BQType =
-    // Routine info from BQ does not contain mode for types, here we normalize mode before we compare
+    // Routines from BQ does not contain Mode for argument/return types.
+    // But since this lib's BQType requires a Mode, Mode gets initialized
+    // as NULLABLE for all parameter/return types after we have fetched a routine from BQ
+    // This may not correspond to the Mode in the local routine's BQTypes
+    // So, to make sure we are not actually comparing Modes, we normalize it before type comparison
     tpe.copy(
-      mode = BQField.Mode.REQUIRED,
+      mode = BQField.Mode.NULLABLE,
       subFields = tpe.subFields.map { case (name, t) => (name, normalizeType(t)) }
     )
 
@@ -23,13 +27,9 @@ object RoutineUpdateOperation {
 
   implicit val eqUDF: Eq[UDF.Persistent[?]] = Eq.instance { (a, b) =>
     val name: Boolean = a.name == b.name
-    // unsized is used because it is "awkward" to map on Sized wrapping
     val params: Boolean = a.params.unsized.map(normalizeParam) == b.params.unsized.map(normalizeParam)
     val body: Boolean = "(" + a.body.asFragment.asString + ")" == b.body.asFragment.asString
-
-    // normalize return type to REQUIRED for both a and b
     val returnType: Boolean = a.returnType.map(normalizeType) == b.returnType.map(normalizeType)
-
     name && params && body && returnType
   }
 
