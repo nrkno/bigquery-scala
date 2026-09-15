@@ -162,6 +162,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
         "org.typelevel" %% "munit-cats-effect" % "2.2.0" % Test,
         "org.scalameta" %% "munit-scalacheck" % "1.3.1" % Test,
         ("io.chrisdavenport" %% "http4s-grpc-google-cloud-bigquerystorage-v1" % "3.6.0+0.0.6")
+          .exclude("org.jspecify", "jspecify")
           .exclude("io.chrisdavenport", s"http4s-grpc_${binaryVersion}"),
         ("io.chrisdavenport" %% "http4s-grpc" % "0.0.4")
           .exclude("org.http4s", s"http4s-ember-server_${binaryVersion}")
