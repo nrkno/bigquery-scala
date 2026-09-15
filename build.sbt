@@ -125,6 +125,7 @@ def addGoogleDep(module: ModuleID) =
   module
     .exclude("com.google.guava", "guava")
     .exclude("org.json", "json")
+    .exclude("org.jspecify", "jspecify")
 
 lazy val `google-client` = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -138,7 +139,7 @@ lazy val `google-client` = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect" % "2.2.0" % Test,
       "org.scalameta" %% "munit-scalacheck" % "1.3.1" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
-      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.33.0").exclude("org.jspecify", "jspecify"),
+      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.33.0"),
       "com.google.guava" % "guava" % "33.7.1-jre"
     ),
     Compile / doc / scalacOptions ++= Seq(
