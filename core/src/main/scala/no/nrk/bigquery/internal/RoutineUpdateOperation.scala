@@ -10,11 +10,27 @@ package internal
 import cats.Eq
 
 object RoutineUpdateOperation {
+
+  private def normalizeType(tpe: BQType): BQType =
+    // Routines from BQ does not contain Mode for argument/return types.
+    // But since this lib's BQType requires a Mode, Mode gets initialized
+    // as NULLABLE for all parameter/return types after we have fetched a routine from BQ
+    // This may not correspond to the Mode in the local routine's BQTypes
+    // So, to make sure we are not actually comparing Modes, we normalize it before type comparison
+    tpe.copy(
+      mode = BQField.Mode.NULLABLE,
+      subFields = tpe.subFields.map { case (name, t) => (name, normalizeType(t)) }
+    )
+
+  private def normalizeParam(p: BQRoutine.Param): BQRoutine.Param =
+    p.copy(maybeType = p.maybeType.map(normalizeType))
+
   implicit val eqUDF: Eq[UDF.Persistent[?]] = Eq.instance { (a, b) =>
-    a.name == b.name &&
-    a.params == b.params &&
-    a.body.asFragment.asString == b.body.asFragment.asString &&
-    a.returnType == b.returnType
+    val name: Boolean = a.name == b.name
+    val params: Boolean = a.params.unsized.map(normalizeParam) == b.params.unsized.map(normalizeParam)
+    val body: Boolean = "(" + a.body.asFragment.asString + ")" == b.body.asFragment.asString
+    val returnType: Boolean = a.returnType.map(normalizeType) == b.returnType.map(normalizeType)
+    name && params && body && returnType
   }
 
   implicit val eqTVF: Eq[TVF[?, ?]] = Eq.instance { (a, b) =>

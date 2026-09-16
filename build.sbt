@@ -93,8 +93,8 @@ lazy val core = crossProject(JVMPlatform)
       ("org.apache.avro" % "avro" % "1.12.2").exclude("org.apache.commons", "commons-compress"),
       "com.lihaoyi" %% "sourcecode" % "0.4.4",
       "org.apache.commons" % "commons-compress" % "1.28.0",
-      "co.fs2" %% "fs2-core" % "3.13.0",
-      "co.fs2" %% "fs2-io" % "3.13.0",
+      "co.fs2" %% "fs2-core" % "3.14.0",
+      "co.fs2" %% "fs2-io" % "3.14.0",
       "org.typelevel" %% "log4cats-slf4j" % "2.8.0",
       "io.circe" %% "circe-generic" % "0.14.16",
       "io.circe" %% "circe-parser" % "0.14.16",
@@ -137,7 +137,7 @@ lazy val `google-client` = crossProject(JVMPlatform)
     libraryDependencies ++= Seq(
       "org.typelevel" %% "munit-cats-effect" % "2.2.0" % Test,
       "org.scalameta" %% "munit-scalacheck" % "1.3.1" % Test,
-      addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.38.1"),
+      addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.50.0"),
       addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.32.0"),
       "com.google.guava" % "guava" % "33.7.1-jre"
     ),
@@ -220,7 +220,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % "1.3.6",
-      ("com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.96.0").exclude("org.jspecify", "jspecify"),
+      ("com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.97.0").exclude("org.jspecify", "jspecify"),
       "org.typelevel" %% "munit-cats-effect" % "2.2.0"
     ),
     mimaBinaryIssueFilters := Nil
