@@ -82,6 +82,7 @@ object GoogleTypeHelper {
 
   def toGoogleDisposition(writeDisposition: WriteDisposition) = writeDisposition match {
     case WriteDisposition.WRITE_TRUNCATE => GoogleWriteDisposition.WRITE_TRUNCATE
+    case WriteDisposition.WRITE_TRUNCATE_DATA => GoogleWriteDisposition.WRITE_TRUNCATE_DATA
     case WriteDisposition.WRITE_APPEND => GoogleWriteDisposition.WRITE_APPEND
     case WriteDisposition.WRITE_EMPTY => GoogleWriteDisposition.WRITE_EMPTY
   }
