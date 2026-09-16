@@ -125,7 +125,6 @@ def addGoogleDep(module: ModuleID) =
   module
     .exclude("com.google.guava", "guava")
     .exclude("org.json", "json")
-    .exclude("org.jspecify", "jspecify")
 
 lazy val `google-client` = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -163,7 +162,6 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
         "org.typelevel" %% "munit-cats-effect" % "2.2.0" % Test,
         "org.scalameta" %% "munit-scalacheck" % "1.3.1" % Test,
         ("io.chrisdavenport" %% "http4s-grpc-google-cloud-bigquerystorage-v1" % "3.6.0+0.0.6")
-          .exclude("org.jspecify", "jspecify")
           .exclude("io.chrisdavenport", s"http4s-grpc_${binaryVersion}"),
         ("io.chrisdavenport" %% "http4s-grpc" % "0.0.4")
           .exclude("org.http4s", s"http4s-ember-server_${binaryVersion}")
@@ -172,8 +170,7 @@ lazy val `http4s-client` = crossProject(JVMPlatform)
         // needed because of hard-link in http4s-grpc
         // https://github.com/davenverse/http4s-grpc/pull/89
         "org.http4s" %% "http4s-ember-core" % "0.23.37",
-        ("net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.6.4-v2-20250427")
-          .exclude("org.jspecify", "jspecify"),
+        ("net.hamnaberg.googleapis" %% "googleapis-http4s-bigquery" % "0.6.4-v2-20250427"),
         "com.permutive" %% "gcp-auth" % "2.1.0"
       )
     },
@@ -223,7 +220,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % "1.3.6",
-      ("com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.97.0").exclude("org.jspecify", "jspecify"),
+      ("com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.97.0"),
       "org.typelevel" %% "munit-cats-effect" % "2.2.0"
     ),
     mimaBinaryIssueFilters := Nil
