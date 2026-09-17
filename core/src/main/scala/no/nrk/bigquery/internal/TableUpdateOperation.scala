@@ -23,9 +23,19 @@ object TableUpdateOperation {
     a.tableOptions == b.tableOptions
   }
 
+  // BigQuery only stores policy tags on base tables,
+  // and views inherit the policys from the table columns it uses
+  // If local view definitions contain policy tags they will be ignored when BQ creates the view
+  // So when we compare local view definitions vs views created in BQ, we must normalize/remove the policy tags
+  private def withoutPolicyTags(schema: BQSchema): BQSchema = {
+    def removePolicy(field: BQField): BQField =
+      field.copy(policyTags = Nil, subFields = field.subFields.map(removePolicy))
+    BQSchema(schema.fields.map(removePolicy))
+  }
+
   private implicit val viewDefEquality: Eq[BQTableDef.View[Any]] = Eq.instance { (a, b) =>
     a.tableId == b.tableId &&
-    a.schema == b.schema &&
+    withoutPolicyTags(a.schema) == withoutPolicyTags(b.schema) &&
     a.partitionType === b.partitionType &&
     a.query.asString == b.query.asString &&
     a.description == b.description &&
