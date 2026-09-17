@@ -35,7 +35,7 @@ object RoutineUpdateOperation {
 
   implicit val eqTVF: Eq[TVF[?, ?]] = Eq.instance { (a, b) =>
     a.name == b.name &&
-    a.params == b.params &&
+    a.params.unsized.map(normalizeParam) == b.params.unsized.map(normalizeParam) &&
     a.description == b.description &&
     conforms.onlyTypes(a.schema, b.schema).isEmpty &&
     a.partitionType == b.partitionType &&
