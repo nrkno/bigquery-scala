@@ -189,7 +189,7 @@ lazy val prometheus = crossProject(JVMPlatform)
   .settings(
     name := "bigquery-prometheus",
     libraryDependencies ++= Seq(
-      "io.prometheus" % "simpleclient" % "0.16.0"
+      "io.prometheus" % "prometheus-metrics-core" % "1.9.0"
     )
   )
 
