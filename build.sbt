@@ -47,7 +47,7 @@ ThisBuild / tlVersionIntroduced := Map(
   "3" -> "0.9.0",
   "2.13" -> "0.9.0"
 )
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17"))
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("21"))
 
 val commonSettings = Seq(
   headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
