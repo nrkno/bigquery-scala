@@ -141,7 +141,7 @@ lazy val `google-client` = crossProject(JVMPlatform)
     libraryDependencies ++= Seq(
       "org.typelevel" %% "munit-cats-effect" % "2.2.1" % Test,
       "org.scalameta" %% "munit-scalacheck" % "1.3.1" % Test,
-      addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.50.0"),
+      addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.50.1"),
       addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.38.0"),
       "com.google.guava" % "guava" % "33.8.0-jre"
     ),
