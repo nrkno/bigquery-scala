@@ -125,6 +125,7 @@ def addGoogleDep(module: ModuleID) =
   module
     .exclude("com.google.guava", "guava")
     .exclude("org.json", "json")
+    .exclude("org.jspecify", "jspecify")
 
 lazy val `google-client` = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
