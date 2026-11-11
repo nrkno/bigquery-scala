@@ -121,11 +121,14 @@ lazy val core = crossProject(JVMPlatform)
     )
   )
 
+ThisBuild / excludeDependencies ++= Seq(
+  ExclusionRule("org.jspecify", "jspecify")
+)
+
 def addGoogleDep(module: ModuleID) =
   module
     .exclude("com.google.guava", "guava")
     .exclude("org.json", "json")
-    .exclude("org.jspecify", "jspecify")
 
 lazy val `google-client` = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -221,7 +224,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % "1.3.6",
-      ("com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.100.0").exclude("org.jspecify", "jspecify"),
+      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.100.0",
       "org.typelevel" %% "munit-cats-effect" % "2.2.0"
     ),
     mimaBinaryIssueFilters := Nil
