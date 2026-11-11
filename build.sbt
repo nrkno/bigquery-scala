@@ -47,7 +47,7 @@ ThisBuild / tlVersionIntroduced := Map(
   "3" -> "0.9.0",
   "2.13" -> "0.9.0"
 )
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11"))
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("21"))
 
 val commonSettings = Seq(
   headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
@@ -96,8 +96,8 @@ lazy val core = crossProject(JVMPlatform)
       "co.fs2" %% "fs2-core" % "3.14.0",
       "co.fs2" %% "fs2-io" % "3.14.0",
       "org.typelevel" %% "log4cats-slf4j" % "2.8.0",
-      "io.circe" %% "circe-generic" % "0.14.16",
-      "io.circe" %% "circe-parser" % "0.14.16",
+      "io.circe" %% "circe-generic" % "0.14.17",
+      "io.circe" %% "circe-parser" % "0.14.17",
       "org.scala-lang.modules" %% "scala-collection-compat" % "2.14.0"
     ),
     libraryDependencies ++= {
@@ -121,6 +121,10 @@ lazy val core = crossProject(JVMPlatform)
     )
   )
 
+ThisBuild / excludeDependencies ++= Seq(
+  ExclusionRule("org.jspecify", "jspecify")
+)
+
 def addGoogleDep(module: ModuleID) =
   module
     .exclude("com.google.guava", "guava")
@@ -138,8 +142,8 @@ lazy val `google-client` = crossProject(JVMPlatform)
       "org.typelevel" %% "munit-cats-effect" % "2.2.0" % Test,
       "org.scalameta" %% "munit-scalacheck" % "1.3.1" % Test,
       addGoogleDep("com.google.cloud" % "google-cloud-bigquery" % "2.50.0"),
-      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.22.1"),
-      "com.google.guava" % "guava" % "33.7.2-jre"
+      addGoogleDep("com.google.cloud" % "google-cloud-bigquerystorage" % "3.38.0"),
+      "com.google.guava" % "guava" % "33.8.0-jre"
     ),
     Compile / doc / scalacOptions ++= Seq(
       "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
@@ -220,7 +224,7 @@ lazy val `transfer-client` = crossProject(JVMPlatform)
     name := "bigquery-transfer-client",
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % "1.3.6",
-      ("com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.97.0").exclude("org.jspecify", "jspecify"),
+      "com.google.cloud" % "google-cloud-bigquerydatatransfer" % "2.102.0",
       "org.typelevel" %% "munit-cats-effect" % "2.2.0"
     ),
     mimaBinaryIssueFilters := Nil
@@ -238,7 +242,7 @@ lazy val testing = crossProject(JVMPlatform)
       "org.scalameta" %% "munit" % "1.3.6",
       "org.typelevel" %% "munit-cats-effect" % "2.2.0",
       "ch.qos.logback" % "logback-classic" % "1.2.13" % Test,
-      "org.http4s" %% "http4s-netty-client" % "0.7.2"
+      "org.http4s" %% "http4s-netty-client" % "0.7.4"
     ),
     mimaBinaryIssueFilters := Nil
   )
