@@ -74,7 +74,8 @@ lazy val root = tlCrossRootProject
     codegen,
     codegenTests,
     `transfer-client`,
-    docs)
+    docs
+  )
 
 lazy val core = crossProject(JVMPlatform)
   .withoutSuffixFor(JVMPlatform)
@@ -113,6 +114,7 @@ lazy val core = crossProject(JVMPlatform)
         )
       }
     },
+    Compile / sourceGenerators += (Compile / sourceManaged).map(Boilerplate.gen).taskValue,
     Compile / doc / scalacOptions ++= Seq(
       "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
     ),
